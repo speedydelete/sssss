@@ -4,14 +4,16 @@ import {parse} from '../lifeweb/lib/index.js';
 import {parseData, patternToShip, normalizeShips, addShipsToFiles, findSpeedRLE} from './index.js';
 
 
+let arg = process.argv.slice(3).join(' ');
+
 if (process.argv[2] === 'get') {
-    console.log(findSpeedRLE(process.argv.slice(3).join(' ')));
+    process.stdout.write(await findSpeedRLE(arg));
 } else if (process.argv[2] === 'add') {
-    addShipsToFiles(normalizeShips(parseData(process.argv.slice(3).join(' '))));
+    process.stdout.write(await addShipsToFiles(normalizeShips(parseData(arg))));
 } else if (process.argv[2] === 'add_file') {
-    addShipsToFiles(normalizeShips(parseData((await fs.readFile(process.argv.slice(3).join(' '))).toString())));
+    process.stdout.write(await addShipsToFiles(normalizeShips(parseData((await fs.readFile(arg)).toString()))));
 } else if (process.argv[2] === 'add_rle') {
-    addShipsToFiles(normalizeShips([patternToShip(parse(process.argv.slice(3).join(' ')))]));
+    process.stdout.write(await addShipsToFiles(normalizeShips([patternToShip(parse(arg))])));
 } else {
     throw new Error(`Invalid subcommand: ${process.argv[2]}`);
 }

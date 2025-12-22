@@ -1,0 +1,108 @@
+
+orthogonal:
+
+c/(n)o, pop 3: https://conwaylife.com/forums/viewtopic.php?f=11&t=3081&start=150#p164618
+2c/(n)o, pop 3: https://conwaylife.com/forums/viewtopic.php?f=11&t=3081&start=150#p164618
+3c/(n)o, pop 3: https://conwaylife.com/forums/viewtopic.php?f=11&t=3081&start=175#p186761
+4c/(n)o, pop 3: https://conwaylife.com/forums/viewtopic.php?f=11&t=3081&start=175#p186761
+5c/(n)o, pop 3: https://conwaylife.com/forums/viewtopic.php?f=11&t=3081&start=175#p186761
+
+3c/(4n)o, pop 11: https://conwaylife.com/forums/viewtopic.php?f=11&t=3081&start=100#p101606
+3c/(4n + 1)o, pop 7: https://conwaylife.com/forums/viewtopic.php?f=11&t=3081&start=100#p101606
+3c/(4n + 2)o, pop 14: https://conwaylife.com/forums/viewtopic.php?f=11&t=3081&start=100#p101606
+3c/(4n + 3)o, pop 5: https://conwaylife.com/forums/viewtopic.php?f=11&t=3081&start=125#p117590
+
+3c/(12n + 2)o, pop 5: https://conwaylife.com/forums/viewtopic.php?f=11&t=3081&start=125#p117590
+3c/(12n + 4)o, pop 5: https://conwaylife.com/forums/viewtopic.php?f=11&t=3081&start=125#p117590
+3c/(12n + 9)o, pop 5: https://conwaylife.com/forums/viewtopic.php?f=11&t=3081&start=125#p117590
+3c/(12n + 11)o, pop 5: https://conwaylife.com/forums/viewtopic.php?f=11&t=3081&start=125#p117590
+
+6c/(60n + 32), pop 3: https://conwaylife.com/forums/viewtopic.php?f=11&t=3081&start=175#p186761
+
+8c/(24n + 18)o, pop 5: https://conwaylife.com/forums/viewtopic.php?f=11&t=3081&start=125#p117590
+
+10c/(120n + 104)o, pop 5: https://conwaylife.com/forums/viewtopic.php?f=11&t=3081&start=125#p117643
+
+(n)c/(6n + 5)o, pop no: https://conwaylife.com/forums/viewtopic.php?f=11&t=3081&start=175#p188819
+
+(2n)c/(4n)o, pop 20: https://conwaylife.com/forums/viewtopic.php?f=11&t=3081#p57920
+(2n)c/(6n)o, pop 17: https://conwaylife.com/forums/viewtopic.php?f=11&t=3081&start=100#p101646
+(2n)c/(8n)o, pop 11: https://conwaylife.com/forums/viewtopic.php?f=11&t=3081&start=100#p101685
+
+(2n + 1)c/(4n + 1)o, pop 20: https://conwaylife.com/forums/viewtopic.php?f=11&t=3081&start=100#p107228
+
+(4n)c/(6n)o, pop 18: https://conwaylife.com/forums/viewtopic.php?f=11&t=3081&start=100#p101606
+
+(2n + 2)c/(4n + 2), pop 19: https://conwaylife.com/forums/viewtopic.php?f=11&t=3081&start=100#p101606
+
+(2^n)c/(2^n)o, pop 6: https://conwaylife.com/forums/viewtopic.php?f=11&t=3081#p60437
+
+(3^n)c/(3^n)o, pop 4 + 3n: https://conwaylife.com/forums/viewtopic.php?f=11&t=3081&start=75#p78862
+
+(4n)c/(8n + 4k + 13), pop 22 + 2n + 2k: https://conwaylife.com/forums/viewtopic.php?f=11&t=3081&start=125#p121932
+(4n)c/(8n + 4k + 14), pop 22 + 2n + 2k: https://conwaylife.com/forums/viewtopic.php?f=11&t=3081&start=125#p121932
+(4n)c/(8n + 4k + 15), pop 22 + 2n + 2k: https://conwaylife.com/forums/viewtopic.php?f=11&t=3081&start=125#p121932
+(4n)c/(8n + 4k + 16), pop 22 + 2n + 2k: https://conwaylife.com/forums/viewtopic.php?f=11&t=3081&start=125#p121932
+
+(4n + 2)c/(8n + 4k + 17), pop 22 + 2n + 2k: https://conwaylife.com/forums/viewtopic.php?f=11&t=3081&start=125#p121932
+(4n + 2)c/(8n + 4k + 18), pop 24 + 2n + 2k: https://conwaylife.com/forums/viewtopic.php?f=11&t=3081&start=125#p121932
+(4n + 2)c/(8n + 4k + 19), pop 22 + 2n + 2k: https://conwaylife.com/forums/viewtopic.php?f=11&t=3081&start=125#p121932
+(4n + 2)c/(8n + 4k + 20), pop 24 + 2n + 2k: https://conwaylife.com/forums/viewtopic.php?f=11&t=3081&start=125#p121932
+
+not doing this one now: https://conwaylife.com/forums/viewtopic.php?f=11&t=3081&start=125#p119984
+
+or this one: https://conwaylife.com/forums/viewtopic.php?f=11&t=3081&start=125#p125434
+
+general orthogonal:
+https://conwaylife.com/forums/viewtopic.php?f=11&t=3081&start=150#p139556
+https://conwaylife.com/forums/viewtopic.php?p=67281&sid=8091549f734fc5ea9d2069a664716dd9#p67281
+
+diagonal:
+
+c/(2n + 1)d, pop 5 + n: https://conwaylife.com/forums/viewtopic.php?f=11&t=3081#p55115
+
+c/(4n)d, pop 19: https://conwaylife.com/forums/viewtopic.php?f=11&t=3081&start=25#p62119
+c/(4n + 1)d, pop quadratic: https://conwaylife.com/forums/viewtopic.php?f=11&t=3081&start=100#p100982
+c/(4n + 2)d, pop 21: https://conwaylife.com/forums/viewtopic.php?f=11&t=3081&start=25#p62119
+
+c/(4(n + k) - 3)d, pop quadratic: https://conwaylife.com/forums/viewtopic.php?f=11&t=3081&start=175#p187936
+
+c/(6n + 29)d, pop 6: https://conwaylife.com/forums/viewtopic.php?f=11&t=1971#p52713
+c/(6n + 62)d, pop 6: https://conwaylife.com/forums/viewtopic.php?f=11&t=1971#p52572
+
+c/(9n + 41)d, pop quadratic: https://conwaylife.com/forums/viewtopic.php?f=11&t=3081&start=125#p124473
+
+c/(11n + 27)d, pop 8: https://conwaylife.com/forums/viewtopic.php?f=11&t=3081&start=75#p79903
+
+c/(16n + 13)d, pop 5: https://conwaylife.com/forums/viewtopic.php?f=11&t=3081&start=125#p117590
+
+c/(66n + 29)d, pop 6: https://conwaylife.com/forums/viewtopic.php?f=11&t=1971#p52480
+
+(2n)c/(4n + 4)d, pop 10: https://conwaylife.com/forums/viewtopic.php?f=11&t=3081&start=125#p121932
+
+(2n + 1)c/(4n + 4)d, pop 19: https://conwaylife.com/forums/viewtopic.php?f=11&t=3081&start=150#p139893
+
+(n)c/(3n + 6k + 15)d, pop no: https://conwaylife.com/forums/viewtopic.php?f=11&t=3081&start=150#p139893
+(n)c/(3n + 6k + 18)d, pop no: https://conwaylife.com/forums/viewtopic.php?f=11&t=3081&start=150#p139893
+(4n)c/(8n + 4k + 16)d, pop no: https://conwaylife.com/forums/viewtopic.php?f=11&t=3081&start=150#p139893
+
+oblique:
+
+(2, 1)c/(4n), pop 5: https://conwaylife.com/forums/viewtopic.php?f=11&t=3081&start=125#p113788
+(2, 1)c/(4n + 1), pop 5: https://conwaylife.com/forums/viewtopic.php?f=11&t=3081&start=125#p113788
+(2, 1)c/(4n + 2), pop 5: https://conwaylife.com/forums/viewtopic.php?f=11&t=3081&start=125#p113788
+(2, 1)c/(4n + 3), pop 5: https://conwaylife.com/forums/viewtopic.php?f=11&t=3081&start=125#p113788
+(2, 1)c/(something), pop something: https://conwaylife.com/forums/viewtopic.php?f=11&t=3081&start=150#p178034
+
+(3, 1)c/(4n + 3), pop 5: https://conwaylife.com/forums/viewtopic.php?f=11&t=3081&start=125#p113788
+
+adjustable slope reflector ships:
+https://conwaylife.com/forums/viewtopic.php?f=11&t=3081&start=50
+https://conwaylife.com/forums/viewtopic.php?f=11&t=3081&start=100#p98872
+https://conwaylife.com/forums/viewtopic.php?f=11&t=3081&start=125#p113620
+https://conwaylife.com/forums/viewtopic.php?f=11&t=3081&start=150#p132890
+https://conwaylife.com/forums/viewtopic.php?f=11&t=3081&start=175#p182731 and https://conwaylife.com/forums/viewtopic.php?f=11&t=3081&start=175#p188651
+
+adjustable slope box ships:
+https://conwaylife.com/forums/viewtopic.php?f=11&t=3081&start=125#p112512
+https://conwaylife.com/forums/viewtopic.php?f=11&t=3081&start=150#p152053

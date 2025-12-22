@@ -26,25 +26,6 @@ body {
     gap: 20px;
 }
 
-#main {
-    min-height: 0;
-    flex: 1 1 auto;
-    width: 100%;
-    display: flex;
-    flex-flow: row wrap;
-    gap: 20px;
-}
-
-#main > div {
-    min-height: 0;
-    max-height: 100%;
-    width: calc(50% - 10px);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 20px;
-}
-
 h1, h2 {
     text-align: center;
 }
@@ -74,9 +55,6 @@ input[type=number] {
 }
 
 textarea {
-    width: 80%;
-    height: 10ch;
-    flex: 1 0 auto;
     resize: none;
     font-family: 'Courier New', Courier, monospace;
     font-size: 1em;
@@ -86,6 +64,33 @@ textarea {
 
 textarea:focus {
     outline: none;
+}
+
+#main {
+    min-height: 0;
+    flex: 1 1 auto;
+    width: 100%;
+    display: flex;
+    flex-flow: row wrap;
+    gap: 20px;
+}
+
+#main > div {
+    min-height: 0;
+    max-height: 100%;
+    width: calc(50% - 10px);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+}
+
+#links {
+    display: flex;
+    flex-direction: row;
+    gap: 3ch;
+    justify-content: center;
+    align-items: center;
 }
 
 #speed-wrapper {
@@ -109,11 +114,26 @@ textarea:focus {
     font-family: 'Courier New', Courier, monospace;
 }
 
+#ships, #ships-out {
+    width: 80%;
+    height: 10ch;
+    flex: 1 0 auto;
+}
+
+#ships-out {
+    display: none;
+}
+
         </style>
     </head>
     <body spellcheck="false" autocapitalize="" autocorrect="off" writingsuggestions="false">
-        <h1>Smallest Spaceships Supporting Specific Speeds (5S)</h1>
-        <a href="https://conwaylife.com/forums/viewtopic.php?f=11&t=2892">More information</a>
+        <div>
+            <h1>Smallest Spaceships Supporting Specific Speeds (5S)</h1>
+            <div id="links">
+                <a href="https://conwaylife.com/forums/viewtopic.php?f=11&t=2892">More information</a>
+                <a href="https://github.com/speedydelete/sssss">Source code</a>
+            </div>
+        </div>
         <div id="main">
             <div>
                 <h2>Search Speed</h2>
@@ -127,32 +147,254 @@ textarea:focus {
                 <h2>Submit Spaceships</h2>
                 Enter spaceships in RLE or 5S format. The maximum period is 32768. If you would like to submit higher-period ship, or an adjustable ship (don't submit adjustable ships here!) please contact speedydelete on the ConwayLife.com forums or Discord.
                 <textarea id="ships"></textarea>
+                <div id="ships-out"></div>
                 <button id="submit">Submit</button>
             </div>
         </div>
-        <script>'use strict';function printError(e){let x=String(e instanceof Error?('stack' in e?e.stack:e):e).replaceAll(/file:\/\/\/media\/fuse\/drivefs-[0-9a-f]+\/root\/code\//g,'').replaceAll('about:srcdoc','index.js');if(e instanceof Error&&!x.includes('Error'))x=String(e)+'\n'+x;for (let m of x.matchAll(/data:text\/javascript;base64,([a-zA-Z0-9+/=]+)/g)){let f=atob(m[1]);x=x.replaceAll(m[0],f.slice(2,f.indexOf('*/')))}if(document.readyState!=='complete'){alert(x);return;}let t=document.createElement('div');t.textContent='\n\n'+x;t.style.color='red';document.getElementById('out').appendChild(t);document.getElementById('config').style.display='none';let l=setInterval(()=>{});for(let i=1;i<=l;i++)clearInterval(i);l=requestAnimationFrame(()=>{});for(let i=1;i<=l;i++)cancelAnimationFrame(i);}window.addEventListener('error',e=>{printError(e.error);return true;});window.addEventListener('unhandledrejection',e=>{e.preventDefault();printError(e.reason);});</script>
+        <script>'use strict';function printError(e,c='red'){let x=String(e instanceof Error?('stack' in e?e.stack:e):e);if(!(document.readyState==='complete')){alert(x);return;}document.querySelectorAll('body > *').forEach(x=>x.remove());let t=document.createElement('pre');t.style.color=c;t.style.paddingLeft='15px';t.style.fontFamily='\'Courier New\',Courier,monospace';t.style.fontSize='14px';t.style.overflowX='wrap';t.textContent=x.replaceAll(/file:\/\/\/media\/fuse\/drivefs-[0-9a-f]+\/root\/code\//g,'');document.body.appendChild(t);let l=setInterval(()=>{},0);for(let j=1;j<=l;j++){clearInterval(j);}window.onkeydown=()=>{};}window.addEventListener('error',e=>{printError(e.error);return true;});window.addEventListener('unhandledrejection',e=>{d.preventDefault();printError(e.reason);});</script>
         <script type="module">
 
+import {findType, parse} from './lifeweb/index.js';
+
+
+function parseSpeed(speed) {
+    if (!speed.includes('c')) {
+        alert('Invalid speed!');
+        return;
+    }
+    let [disp, period] = speed.split('c');
+    if (period.startsWith('/')) {
+        period = period.slice(1);
+    }
+    let p = parseInt(period);
+    let x, y;
+    let num = parseInt(disp);
+    if (!Number.isNaN(num)) {
+        x = num;
+        if (period.endsWith('d')) {
+            y = num;
+        } else {
+            y = 0;
+        }
+    } else if (disp.startsWith('(')) {
+        let parts = disp.slice(1, -1).split(',');
+        x = parseInt(parts[0]);
+        y = parseInt(parts[1]);
+        if (Number.isNaN(x) || Number.isNaN(y) || parts.length !== 2) {
+            alert('Invalid speed!');
+            return;
+        }
+    } else if (disp === '') {
+        x = 1;
+        if (period.endsWith('d')) {
+            y = 1;
+        } else {
+            y = 0;
+        }
+    } else {
+        alert('Invalid speed!');
+        return;
+    }
+    return {dx: x, dy: y, period: p};
+}
+
+
+function normalizeShips(ships, throwInvalid) {
+    let out = [];
+    let invalidShips = [];
+    for (let i = 0; i < ships.length; i++) {
+        let ship = ships[i];
+        let p = parse(`x = 0, y = 0, rule = ${ship.rule}\n${ship.rle}`);
+        let type = findType(p, ship.period + 1);
+        if (type.period !== ship.period || !type.disp || type.disp[0] !== ship.dx || type.disp[1] !== ship.dy) {
+            if (throwInvalid) {
+                throw new Error(`Invalid ship detected: ${shipsToString([ship])}`);
+            } else {
+                console.error(`Invalid ship detected: ${shipsToString([ship])}`);
+                invalidShips.push(speedToString(ship));
+                continue;
+            }
+        }
+        if (ship.dx < 0 || ship.dy < 0 || Math.abs(ship.dx) < Math.abs(ship.dy)) {
+            if (ship.dx < 0) {
+                p.flipHorizontal();
+            }
+            if (ship.dy < 0) {
+                p.flipVertical();
+            }
+            if (ship.dx < ship.dy) {
+                let temp = ship.dx;
+                ship.dx = ship.dy;
+                ship.dy = temp;
+                p.rotateLeft().flipVertical();
+            }
+            type = findType(p, ship.period + 1);
+            if (type.period !== ship.period || !type.disp || type.disp[0] !== ship.dx || type.disp[1] !== ship.dy) {
+                if (throwInvalid) {
+                    throw new Error(`Invalid ship detected: ${shipsToString([ship])}`);
+                } else {
+                    console.error(`Invalid ship detected: ${shipsToString([ship])}`);
+                    invalidShips.push(speedToString(ship));
+                    continue;
+                }
+            }
+        }
+        ship.rule = findMinmax(p, ship.period + 1)[0];
+        let minPop = type.phases[0].population;
+        let minPhase = type.phases[0];
+        for (let phase of type.phases) {
+            if (phase.population < minPop) {
+                minPop = phase.population;
+                minPhase = phase;
+            }
+        }
+        ship.rle = minPhase.toRLE().split('\n').slice(1).join('');
+        out.push(ship);
+    }
+    return throwInvalid === false ? [out, invalidShips] : out;
+}
+
+function parseData(data) {
+    let out = [];
+    if (data.includes(',')) {
+        for (let line of data.split('\n')) {
+            line = line.trim();
+            if (line === '' || line.startsWith('#')) {
+                continue;
+            }
+            let info = line.split(', ');
+            out.push({
+                pop: parseInt(info[0]),
+                rule: info[1],
+                dx: parseInt(info[2]),
+                dy: parseInt(info[3]),
+                period: parseInt(info[4]),
+                rle: info[5],
+            });
+        }
+    } else {
+        let currentRLE = '';
+        let rleNumber = 0;
+        let isFirstLine = false;
+        for (let line of data.split('\n')) {
+            line = line.trim();
+            if (line === '' || line.startsWith('#')) {
+                continue;
+            }
+            if (line.startsWith('x')) {
+                if (currentRLE !== '') {
+                    let p = parse(currentRLE);
+                    let type = findType(p, 4096);
+                    if (!type.disp || (type.disp[0] === 0 && type.disp[1] === 1)) {
+                        alert(`Pattern #${rleNumber} is not a spaceship or its period is higher than 4096!`);
+                    } else {
+                        out.push({
+                            pop: 0,
+                            rule: p.ruleStr,
+                            dx: type.disp[0],
+                            dy: type.disp[1],
+                            period: type.period,
+                            rle: p.toRLE().split('\n').slice(1).join(''),
+                        });
+                    }
+                }
+                rleNumber++;
+            } else if (isFirstLine) {
+                alert('First line must be a RLE header');
+            }
+        }
+    }
+    return out;
+}
+
+function shipsToString(ships) {
+    let out = '';
+    for (let ship of ships) {
+        out += ship.pop + ', ' + ship.rule + ', ' + ship.dx + ', ' + ship.dy + ', ' + ship.period + ', ' + ship.rle + '\n';
+    }
+    return out;
+}
+
+let speedInput = document.getElementById('speed');
+let searchButton = document.getElementById('search');
+let searchOutput = document.getElementById('out');
+let shipsInput = document.getElementById('ships');
+let shipsOutput = document.getElementById('ships-out');
+let submitButton = document.getElementById('submit');
+
+searchButton.addEventListener('click', async () => {
+    let {dx, dy, period} = parseSpeed(speedInput.value);
+    let resp = await fetch(`./api/get?dx=${dx}&dy=${dy}&period=${period}`);
+    if (resp.ok) {
+        searchOutput.textContent = await resp.text();
+    } else {
+        if (resp.status === 429) {
+            alert('You are being rate limited! Try again in 5 seconds!');
+        } else {
+            alert(`Error: Server returned ${resp.status} ${resp.statusText}!`);
+        }
+    }
+});
+
+let isBackButton = false;
+
+submitButton.addEventListener('click', async () => {
+    if (isBackButton) {
+        shipsInput.style.display = 'block';
+        shipsOutput.style.display = 'none';
+        submitButton.textContent = 'Submit';
+        return;
+    }
+    let rawShips = parseData(document.getElementById('ships').value);
+    let [ships, invalidShips] = normalizeShips(rawShips, false);
+    if (ships.length === 0) {
+        alert(`All ships are invalid!`);
+        return;
+    }
+    let resp = await fetch('./api/add', {
+        method: 'POST',
+        body: shipsToString(ships),
+    });
+    if (resp.ok) {
+        shipsInput.style.display = 'none';
+        shipsOutput.style.display = 'block';
+        submitButton.textContent = 'Back';
+        let out = await resp.text();
+        if (invalidShips.length > 0) {
+            out = `${invalidShips.length} invalid ships removed before submitting: ${invalidShips.join(', ')}\n${out}`;
+        }
+        shipsOutput.textContent = out;
+    } else {
+        if (resp.status === 429) {
+            alert('You are being rate limited! Try again in 5 seconds!');
+        } else {
+            alert(`Error: Server returned ${resp.status} ${resp.statusText}!`);
+        }
+    }
+});
+
+
 document.querySelectorAll('input').forEach(elt => {
-    let value = localStorage['sssss-input-' + elt.id];
+    let value = localStorage['5s-input-' + elt.id];
     if (value) {
         elt.value = value;
     }
     elt.addEventListener('change', () => {
-        localStorage['sssss-input-' + elt.id] = elt.value;
+        localStorage['5s-input-' + elt.id] = elt.value;
     });
 });
 
 document.querySelectorAll('textarea').forEach(elt => {
-    let value = localStorage['sssss-textarea-' + elt.id];
+    let value = localStorage['5s-textarea-' + elt.id];
     if (value) {
         elt.value = value;
     }
     elt.addEventListener('change', () => {
-        localStorage['sssss-textarea-' + elt.id] = elt.value;
+        localStorage['5s-textarea-' + elt.id] = elt.value;
     });
 });
 
         </script>
     </body>
 </html>
+
