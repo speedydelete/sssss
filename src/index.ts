@@ -132,7 +132,7 @@ export function patternToShip(p: Pattern, limit: number = 32768): Ship {
         dx: type.disp[0],
         dy: type.disp[1],
         period: type.period,
-        rle: p.toRLE(),
+        rle: p.toRLE().split('\n').slice(1).join(''),
     }])[0];
 }
 
@@ -224,11 +224,12 @@ export async function addShipsToFiles(ships: Ship[]): Promise<string> {
                         ship2.pop = ship.pop;
                         ship2.rule = ship.rule;
                         ship2.rle = ship.rle;
+                        improvedShips.push(speedToString(ship));
                     } else {
                         nonImprovedShips.push(speedToString(ship));
-                        found = true;
-                        break;
                     }
+                    found = true;
+                    break;
                 }
             }
             if (!found) {
@@ -247,6 +248,9 @@ export async function addShipsToFiles(ships: Ship[]): Promise<string> {
     }
     if (nonImprovedShips.length > 0) {
         out += `${nonImprovedShips.length} non-improved ships: ${nonImprovedShips.join(', ')}\n`;
+    }
+    if (invalidShips.length === 0 && improvedShips.length === 0 && nonImprovedShips.length === 0) {
+        out = 'No changes made';
     }
     return out;
 }

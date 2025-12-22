@@ -14,6 +14,8 @@ if (process.argv[2] === 'get') {
     process.stdout.write(await addShipsToFiles(normalizeShips(parseData((await fs.readFile(arg)).toString()))));
 } else if (process.argv[2] === 'add_rle') {
     process.stdout.write(await addShipsToFiles(normalizeShips([patternToShip(parse(arg))])));
+} else if (process.argv[2] === 'add_rle_file') {
+    process.stdout.write(await addShipsToFiles(normalizeShips([patternToShip(parse((await fs.readFile(arg)).toString()))])));
 } else {
     throw new Error(`Invalid subcommand: ${process.argv[2]}`);
 }
