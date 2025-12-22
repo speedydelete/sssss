@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>5S</title>
+        <meta charset="utf-8">
+        <style>
+
+* {
+    box-sizing: border-box;
+}
+
+html, body {
+    position: absolute;
+    inset: 0;
+    height: 100%;
+    width: 100%;
+    font-family: Arial, Helvetica, sans-serif;
+}
+
+body {
+    padding: 20px;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+}
+
+#main {
+    min-height: 0;
+    flex: 1 1 auto;
+    width: 100%;
+    display: flex;
+    flex-flow: row wrap;
+    gap: 20px;
+}
+
+#main > div {
+    min-height: 0;
+    max-height: 100%;
+    width: calc(50% - 10px);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+}
+
+h1, h2 {
+    text-align: center;
+}
+
+button, input:not([type=checkbox]) {
+    padding: 3px 6px;
+    font-size: inherit;
+    background-color: inherit;
+    color: inherit;
+    border: 1px solid black;
+}
+
+button {
+    font-family: inherit;
+}
+
+input {
+    font-family: 'Courier New', Courier, monospace;
+}
+
+input:focus {
+    outline: none;
+}
+
+input[type=number] {
+    appearance: textfield;
+}
+
+textarea {
+    width: 80%;
+    height: 10ch;
+    flex: 1 0 auto;
+    resize: none;
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 1em;
+    overflow-wrap: anywhere;
+    overflow-y: auto;
+}
+
+textarea:focus {
+    outline: none;
+}
+
+#speed-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: start;
+    gap: 20px;
+}
+
+#speed {
+    width: 24ch;
+}
+
+#out {
+    flex: 1 1 auto;
+    min-height: 0;
+    max-width: 72ch;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+    overflow-y: auto;
+    font-family: 'Courier New', Courier, monospace;
+}
+
+        </style>
+    </head>
+    <body spellcheck="false" autocapitalize="" autocorrect="off" writingsuggestions="false">
+        <h1>Smallest Spaceships Supporting Specific Speeds (5S)</h1>
+        <a href="https://conwaylife.com/forums/viewtopic.php?f=11&t=2892">More information</a>
+        <div id="main">
+            <div>
+                <h2>Search Speed</h2>
+                <div id="speed-wrapper">
+                    <div>Speed: <input type="text" id="speed" /></div>
+                    <button id="search">Search</button>
+                </div>
+                <div id="out"></div>
+            </div>
+            <div>
+                <h2>Submit Spaceships</h2>
+                Enter spaceships in RLE or 5S format. The maximum period is 32768. If you would like to submit higher-period ship, or an adjustable ship (don't submit adjustable ships here!) please contact speedydelete on the ConwayLife.com forums or Discord.
+                <textarea id="ships"></textarea>
+                <button id="submit">Submit</button>
+            </div>
+        </div>
+        <script>'use strict';function printError(e){let x=String(e instanceof Error?('stack' in e?e.stack:e):e).replaceAll(/file:\/\/\/media\/fuse\/drivefs-[0-9a-f]+\/root\/code\//g,'').replaceAll('about:srcdoc','index.js');if(e instanceof Error&&!x.includes('Error'))x=String(e)+'\n'+x;for (let m of x.matchAll(/data:text\/javascript;base64,([a-zA-Z0-9+/=]+)/g)){let f=atob(m[1]);x=x.replaceAll(m[0],f.slice(2,f.indexOf('*/')))}if(document.readyState!=='complete'){alert(x);return;}let t=document.createElement('div');t.textContent='\n\n'+x;t.style.color='red';document.getElementById('out').appendChild(t);document.getElementById('config').style.display='none';let l=setInterval(()=>{});for(let i=1;i<=l;i++)clearInterval(i);l=requestAnimationFrame(()=>{});for(let i=1;i<=l;i++)cancelAnimationFrame(i);}window.addEventListener('error',e=>{printError(e.error);return true;});window.addEventListener('unhandledrejection',e=>{e.preventDefault();printError(e.reason);});</script>
+        <script type="module">
+
+document.querySelectorAll('input').forEach(elt => {
+    let value = localStorage['sssss-input-' + elt.id];
+    if (value) {
+        elt.value = value;
+    }
+    elt.addEventListener('change', () => {
+        localStorage['sssss-input-' + elt.id] = elt.value;
+    });
+});
+
+document.querySelectorAll('textarea').forEach(elt => {
+    let value = localStorage['sssss-textarea-' + elt.id];
+    if (value) {
+        elt.value = value;
+    }
+    elt.addEventListener('change', () => {
+        localStorage['sssss-textarea-' + elt.id] = elt.value;
+    });
+});
+
+        </script>
+    </body>
+</html>

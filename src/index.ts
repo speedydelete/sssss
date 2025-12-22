@@ -1,7 +1,8 @@
 
 import {join} from 'node:path';
 import * as fs from 'node:fs/promises';
-import {Pattern, parse, findType, findMinmax} from '../lifeweb/lib/index.js';
+import {Pattern, parse, findType, findMinmax, fullIdentify} from '../lifeweb/lib/index.js';
+import {ADJUSTABLE_SHIPS} from './adjustable.js';
 
 
 export interface Ship {
@@ -100,13 +101,7 @@ export function normalizeShips(ships: Ship[], throwInvalid: boolean = true): Shi
                 }
             }
         }
-        let newRule = findMinmax(p, type, ship.period + 1)[0];
-        p = parse(`x = 0, y = 0, rule = ${newRule}\n${ship.rle}`);
-        type = findType(p, ship.period + 1);
-        if (type.period !== ship.period || !type.disp || type.disp[0] !== ship.dx || type.disp[1] !== ship.dy) {
-            throw new Error(`Bug in lifeweb detected with ship: ${shipsToString([ship])}`);
-        }
-        ship.rule = newRule;
+        ship.rule = findMinmax(p, ship.period + 1)[0];
         let minPop = type.phases[0].population;
         let minPhase = type.phases[0];
         for (let phase of type.phases) {
@@ -125,10 +120,10 @@ export function normalizeShips(ships: Ship[], throwInvalid: boolean = true): Shi
 }
 
 
-export function patternToShip(p: Pattern): Ship {
-    let type = findType(p, 16777216);
+export function patternToShip(p: Pattern, limit: number = 32768): Ship {
+    let type = findType(p, limit);
     if (!type.disp) {
-        throw new Error('Pattern is not a ship or period is greater than 16777216 generations');
+        throw new Error(`Pattern is not a ship or its period is greater than ${limit} generations`);
     }
     if (type.disp[0] === 0 && type.disp[1] === 0) {
         throw new Error('Pattern does not move');
@@ -293,7 +288,7 @@ export async function addShipsToFiles(ships: Ship[]): Promise<string[]> {
     return errors;
 }
 
-export async function findShip(dx: number, dy: number, period: number): Promise<Ship | null> {
+export async function findShip(dx: number, dy: number, period: number, adjustable: boolean = true): Promise<null | {ship: Ship, adjustable: boolean}> {
     dx = Math.abs(dx);
     dy = Math.abs(dy);
     if (dx < dy) {
@@ -301,33 +296,136 @@ export async function findShip(dx: number, dy: number, period: number): Promise<
         dy = dx;
         dx = temp;
     }
-    let file: string;
+    let type: 'orthogonal' | 'diagonal' | 'oblique';
     if (dy === 0) {
-        file = join(dataPath, 'orthogonal.sss');
+        type = 'orthogonal';
     } else if (dx === dy) {
-        file = join(dataPath, 'diagonal.sss');
+        type = 'diagonal';
     } else {
-        file = join(dataPath, 'oblique.sss');
+        type = 'oblique';
     }
-    let data = parseData((await fs.readFile(file)).toString());
+    let data = parseData((await fs.readFile(join(dataPath, type + '.sss'))).toString());
     for (let ship of data) {
         if (ship.period === period && ship.dx === dx && ship.dy === dy) {
-            return ship;
+            return {ship, adjustable: false};
         }
     }
-    return null;
+    if (adjustable) {
+        let record: Ship | null = null;
+        for (let i = 0; i < ADJUSTABLE_SHIPS.length; i++) {
+            let out = ADJUSTABLE_SHIPS[i](dx, dy, period);
+            if (out) {
+                let data = fullIdentify(out, period + 1, 1);
+                if (!data.disp) {
+                    throw new Error(`Invalid adjustable ship found! (#${i})`)
+                }
+                let p = data.phases[data.stabilizedAt + 1];
+                let ship = normalizeShips([{
+                    pop: 0,
+                    rule: p.ruleStr,
+                    dx,
+                    dy,
+                    period,
+                    rle: p.toRLE(),
+                }])[0];
+                if (!record || ship.pop < record.pop) {
+                    record = ship;
+                }
+            }
+        }
+        if (record) {
+            return {ship: record, adjustable: true};
+        } else {
+            return null;
+        }
+    } else {
+        return null;
+    }
 }
 
-export async function findSpeed(speed: string): Promise<Ship | null> {
+export async function findSpeedRLE(speed: string): Promise<string> {
     let {dx, dy, period} = parseSpeed(speed);
-    return await findShip(dx, dy, period);
+    let data = await findShip(dx, dy, period);
+    if (!data) {
+        if (dx + dy < 2 * period) {
+            return `No such ship found in database!\nNote that a 61-cell RCT-based ship that moves at this speed exists\n`;
+        } else {
+            return `No such ship found in database!`;
+        }
+    }
+    let {ship, adjustable} = data;
+    let out = `#C (${ship.dx}, ${ship.dy})c/${ship.period}, population ${ship.pop}\n`;
+    if (adjustable) {
+        out = '#C Unable to find a non-adjustable ship, but found an adjustable ship!\n' + out;
+    }
+    if (dx + dy < 2 * period && ship.pop > 61) {
+        out += `#C Note that a 61-cell RCT-based ship that moves at this speed exists\n`;
+    }
+    return out + '\n' + ship.rle;
 }
 
 
-// let ships = parseData((await fs.readFile('data/diagonal.sss')).toString());
+let errors = 0;
+
+let oldShips = parseData((await fs.readFile('data/oblique.sss')).toString());
+let newShips = parseData((await fs.readFile('new.sss')).toString());
+
+// console.log('Checking new ships');
+// let start = performance.now();
+
+// for (let i = 0; i < newShips.length; i++) {
+//     let {period, dx, dy} = newShips[i];
+//     let index = newShips.slice(i + 1).findIndex(x => x.period === period && x.dx === dx && x.dy === dy);
+//     let dupeCount = 0;
+//     while (index !== -1) {
+//         dupeCount++;
+//         newShips.splice(index + i + 1, 1);
+//         index = newShips.slice(i + 1).findIndex(x => x.period === period && x.dx === dx && x.dy === dy);
+//     }
+//     if (dupeCount > 0) {
+//         await fs.appendFile('out.txt', `Line repeated ${dupeCount} ${dupeCount === 1 ? 'time' : 'times'}: ${dx}, ${dy}, ${period}\n`);
+//         errors += dupeCount;
+//     }
+//     if (i % 5000 === 0 && i > 0) {
+//         console.log(`${i} ships checked (${(i / ((performance.now() - start) / 1000)).toFixed(3)} ships/second), ${errors} errors found`);
+//         await fs.writeFile('new.sss', shipsToString(sortShips(newShips)));
+//     }
+// }
+// console.log(`${newShips.length} ships checked (${(newShips.length / ((performance.now() - start) / 1000)).toFixed(3)} ships/second), ${errors} errors found`);
+
+// await fs.writeFile('new.sss', shipsToString(sortShips(newShips)));
+
+console.log('Checking old ships');
+let start = performance.now();
+
+for (let i = 0; i < oldShips.length; i++) {
+    let {dx, dy, period} = oldShips[i];
+    if (!newShips.some(x => x.period === period && x.dx === dx && x.dy === dy)) {
+        await fs.appendFile('out.txt', `Missing line: ${dx}, ${dy}, ${period}\n`);
+        let ship = normalizeShips([oldShips[i]], true);
+        newShips.push(...ship);
+        errors++;
+    }
+    if (i % 5000 === 0 && i > 0) {
+        console.log(`${i} ships checked (${(i / ((performance.now() - start) / 1000)).toFixed(3)} ships/second), ${errors} errors found`);
+        await fs.writeFile('new2.sss', shipsToString(sortShips(newShips)));
+    }
+}
+console.log(`${oldShips.length} ships checked (${(oldShips.length / ((performance.now() - start) / 1000)).toFixed(3)} ships/second), ${errors} errors found`);
+await fs.writeFile('new2.sss', shipsToString(sortShips(newShips)));
+
+// let ships = parseData((await fs.readFile('data/oblique.sss')).toString());
 // ships = sortShips(ships);
-// for (let i = 75000; i < ships.length + 999; i += 1000) {
-//     let data = normalizeShips(ships.slice(i, i + 1000));
-//     await fs.appendFile('data/diagonal_new.sss', shipsToString(data));
-//     console.log(Math.min(i + 1000, ships.length) + ' ships normalized');
+// let start = performance.now();
+// let count = 0;
+// let inc = 10;
+// for (let i = 0; i < ships.length; i += inc) {
+//     let subStart = performance.now();
+//     let data = normalizeShips(ships.slice(i, i + inc));
+//     await fs.appendFile('data/oblique_new.sss', shipsToString(data));
+//     count += inc;
+//     let now = performance.now();
+//     let sps = inc / ((now - subStart) / 1000);
+//     console.log(`${Math.min(i + inc, ships.length)} ships normalized (${sps.toFixed(3)} ships/second current, ${(count / ((now  - start) / 1000)).toFixed(3)} ships/second total)`);
+//     inc = Math.max(Math.min(Math.ceil(sps * 10), 1000), 1);
 // }
