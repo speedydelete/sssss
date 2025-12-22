@@ -68,21 +68,40 @@ export function normalizeShips<T extends boolean | undefined = undefined>(ships:
         let ship = ships[i];
         let p = parse(`x = 0, y = 0, rule = ${ship.rule}\n${ship.rle}`);
         let type = findType(p, ship.period + 1);
-        if (type.period !== ship.period || !type.disp || type.disp[0] !== ship.dx || type.disp[1] !== ship.dy) {
+        if (type.period !== ship.period || !type.disp || !(Math.abs(ship.dx) === Math.abs(type.disp[0]) ? Math.abs(ship.dy) === Math.abs(type.disp[1]) : (Math.abs(ship.dy) === Math.abs(type.disp[0]) && Math.abs(ship.dx) === Math.abs(type.disp[1])))) {
             if (throwInvalid) {
-                throw new Error(`Invalid ship detected: ${shipsToString([ship])}`);
+                throw new Error(`Invalid ship detected: ${shipsToString([ship]).slice(0, -1)}`);
             } else {
-                console.error(`Invalid ship detected: ${shipsToString([ship])}`);
+                console.log(`Invalid ship detected: ${shipsToString([ship]).slice(0, -1)}`);
                 invalidShips.push(speedToString(ship));
                 continue;
+            }
+        }
+        ship.dx = type.disp[0];
+        ship.dy = type.disp[1];
+        if (ship.dx === 0 && ship.dy !== 0) {
+            p.rotateRight();
+            ship.dx = -ship.dy;
+            ship.dy = 0;
+            type = findType(p, ship.period + 1);
+            if (type.period !== ship.period || !type.disp || ship.dx !== type.disp[0] || ship.dy !== type.disp[1]) {
+                if (throwInvalid) {
+                    throw new Error(`Invalid ship detected: ${shipsToString([ship]).slice(0, -1)}`);
+                } else {
+                    console.log(`Invalid ship detected: ${shipsToString([ship]).slice(0, -1)}`);
+                    invalidShips.push(speedToString(ship));
+                    continue;
+                }
             }
         }
         if (ship.dx < 0 || ship.dy < 0 || Math.abs(ship.dx) < Math.abs(ship.dy)) {
             if (ship.dx < 0) {
                 p.flipHorizontal();
+                ship.dx = -ship.dx;
             }
             if (ship.dy < 0) {
                 p.flipVertical();
+                ship.dy = -ship.dy;
             }
             if (ship.dx < ship.dy) {
                 let temp = ship.dx;
@@ -91,11 +110,11 @@ export function normalizeShips<T extends boolean | undefined = undefined>(ships:
                 p.rotateLeft().flipVertical();
             }
             type = findType(p, ship.period + 1);
-            if (type.period !== ship.period || !type.disp || type.disp[0] !== ship.dx || type.disp[1] !== ship.dy) {
+            if (type.period !== ship.period || !type.disp || ship.dx !== type.disp[0] || ship.dy !== type.disp[1]) {
                 if (throwInvalid) {
-                    throw new Error(`Invalid ship detected: ${shipsToString([ship])}`);
+                    throw new Error(`Invalid ship detected: ${shipsToString([ship]).slice(0, -1)}`);
                 } else {
-                    console.error(`Invalid ship detected: ${shipsToString([ship])}`);
+                    console.log(`Invalid ship detected: ${shipsToString([ship]).slice(0, -1)}`);
                     invalidShips.push(speedToString(ship));
                     continue;
                 }
@@ -179,9 +198,9 @@ export function parseSpeed(speed: string): {dx: number, dy: number, period: numb
 export function speedToString({dx, dy, period}: {dx: number, dy: number, period: number}): string {
     if (dy === 0) {
         if (dx === 1) {
-            return `c/${period}o`
+            return `c/${period}o`;
         } else {
-            return `${dx}c/${period}p`
+            return `${dx}c/${period}o`;
         }
     } else if (dx === dy) {
         if (dx === 1) {
@@ -199,11 +218,11 @@ export function speedToString({dx, dy, period}: {dx: number, dy: number, period:
 let dataPath = join(import.meta.dirname, '..', 'data');
 
 export async function addShipsToFiles(ships: Ship[]): Promise<string> {
-    let [newShips, invalidShips] = normalizeShips(ships, false);
+    let [ships2, invalidShips] = normalizeShips(ships, false);
     let orthogonals: Ship[] = [];
     let diagonals: Ship[] = [];
     let obliques: Ship[] = [];
-    for (let ship of newShips) {
+    for (let ship of ships2) {
         if (ship.dy === 0) {
             orthogonals.push(ship);
         } else if (ship.dx === ship.dy) {
@@ -213,7 +232,8 @@ export async function addShipsToFiles(ships: Ship[]): Promise<string> {
         }
     }
     let improvedShips: string[] = [];
-    let nonImprovedShips: string[] = [];
+    let unchangedShips: string[] = [];
+    let newShips: string[] = [];
     for (let [part, name] of [[orthogonals, 'orthogonal'], [diagonals, 'diagonal'], [obliques, 'oblique']] as const) {
         let data = parseData((await fs.readFile(join(dataPath, name + '.sss'))).toString());
         for (let ship of part) {
@@ -226,7 +246,7 @@ export async function addShipsToFiles(ships: Ship[]): Promise<string> {
                         ship2.rle = ship.rle;
                         improvedShips.push(speedToString(ship));
                     } else {
-                        nonImprovedShips.push(speedToString(ship));
+                        unchangedShips.push(speedToString(ship));
                     }
                     found = true;
                     break;
@@ -234,6 +254,7 @@ export async function addShipsToFiles(ships: Ship[]): Promise<string> {
             }
             if (!found) {
                 data.push(ship);
+                newShips.push(speedToString(ship));
             }
         }
         data = sortShips(data);
@@ -243,14 +264,17 @@ export async function addShipsToFiles(ships: Ship[]): Promise<string> {
     if (invalidShips.length > 0) {
         out += `${invalidShips.length} invalid ships: ${invalidShips.join(', ')}\n`;
     }
+    if (newShips.length > 0) {
+        out += `${newShips.length} new ships: ${newShips.join(', ')}\n`;
+    }
     if (improvedShips.length > 0) {
         out += `${improvedShips.length} improved ships: ${improvedShips.join(', ')}\n`;
     }
-    if (nonImprovedShips.length > 0) {
-        out += `${nonImprovedShips.length} non-improved ships: ${nonImprovedShips.join(', ')}\n`;
+    if (unchangedShips.length > 0) {
+        out += `${unchangedShips.length} unchanged ships: ${unchangedShips.join(', ')}\n`;
     }
-    if (invalidShips.length === 0 && improvedShips.length === 0 && nonImprovedShips.length === 0) {
-        out = 'No changes made';
+    if (invalidShips.length === 0 && newShips.length === 0 && improvedShips.length === 0 && unchangedShips.length === 0) {
+        out = 'No changes made\n';
     }
     return out;
 }
