@@ -259,8 +259,17 @@ function validateType(type: string, ship: Ship): void {
 }
 
 
-// @ts-ignore
 let dataPath = join(import.meta.dirname, '..', 'data');
+
+function compareShips(x: Ship, y: Ship): number {
+    if (x.period !== y.period) {
+        return x.period - y.period;
+    } else if (x.dx !== y.dx) {
+        return x.dx - y.dx;
+    } else {
+        return x.dy - y.dy;
+    }
+}
 
 export async function addShipsToFiles(type: string, ships: Ship[]): Promise<string> {
     let [ships2, invalidShips] = normalizeShips(ships, false);
@@ -285,27 +294,51 @@ export async function addShipsToFiles(type: string, ships: Ship[]): Promise<stri
             continue;
         }
         let data = parseData((await fs.readFile(join(dataPath, type, name + '.sss'))).toString());
-        // for (let ship of part) {
-        //     let found = false;
-        //     for (let ship2 of data) {
-        //         if (ship2.period === ship.period && ship2.dx === ship.dx && ship2.dy === ship.dy) {
-        //             if (ship2.pop < ship.pop) {
-        //                 ship2.pop = ship.pop;
-        //                 ship2.rule = ship.rule;
-        //                 ship2.rle = ship.rle;
-        //                 improvedShips.push(speedToString(ship));
-        //             } else {
-        //                 unchangedShips.push(speedToString(ship));
-        //             }
-        //             found = true;
-        //             break;
-        //         }
-        //     }
-        //     if (!found) {
-        //         data.push(ship);
-        //         newShips.push(speedToString(ship));
-        //     }
-        // }
+        for (let ship of part) {
+            let low = 0;
+            let high = data.length;
+            while (low < high) {
+                let mid = (low + high) >>> 1;
+                if (compareShips(data[mid], ship) < 0) {
+                    low = mid + 1;
+                } else {
+                    high = mid;
+                }
+            }
+            if (low < data.length && compareShips(data[low], ship) === 0) {
+                let ship2 = data[low];
+                if (ship2.pop < ship.pop) {
+                    ship2.pop = ship.pop;
+                    ship2.rule = ship.rule;
+                    ship2.rle = ship.rle;
+                    improvedShips.push(speedToString(ship));
+                } else {
+                    unchangedShips.push(speedToString(ship));
+                }
+            } else {
+                data.splice(low, 0, ship);
+                newShips.push(speedToString(ship));
+            }
+            // let found = false;
+            // for (let ship2 of data) {
+            //     if (ship2.period === ship.period && ship2.dx === ship.dx && ship2.dy === ship.dy) {
+            //         if (ship2.pop < ship.pop) {
+            //             ship2.pop = ship.pop;
+            //             ship2.rule = ship.rule;
+            //             ship2.rle = ship.rle;
+            //             improvedShips.push(speedToString(ship));
+            //         } else {
+            //             unchangedShips.push(speedToString(ship));
+            //         }
+            //         found = true;
+            //         break;
+            //     }
+            // }
+            // if (!found) {
+            //     data.push(ship);
+            //     newShips.push(speedToString(ship));
+            // }
+        }
         let found: Ship[] = [];
         for (let ship of data) {
             for (let newShip of part) {
