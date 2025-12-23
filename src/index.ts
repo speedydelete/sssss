@@ -238,7 +238,7 @@ export async function addShipsToFiles(ships: Ship[]): Promise<string> {
         let data = parseData((await fs.readFile(join(dataPath, name + '.sss'))).toString());
         let found: Ship[] = [];
         for (let ship of data) {
-            for (let ship2 of data) {
+            for (let ship2 of part) {
                 if (found.includes(ship2)) {
                     continue;
                 }
