@@ -126,7 +126,7 @@ export function normalizeShips<T extends boolean | undefined = undefined>(ships:
         ship.rule = findMinmax(p, ship.period + 1)[0];
         let minPop = type.phases[0].population;
         let minPhase = type.phases[0];
-        for (let i = 0; i < type.phases.length; i += 2) {
+        for (let i = 0; i < type.phases.length; i += p.rulePeriod) {
             let phase = type.phases[i];
             if (phase.population < minPop) {
                 minPop = phase.population;
