@@ -264,16 +264,6 @@ function validateType(type: string, ship: Ship): void {
 
 let dataPath = join(import.meta.dirname, '..', 'data');
 
-function compareShips(x: Ship, y: Ship): number {
-    if (x.period !== y.period) {
-        return x.period - y.period;
-    } else if (x.dx !== y.dx) {
-        return x.dx - y.dx;
-    } else {
-        return x.dy - y.dy;
-    }
-}
-
 export async function addShipsToFiles(type: string, ships: Ship[]): Promise<string> {
     let start = performance.now();
     let [ships2, invalidShips] = normalizeShips(ships, false);
@@ -297,6 +287,7 @@ export async function addShipsToFiles(type: string, ships: Ship[]): Promise<stri
         if (part.length === 0) {
             continue;
         }
+        console.log('Adding ' + name + 's');
         let data = parseData((await fs.readFile(join(dataPath, type, name + '.sss'))).toString());
         let found: Ship[] = [];
         for (let ship of data) {

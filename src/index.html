@@ -66,6 +66,26 @@ textarea:focus {
     outline: none;
 }
 
+select {
+    padding: 5px;
+    appearance: none;
+    background-color: #ffffff;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' version='1.1' viewBox='0 0 16 16'><line x1='1' y1='6' x2='6' y2='12' stroke='%23000000' stroke-width='0.85' /><line x1='11' y1='6' x2='6' y2='12' stroke='%23000000' stroke-width='0.85' /></svg>");
+    background-repeat: no-repeat;
+    background-position: right;
+    background-size: 16px;
+    color: #000000;
+    border: 1px solid #000000;
+}
+
+select:focus {
+    outline: none;
+}
+
+option {
+    background-color: #ffffff;
+}
+
 #main {
     min-height: 0;
     flex: 1 1 auto;
@@ -91,6 +111,11 @@ textarea:focus {
     gap: 3ch;
     justify-content: center;
     align-items: center;
+}
+
+#type {
+    box-sizing: content-box;
+    width: calc(6ch + 21px);
 }
 
 #speed-wrapper {
@@ -130,6 +155,13 @@ textarea:focus {
         <div>
             <h1>Smallest Spaceships Supporting Specific Speeds (5S)</h1>
             <div id="top">
+                <div>
+                    Rulespace:
+                    <select id="type">
+                        <option value="int">INT</option>
+                        <option value="intb0">INT B0</option>
+                    </select>
+                </div>
                 <a href="https://conwaylife.com/forums/viewtopic.php?f=11&t=2892">More information</a>
                 <a href="https://github.com/speedydelete/sssss">Source code</a>
             </div>

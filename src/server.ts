@@ -1,8 +1,27 @@
 
 import {createServer} from 'node:http';
+import {findSpeedRLE, parseData, addShipsToFiles} from './index.js';
 
 
-let server = createServer((req, out) => {
+let lastRequestTime = new Map<string, number>();
+
+let server = createServer(async (req, out) => {
+    let ip = req.socket.remoteAddress;
+    if (ip) {
+        let time = performance.now() / 1000;
+        let value = lastRequestTime.get(ip);
+        if (value !== undefined) {
+            if (time - value < 5) {
+                out.writeHead(429);
+                out.end();
+                return;
+            } else {
+                lastRequestTime.set(ip, time);
+            }
+        } else {
+            lastRequestTime.set(ip, time);
+        }
+    }
     if (!req.url) {
         out.writeHead(400);
         out.end();
@@ -28,8 +47,17 @@ let server = createServer((req, out) => {
         let dx = params.get('dx');
         let dy = params.get('dy');
         let period = params.get('period');
+        out.writeHead(200);
+        // @ts-ignore
+        out.write(await findSpeedRLE(type, ))
+        out.end();
     } else if (endpoint === 'add') {
-
+        if (!params) {
+            out.writeHead(400);
+            out.end();
+            return;
+        }
+        let type = params.get('type');
     } else {
         out.writeHead(404);
         out.end();
