@@ -2,7 +2,6 @@
 import {join} from 'node:path';
 import * as fs from 'node:fs/promises';
 import {Pattern, parse, findType, findMinmax} from '../lifeweb/lib/index.js';
-import {createAdjustable} from './adjustable.js';
 
 
 export interface Ship {
@@ -137,7 +136,7 @@ export function normalizeShips<T extends boolean | undefined = undefined>(ships:
 }
 
 
-export function patternToShip(p: Pattern, limit: number = 32768): Ship {
+export function patternToShip(p: Pattern, limit: number = 32768): Ship | undefined {
     let type = findType(p, limit);
     if (!type.disp) {
         throw new Error(`Pattern is not a ship or its period is greater than ${limit} generations`);
@@ -235,6 +234,9 @@ export async function addShipsToFiles(type: string, ships: Ship[]): Promise<stri
     let unchangedShips: string[] = [];
     let newShips: string[] = [];
     for (let [part, name] of [[orthogonals, 'orthogonal'], [diagonals, 'diagonal'], [obliques, 'oblique']] as const) {
+        if (part.length === 0) {
+            continue;
+        }
         let data = parseData((await fs.readFile(join(dataPath, type, name + '.sss'))).toString());
         // for (let ship of part) {
         //     let found = false;
@@ -259,20 +261,20 @@ export async function addShipsToFiles(type: string, ships: Ship[]): Promise<stri
         // }
         let found: Ship[] = [];
         for (let ship of data) {
-            for (let ship2 of part) {
-                if (found.includes(ship2)) {
+            for (let newShip of part) {
+                if (found.includes(newShip)) {
                     continue;
                 }
-                if (ship2.period === ship.period && ship2.dx === ship.dx && ship2.dy === ship.dy) {
-                    if (ship.pop < ship2.pop) {
-                        ship.pop = ship2.pop;
-                        ship.rule = ship2.rule;
-                        ship.rle = ship2.rle;
+                if (newShip.period === ship.period && newShip.dx === ship.dx && newShip.dy === ship.dy) {
+                    if (newShip.pop < ship.pop) {
+                        ship.pop = newShip.pop;
+                        ship.rule = newShip.rule;
+                        ship.rle = newShip.rle;
                         improvedShips.push(speedToString(ship));
                     } else {
                         unchangedShips.push(speedToString(ship));
                     }
-                    found.push(ship2);
+                    found.push(newShip);
                     break;
                 }
             }
@@ -287,7 +289,7 @@ export async function addShipsToFiles(type: string, ships: Ship[]): Promise<stri
             }
         }
         data = sortShips(data);
-        await fs.writeFile(join(dataPath, name + '.sss'), shipsToString(data));
+        await fs.writeFile(join(dataPath, type, name + '.sss'), shipsToString(data));
     }
     let out = '';
     if (invalidShips.length > 0) {

@@ -15,13 +15,21 @@ let out: string;
 if (command === 'get') {
     out = await findSpeedRLE(type, arg);
 } else if (process.argv[2] === 'add') {
-    out = await addShipsToFiles(type, normalizeShips(parseData(arg)));
-} else if (process.argv[2] === 'add_file') {
-    out = await addShipsToFiles(type, normalizeShips(parseData((await fs.readFile(arg)).toString())));
+    let data = parseData((await fs.readFile(arg)).toString());
+    out = await addShipsToFiles(type, normalizeShips(data));
 } else if (process.argv[2] === 'add_rle') {
-    out = await addShipsToFiles(type, normalizeShips([patternToShip(parse(arg))]));
-} else if (process.argv[2] === 'add_rle_file') {
-    out = await addShipsToFiles(type, normalizeShips([patternToShip(parse((await fs.readFile(arg)).toString()))]));
+    let data = patternToShip(parse((await fs.readFile(arg)).toString()));
+    if (!data) {
+        out = '';
+    } else {
+        let ships = normalizeShips([data]);
+        if (ships.length > 0) {
+            out = await addShipsToFiles(type, ships);
+        } else {
+            out = '';
+        }
+    }
+
 } else {
     throw new Error(`Invalid subcommand: ${process.argv[2]}`);
 }
