@@ -1,7 +1,7 @@
 
 import {join} from 'node:path';
 import * as fs from 'node:fs/promises';
-import {Pattern, parse, findType, findMinmax} from '../lifeweb/lib/index.js';
+import {Pattern, MAPPattern, MAPB0Pattern, findType, findMinmax, createPattern, parse} from '../lifeweb/lib/index.js';
 
 
 export interface Ship {
@@ -213,6 +213,26 @@ export function speedToString({dx, dy, period}: {dx: number, dy: number, period:
 }
 
 
+function validateType(type: string, ship: Ship): void {
+    let correct = false;
+    let p = createPattern(ship.rule);
+    if (type === 'int') {
+        if (p instanceof MAPPattern && p.ruleSymmetry === 'D8') {
+            correct = true;
+        }
+    } else if (type === 'intb0') {
+        if (p instanceof MAPB0Pattern && p.ruleSymmetry === 'D8') {
+            correct = true;
+        }
+    } else {
+        throw new Error(`Invalid ship type: '${type}'`);
+    }
+    if (!correct) {
+        throw new Error(`Invalid rule for ${type}: ${ship.rule}`);
+    }
+}
+
+
 // @ts-ignore
 let dataPath = join(import.meta.dirname, '..', 'data');
 
@@ -222,6 +242,7 @@ export async function addShipsToFiles(type: string, ships: Ship[]): Promise<stri
     let diagonals: Ship[] = [];
     let obliques: Ship[] = [];
     for (let ship of ships2) {
+        validateType(type, ship);
         if (ship.dy === 0) {
             orthogonals.push(ship);
         } else if (ship.dx === ship.dy) {
