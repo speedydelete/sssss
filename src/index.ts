@@ -236,6 +236,27 @@ export async function addShipsToFiles(ships: Ship[]): Promise<string> {
     let newShips: string[] = [];
     for (let [part, name] of [[orthogonals, 'orthogonal'], [diagonals, 'diagonal'], [obliques, 'oblique']] as const) {
         let data = parseData((await fs.readFile(join(dataPath, name + '.sss'))).toString());
+        // for (let ship of part) {
+        //     let found = false;
+        //     for (let ship2 of data) {
+        //         if (ship2.period === ship.period && ship2.dx === ship.dx && ship2.dy === ship.dy) {
+        //             if (ship2.pop < ship.pop) {
+        //                 ship2.pop = ship.pop;
+        //                 ship2.rule = ship.rule;
+        //                 ship2.rle = ship.rle;
+        //                 improvedShips.push(speedToString(ship));
+        //             } else {
+        //                 unchangedShips.push(speedToString(ship));
+        //             }
+        //             found = true;
+        //             break;
+        //         }
+        //     }
+        //     if (!found) {
+        //         data.push(ship);
+        //         newShips.push(speedToString(ship));
+        //     }
+        // }
         let found: Ship[] = [];
         for (let ship of data) {
             for (let ship2 of part) {
