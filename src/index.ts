@@ -60,8 +60,6 @@ export function sortShips(ships: Ship[]): Ship[] {
     });
 }
 
-let oldTrs: Uint8Array<ArrayBufferLike> = new Uint8Array();
-let oldTrs2: Uint8Array<ArrayBufferLike> = new Uint8Array();
 
 export function normalizeShips<T extends boolean | undefined = undefined>(ships: Ship[], throwInvalid?: T): T extends false ? [Ship[], string[]] : Ship[] {
     let out: Ship[] = [];
