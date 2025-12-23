@@ -22,12 +22,7 @@ if (command === 'get') {
     if (!data) {
         out = '';
     } else {
-        let ships = normalizeShips([data]);
-        if (ships.length > 0) {
-            out = await addShipsToFiles(type, ships);
-        } else {
-            out = '';
-        }
+        out = await addShipsToFiles(type, [data]);
     }
 
 } else {

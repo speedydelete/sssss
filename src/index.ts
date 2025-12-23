@@ -1,7 +1,7 @@
 
 import {join} from 'node:path';
 import * as fs from 'node:fs/promises';
-import {Pattern, MAPPattern, MAPB0Pattern, findType, findMinmax, createPattern, parse} from '../lifeweb/lib/index.js';
+import {Pattern, TRANSITIONS, VALID_TRANSITIONS, unparseTransitions, arrayToTransitions, MAPPattern, MAPB0Pattern, MAPB0GenPattern, findType, findMinmax, createPattern, parse} from '../lifeweb/lib/index.js';
 
 
 export interface Ship {
@@ -123,17 +123,40 @@ export function normalizeShips<T extends boolean | undefined = undefined>(ships:
                 }
             }
         }
-        ship.rule = findMinmax(p, ship.period + 1)[0];
-        let minPop = type.phases[0].population;
-        let minPhase = type.phases[0];
-        for (let i = 0; i < type.phases.length; i += p.rulePeriod) {
-            let phase = type.phases[i];
-            if (phase.population < minPop) {
-                minPop = phase.population;
-                minPhase = phase;
+        ship.rule = findMinmax(p, limit)[0];
+        if (p instanceof MAPB0Pattern || p instanceof MAPB0GenPattern) {
+            let minPop = type.phases[0].population;
+            let minPhase = type.phases[0];
+            let evenRule = ship.rule;
+            let [bTrs, sTrs] = arrayToTransitions(p.evenTrs.reverse(), TRANSITIONS);
+            let oddRule = `B${unparseTransitions(bTrs, VALID_TRANSITIONS, false)}/S${unparseTransitions(sTrs, VALID_TRANSITIONS, false)}`;
+            for (let i = 0; i < type.phases.length; i++) {
+                let phase = type.phases[i];
+                if (phase.population < minPop) {
+                    minPop = phase.population;
+                    minPhase = phase;
+                    ship.rule = i % 2 === 0 ? evenRule : oddRule;
+                }
             }
+            ship.pop = minPop;
+            ship.rle = minPhase.toRLE().split('\n').slice(1).join('');
+            if (ship.rule === oddRule) {
+                p = parse(`x = 0, y = 0, rule = ${ship.rule}\n${ship.rle}`);
+                ship.rule = findMinmax(p, limit)[0];
+            }
+        } else {
+            let minPop = type.phases[0].population;
+            let minPhase = type.phases[0];
+            for (let i = 0; i < type.phases.length; i++) {
+                let phase = type.phases[i];
+                if (phase.population < minPop) {
+                    minPop = phase.population;
+                    minPhase = phase;
+                }
+            }
+            ship.pop = minPop;
+            ship.rle = minPhase.toRLE().split('\n').slice(1).join('');
         }
-        ship.rle = minPhase.toRLE().split('\n').slice(1).join('');
         out.push(ship);
     }
     // @ts-ignore
