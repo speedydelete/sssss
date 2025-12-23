@@ -60,13 +60,17 @@ export function sortShips(ships: Ship[]): Ship[] {
     });
 }
 
+let oldTrs: Uint8Array<ArrayBufferLike> = new Uint8Array();
+let oldTrs2: Uint8Array<ArrayBufferLike> = new Uint8Array();
+
 export function normalizeShips<T extends boolean | undefined = undefined>(ships: Ship[], throwInvalid?: T): T extends false ? [Ship[], string[]] : Ship[] {
     let out: Ship[] = [];
     let invalidShips: string[] = [];
     for (let i = 0; i < ships.length; i++) {
         let ship = ships[i];
         let p = parse(`x = 0, y = 0, rule = ${ship.rule}\n${ship.rle}`);
-        let type = findType(p, ship.period + 1);
+        let limit = Math.ceil(ship.period / p.rulePeriod) * p.rulePeriod + 1;
+        let type = findType(p, limit);
         if (type.period !== ship.period || !type.disp || !(Math.abs(ship.dx) === Math.abs(type.disp[0]) ? Math.abs(ship.dy) === Math.abs(type.disp[1]) : (Math.abs(ship.dy) === Math.abs(type.disp[0]) && Math.abs(ship.dx) === Math.abs(type.disp[1])))) {
             if (throwInvalid) {
                 throw new Error(`Invalid ship detected: ${shipsToString([ship]).slice(0, -1)}`);
@@ -82,7 +86,7 @@ export function normalizeShips<T extends boolean | undefined = undefined>(ships:
             p.rotateRight();
             ship.dx = -ship.dy;
             ship.dy = 0;
-            type = findType(p, ship.period + 1);
+            type = findType(p, limit);
             if (type.period !== ship.period || !type.disp || ship.dx !== type.disp[0] || ship.dy !== type.disp[1]) {
                 if (throwInvalid) {
                     throw new Error(`Invalid ship detected: ${shipsToString([ship]).slice(0, -1)}`);
@@ -108,7 +112,7 @@ export function normalizeShips<T extends boolean | undefined = undefined>(ships:
                 ship.dy = temp;
                 p.rotateLeft().flipVertical();
             }
-            type = findType(p, ship.period + 1);
+            type = findType(p, limit);
             if (type.period !== ship.period || !type.disp || ship.dx !== type.disp[0] || ship.dy !== type.disp[1]) {
                 if (throwInvalid) {
                     throw new Error(`Invalid ship detected: ${shipsToString([ship]).slice(0, -1)}`);
@@ -122,7 +126,8 @@ export function normalizeShips<T extends boolean | undefined = undefined>(ships:
         ship.rule = findMinmax(p, ship.period + 1)[0];
         let minPop = type.phases[0].population;
         let minPhase = type.phases[0];
-        for (let phase of type.phases) {
+        for (let i = 0; i < type.phases.length; i += 2) {
+            let phase = type.phases[i];
             if (phase.population < minPop) {
                 minPop = phase.population;
                 minPhase = phase;
