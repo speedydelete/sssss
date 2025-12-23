@@ -24,6 +24,7 @@ let server = createServer((req, out) => {
             out.end();
             return;
         }
+        let type = params.get('type');
         let dx = params.get('dx');
         let dy = params.get('dy');
         let period = params.get('period');

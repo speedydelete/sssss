@@ -6,20 +6,26 @@ import {parseData, patternToShip, normalizeShips, addShipsToFiles, findSpeedRLE}
 
 let start = performance.now();
 
-let arg = process.argv.slice(3).join(' ');
+let command = process.argv[2];
+let type = process.argv[3];
+let arg = process.argv.slice(4).join(' ');
 
-if (process.argv[2] === 'get') {
-    process.stdout.write(await findSpeedRLE(arg));
+let out: string;
+
+if (command === 'get') {
+    out = await findSpeedRLE(type, arg);
 } else if (process.argv[2] === 'add') {
-    process.stdout.write(await addShipsToFiles(normalizeShips(parseData(arg))));
+    out = await addShipsToFiles(type, normalizeShips(parseData(arg)));
 } else if (process.argv[2] === 'add_file') {
-    process.stdout.write(await addShipsToFiles(normalizeShips(parseData((await fs.readFile(arg)).toString()))));
+    out = await addShipsToFiles(type, normalizeShips(parseData((await fs.readFile(arg)).toString())));
 } else if (process.argv[2] === 'add_rle') {
-    process.stdout.write(await addShipsToFiles(normalizeShips([patternToShip(parse(arg))])));
+    out = await addShipsToFiles(type, normalizeShips([patternToShip(parse(arg))]));
 } else if (process.argv[2] === 'add_rle_file') {
-    process.stdout.write(await addShipsToFiles(normalizeShips([patternToShip(parse((await fs.readFile(arg)).toString()))])));
+    out = await addShipsToFiles(type, normalizeShips([patternToShip(parse((await fs.readFile(arg)).toString()))]));
 } else {
     throw new Error(`Invalid subcommand: ${process.argv[2]}`);
 }
+
+process.stdout.write(out);
 
 console.log((performance.now() - start) / 1000);

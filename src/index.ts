@@ -217,7 +217,7 @@ export function speedToString({dx, dy, period}: {dx: number, dy: number, period:
 // @ts-ignore
 let dataPath = join(import.meta.dirname, '..', 'data');
 
-export async function addShipsToFiles(ships: Ship[]): Promise<string> {
+export async function addShipsToFiles(type: string, ships: Ship[]): Promise<string> {
     let [ships2, invalidShips] = normalizeShips(ships, false);
     let orthogonals: Ship[] = [];
     let diagonals: Ship[] = [];
@@ -235,7 +235,7 @@ export async function addShipsToFiles(ships: Ship[]): Promise<string> {
     let unchangedShips: string[] = [];
     let newShips: string[] = [];
     for (let [part, name] of [[orthogonals, 'orthogonal'], [diagonals, 'diagonal'], [obliques, 'oblique']] as const) {
-        let data = parseData((await fs.readFile(join(dataPath, name + '.sss'))).toString());
+        let data = parseData((await fs.readFile(join(dataPath, type, name + '.sss'))).toString());
         // for (let ship of part) {
         //     let found = false;
         //     for (let ship2 of data) {
@@ -309,7 +309,7 @@ export async function addShipsToFiles(ships: Ship[]): Promise<string> {
 }
 
 
-export async function findNonAdjustableShip(dx: number, dy: number, period: number): Promise<Ship | null> {
+export async function findShip(type: string, dx: number, dy: number, period: number): Promise<Ship | null> {
     dx = Math.abs(dx);
     dy = Math.abs(dy);
     if (dx < dy) {
@@ -317,15 +317,15 @@ export async function findNonAdjustableShip(dx: number, dy: number, period: numb
         dy = dx;
         dx = temp;
     }
-    let type: 'orthogonal' | 'diagonal' | 'oblique';
+    let file: 'orthogonal' | 'diagonal' | 'oblique';
     if (dy === 0) {
-        type = 'orthogonal';
+        file = 'orthogonal';
     } else if (dx === dy) {
-        type = 'diagonal';
+        file = 'diagonal';
     } else {
-        type = 'oblique';
+        file = 'oblique';
     }
-    let data = parseData((await fs.readFile(join(dataPath, type + '.sss'))).toString());
+    let data = parseData((await fs.readFile(join(dataPath, type, file + '.sss'))).toString());
     for (let ship of data) {
         if (ship.period === period && ship.dx === dx && ship.dy === dy) {
             return ship;
@@ -334,53 +334,26 @@ export async function findNonAdjustableShip(dx: number, dy: number, period: numb
     return null;
 }
 
-export function findAdjustableShip(dx: number, dy: number, period: number): Ship | null {
-    let p = createAdjustable(dx, dy, period);
-    if (!p) {
-        return null;
-    }
-    return normalizeShips([{
-        pop: 0,
-        rule: p.ruleStr,
-        dx,
-        dy,
-        period,
-        rle: p.toRLE().split('\n').slice(1).join(''),
-    }])[0];
-}
+// export function findAdjustableShip(dx: number, dy: number, period: number): Ship | null {
+//     let p = createAdjustable(dx, dy, period);
+//     if (!p) {
+//         return null;
+//     }
+//     return normalizeShips([{
+//         pop: 0,
+//         rule: p.ruleStr,
+//         dx,
+//         dy,
+//         period,
+//         rle: p.toRLE().split('\n').slice(1).join(''),
+//     }])[0];
+// }
 
-export async function findShip(dx: number, dy: number, period: number): Promise<{normal: Ship | null, adjustable: Ship | null}> {
-    return {normal: await findNonAdjustableShip(dx, dy, period), adjustable: findAdjustableShip(dx, dy, period)};
-}
-
-
-export async function findSpeedRLE(speed: string): Promise<string> {
+export async function findSpeedRLE(type: string, speed: string): Promise<string> {
     let {dx, dy, period} = parseSpeed(speed);
-    let data = await findShip(dx, dy, period);
-    let {normal, adjustable} = data;
-    if (!normal && !adjustable) {
-        if (dx + dy < period / 2) {
-            return `No such ship found in database!\nNote that a 61-cell RCT-based ship that moves at this speed exists.\n`;
-        } else {
-            return `No such ship found in database!\n`;
-        }
+    let data = await findShip(type, dx, dy, period);
+    if (!data) {
+        return `No such ship found in database!\n`;
     }
-    let out = `#C (${dx}, ${dy})/${period}`;
-    let pop = normal ? normal.pop : (adjustable ? adjustable.pop : 0);
-    if (normal) {
-        out += ` population ${normal.pop}\nx = 0, y = 0, rule = ${normal.rule}\n${normal.rle}\n`;
-    }
-    if (adjustable && !(normal && adjustable.pop >= normal.pop)) {
-        if (normal) {
-            out += `\nFound an adjustable spaceship with lower population!\n#C (${dx}, ${dy})/${period}, population ${adjustable.pop}\n`;
-            pop = adjustable.pop;
-        } else {
-            out = `\nUnable to find a non-adjustable ship, but found an adjustable ship!\n${out} population ${adjustable.pop}\n`;
-        }
-        out += `x = 0, y = 0, rule = ${adjustable.rule}\n${adjustable.rle}\n`;
-    }
-    if (dx + dy < period / 2 && pop > 61) {
-        out += `\n\nNote that a 61-cell RCT-based ship that moves at this speed exists.\n`;
-    }
-    return out;
+    return `#C (${dx}, ${dy})/${period}, population ${data.pop}\nx = 0, y = 0, rule = ${data.rule}\n${data.rle}\n`;
 }
