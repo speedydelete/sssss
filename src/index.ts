@@ -244,9 +244,9 @@ export async function addShipsToFiles(ships: Ship[]): Promise<string> {
                 }
                 if (ship2.period === ship.period && ship2.dx === ship.dx && ship2.dy === ship.dy) {
                     if (ship.pop < ship2.pop) {
-                        ship2.pop = ship.pop;
-                        ship2.rule = ship.rule;
-                        ship2.rle = ship.rle;
+                        ship.pop = ship2.pop;
+                        ship.rule = ship2.rule;
+                        ship.rle = ship2.rle;
                         improvedShips.push(speedToString(ship));
                     } else {
                         unchangedShips.push(speedToString(ship));
@@ -262,7 +262,7 @@ export async function addShipsToFiles(ships: Ship[]): Promise<string> {
         for (let ship of part) {
             if (!found.includes(ship)) {
                 data.push(ship);
-                newShips.push(speedToString(ship));     
+                newShips.push(speedToString(ship));
             }
         }
         data = sortShips(data);
