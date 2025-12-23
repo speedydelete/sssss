@@ -294,27 +294,6 @@ export async function addShipsToFiles(type: string, ships: Ship[]): Promise<stri
             continue;
         }
         let data = parseData((await fs.readFile(join(dataPath, type, name + '.sss'))).toString());
-        for (let ship of part) {
-            let found = false;
-            for (let ship2 of data) {
-                if (ship2.period === ship.period && ship2.dx === ship.dx && ship2.dy === ship.dy) {
-                    if (ship2.pop < ship.pop) {
-                        ship2.pop = ship.pop;
-                        ship2.rule = ship.rule;
-                        ship2.rle = ship.rle;
-                        improvedShips.push(speedToString(ship));
-                    } else {
-                        unchangedShips.push(speedToString(ship));
-                    }
-                    found = true;
-                    break;
-                }
-            }
-            if (!found) {
-                data.push(ship);
-                newShips.push(speedToString(ship));
-            }
-        }
         let found: Ship[] = [];
         for (let ship of data) {
             for (let newShip of part) {
