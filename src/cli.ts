@@ -4,6 +4,8 @@ import {parse} from '../lifeweb/lib/index.js';
 import {parseData, patternToShip, normalizeShips, addShipsToFiles, findSpeedRLE} from './index.js';
 
 
+let start = performance.now();
+
 let arg = process.argv.slice(3).join(' ');
 
 if (process.argv[2] === 'get') {
@@ -19,3 +21,5 @@ if (process.argv[2] === 'get') {
 } else {
     throw new Error(`Invalid subcommand: ${process.argv[2]}`);
 }
+
+console.log((performance.now() - start) / 1000);

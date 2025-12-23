@@ -236,9 +236,12 @@ export async function addShipsToFiles(ships: Ship[]): Promise<string> {
     let newShips: string[] = [];
     for (let [part, name] of [[orthogonals, 'orthogonal'], [diagonals, 'diagonal'], [obliques, 'oblique']] as const) {
         let data = parseData((await fs.readFile(join(dataPath, name + '.sss'))).toString());
-        for (let ship of part) {
-            let found = false;
+        let found: Ship[] = [];
+        for (let ship of data) {
             for (let ship2 of data) {
+                if (found.includes(ship2)) {
+                    continue;
+                }
                 if (ship2.period === ship.period && ship2.dx === ship.dx && ship2.dy === ship.dy) {
                     if (ship.pop < ship2.pop) {
                         ship2.pop = ship.pop;
@@ -248,13 +251,18 @@ export async function addShipsToFiles(ships: Ship[]): Promise<string> {
                     } else {
                         unchangedShips.push(speedToString(ship));
                     }
-                    found = true;
+                    found.push(ship2);
                     break;
                 }
             }
-            if (!found) {
+            if (found.length === ships.length) {
+                break;
+            }
+        }
+        for (let ship of part) {
+            if (!found.includes(ship)) {
                 data.push(ship);
-                newShips.push(speedToString(ship));
+                newShips.push(speedToString(ship));     
             }
         }
         data = sortShips(data);
