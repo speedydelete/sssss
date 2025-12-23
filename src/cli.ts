@@ -1,10 +1,8 @@
 
 import * as fs from 'node:fs/promises';
 import {parse} from '../lifeweb/lib/index.js';
-import {parseData, patternToShip, normalizeShips, addShipsToFiles, findSpeedRLE} from './index.js';
+import {parseData, patternToShip, addShipsToFiles, findSpeedRLE} from './index.js';
 
-
-let start = performance.now();
 
 let command = process.argv[2];
 let type = process.argv[3];
@@ -16,7 +14,7 @@ if (command === 'get') {
     out = await findSpeedRLE(type, arg);
 } else if (process.argv[2] === 'add') {
     let data = parseData((await fs.readFile(arg)).toString());
-    out = await addShipsToFiles(type, normalizeShips(data));
+    out = await addShipsToFiles(type, data);
 } else if (process.argv[2] === 'add_rle') {
     let data = patternToShip(parse((await fs.readFile(arg)).toString()));
     if (!data) {
@@ -30,5 +28,3 @@ if (command === 'get') {
 }
 
 process.stdout.write(out);
-
-console.log((performance.now() - start) / 1000);

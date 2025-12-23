@@ -69,7 +69,7 @@ export function normalizeShips<T extends boolean | undefined = undefined>(ships:
         let p = parse(`x = 0, y = 0, rule = ${ship.rule}\n${ship.rle}`);
         let limit = Math.ceil(ship.period / p.rulePeriod) * p.rulePeriod + 1;
         let type = findType(p, limit);
-        if (type.period !== ship.period || !type.disp || !(Math.abs(ship.dx) === Math.abs(type.disp[0]) ? Math.abs(ship.dy) === Math.abs(type.disp[1]) : (Math.abs(ship.dy) === Math.abs(type.disp[0]) && Math.abs(ship.dx) === Math.abs(type.disp[1])))) {
+        if (type.stabilizedAt > 0 || !type.disp || (type.disp[0] === 0 && type.disp[1] === 0)) {
             if (throwInvalid) {
                 throw new Error(`Invalid ship detected: ${shipsToString([ship]).slice(0, -1)}`);
             } else {
@@ -77,6 +77,9 @@ export function normalizeShips<T extends boolean | undefined = undefined>(ships:
                 invalidShips.push(speedToString(ship));
                 continue;
             }
+        }
+        if (ship.dx !== type.disp[0] || ship.dy !== type.disp[1] || ship.period !== type.period) {
+            console.log(`Warning: Replacing ${speedToString(ship)} with ${speedToString({dx: type.disp[0], dy: type.disp[1], period: type.period})}`);
         }
         ship.dx = type.disp[0];
         ship.dy = type.disp[1];
@@ -272,6 +275,7 @@ function compareShips(x: Ship, y: Ship): number {
 }
 
 export async function addShipsToFiles(type: string, ships: Ship[]): Promise<string> {
+    let start = performance.now();
     let [ships2, invalidShips] = normalizeShips(ships, false);
     let orthogonals: Ship[] = [];
     let diagonals: Ship[] = [];
@@ -342,6 +346,7 @@ export async function addShipsToFiles(type: string, ships: Ship[]): Promise<stri
     if (invalidShips.length === 0 && newShips.length === 0 && improvedShips.length === 0 && unchangedShips.length === 0) {
         out = 'No changes made\n';
     }
+    out += `Update took ${((performance.now() - start) / 1000).toFixed(3)} seconds\n`;
     return out;
 }
 
