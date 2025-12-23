@@ -1,6 +1,6 @@
 
 import {createServer} from 'node:http';
-import {findSpeedRLE, parseData, addShipsToFiles} from './index.js';
+import {findShipRLE, parseData, addShipsToFiles} from './index.js';
 
 
 let lastRequestTime = new Map<string, number>();
@@ -47,9 +47,13 @@ let server = createServer(async (req, out) => {
         let dx = params.get('dx');
         let dy = params.get('dy');
         let period = params.get('period');
+        if (!type || !dx || !dy || !period) {
+            out.writeHead(400);
+            out.end();
+            return;
+        }
         out.writeHead(200);
-        // @ts-ignore
-        out.write(await findSpeedRLE(type, ))
+        out.write(await findShipRLE(type, parseInt(dx), parseInt(dy), parseInt(period)));
         out.end();
     } else if (endpoint === 'add') {
         if (!params) {

@@ -382,11 +382,15 @@ export async function findShip(type: string, dx: number, dy: number, period: num
 //     }])[0];
 // }
 
-export async function findSpeedRLE(type: string, speed: string): Promise<string> {
-    let {dx, dy, period} = parseSpeed(speed);
+export async function findShipRLE(type: string, dx: number, dy: number, period: number): Promise<string> {
     let data = await findShip(type, dx, dy, period);
     if (!data) {
         return `No such ship found in database!\n`;
     }
     return `#C (${dx}, ${dy})/${period}, population ${data.pop}\nx = 0, y = 0, rule = ${data.rule}\n${data.rle}\n`;
+}
+
+export async function findSpeedRLE(type: string, speed: string): Promise<string> {
+    let {dx, dy, period} = parseSpeed(speed);
+    return await findShipRLE(type, dx, dy, period);
 }
