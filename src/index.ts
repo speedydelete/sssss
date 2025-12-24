@@ -2,6 +2,7 @@
 import {join} from 'node:path';
 import * as fs from 'node:fs/promises';
 import {Pattern, TRANSITIONS, VALID_TRANSITIONS, unparseTransitions, arrayToTransitions, MAPPattern, MAPB0Pattern, MAPB0GenPattern, findType, findMinmax, createPattern, parse} from '../lifeweb/lib/index.js';
+import {create} from 'node:domain';
 
 
 export function parseSpeed(speed: string): {dx: number, dy: number, period: number} {
@@ -285,7 +286,9 @@ function compareShips(x: Ship, y: Ship): number {
 
 export async function addShipsToFiles(type: string, ships: Ship[], limit?: number): Promise<string> {
     let start = performance.now();
-    let [ships2, invalidShips] = normalizeShips(ships, false, limit);
+    // let [ships2, invalidShips] = normalizeShips(ships, false, limit);
+    let ships2 = ships;
+    let invalidShips: Ship[] = [];
     let orthogonals: Ship[] = [];
     let diagonals: Ship[] = [];
     let obliques: Ship[] = [];
@@ -310,7 +313,7 @@ export async function addShipsToFiles(type: string, ships: Ship[], limit?: numbe
         let data = parseData((await fs.readFile(join(dataPath, type, name + '.sss'))).toString());
         for (let i = 0; i < part.length; i++) {
             if (i % 100 === 0 && i > 0) {
-                console.log(`${i}/${part.length} ships checked`);
+                console.log(`${i}/${part.length} ships added`);
             }
             let ship = part[i];
         // for (let ship of part) {
@@ -434,3 +437,29 @@ export async function findSpeedRLE(type: string, speed: string): Promise<string>
     let {dx, dy, period} = parseSpeed(speed);
     return await findShipRLE(type, dx, dy, period);
 }
+
+
+let data = JSON.parse((await fs.readFile('data.txt')).toString().split('\n')[1].replaceAll("'", '"'));
+
+let ships: Ship[] = [];
+
+for (let [dx, dy, period, rle] of data) {
+    if (dy !== 0) {
+        continue;
+    }
+    if (dx <= 0) {
+        throw new Error('dx is less than or equal to 0');
+    }
+    let p = parse(`x = 0, y = 0, rule = B2-ak3ce4eikqrz5-iknq6-ek8/S1c2aek3aekn4eiknry5eiky6-ei7c8\n${rle}`);
+    p.rotateRight();
+    ships.push({
+        pop: p.population,
+        rule: 'B2-ak3ce4eikqrz5-iknq6-ek8/S1c2aek3aekn4eiknry5eiky6-ei7c8',
+        dx,
+        dy,
+        period,
+        rle: p.toRLE().split('\n').slice(1).join(''),
+    });
+}
+
+await addShipsToFiles('int', ships);
