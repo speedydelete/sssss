@@ -54,7 +54,6 @@ let server = createServer(async (req, out) => {
                 out.end();
                 return;
             }
-            out.setHeader('Access-Control-Allow-Origin', '*');
             out.writeHead(200);
             out.write(await findShipRLE(type, parseInt(dx), parseInt(dy), parseInt(period)));
             out.end();
@@ -88,7 +87,6 @@ let server = createServer(async (req, out) => {
                         return;
                     }
                     let text = await addShipsToFiles(type, ships);
-                    out.setHeader('Access-Control-Allow-Origin', '*');
                     out.writeHead(200);
                     out.write(text);
                     out.end();

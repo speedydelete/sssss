@@ -192,7 +192,7 @@ option {
         <script>'use strict';function printError(e,c='red'){let x=String(e instanceof Error?('stack' in e?e.stack:e):e);if(!x.includes('Error')){x=String(e)+'\n'+x}x=x.replaceAll('@',' at ');if(!(document.readyState==='complete')){alert(x);return;}document.querySelectorAll('body > *').forEach(x=>x.remove());let t=document.createElement('pre');t.style.color=c;t.style.marginTop='100px';t.style.fontFamily='\'Courier New\',Courier,monospace';t.style.fontSize='14px';t.style.overflowWrap='break-word';t.textContent=x.replaceAll(/file:\/\/\/media\/fuse\/drivefs-[0-9a-f]+\/root\/code\//g,'');document.body.appendChild(t);let l=setInterval(()=>{},0);for(let j=1;j<=l;j++){clearInterval(j);}window.onkeydown=()=>{};}window.addEventListener('error',e=>{printError(e.error);return true;});window.addEventListener('unhandledrejection',e=>{e.preventDefault();printError(e.reason);});</script>
         <script type="module">
 
-import {TRANSITIONS, VALID_TRANSITIONS, unparseTransitions, arrayToTransitions, MAPB0Pattern, MAPB0GenPattern, findType, findMinmax, parse} from '../lifeweb/lib/index.js';
+import {TRANSITIONS, VALID_TRANSITIONS, unparseTransitions, arrayToTransitions, MAPB0Pattern, MAPB0GenPattern, findType, findMinmax, parse} from '../lifeweb/index.js';
 
 
 function parseSpeed(speed) {
@@ -450,7 +450,7 @@ let submitButton = document.getElementById('submit');
 
 searchButton.addEventListener('click', async () => {
     let {dx, dy, period} = parseSpeed(speedInput.value);
-    let resp = await fetch(`http://localhost:3000/get?type=${typeSelect.value}&dx=${dx}&dy=${dy}&period=${period}`);
+    let resp = await fetch(`./api/get?type=${typeSelect.value}&dx=${dx}&dy=${dy}&period=${period}`);
     if (resp.ok) {
         searchOutput.textContent = await resp.text();
     } else {
@@ -483,7 +483,7 @@ submitButton.addEventListener('click', async () => {
     shipsOutput.textContent = 'Adding ships...';
     submitButton.textContent = 'Back';
     isBackButton = true;
-    let resp = await fetch(`http://localhost:3000/add?type=${typeSelect.value}`, {
+    let resp = await fetch(`./api/add?type=${typeSelect.value}`, {
         method: 'POST',
         body: shipsToString(ships),
     });
