@@ -449,7 +449,11 @@ let shipsOutput = document.getElementById('ships-out');
 let submitButton = document.getElementById('submit');
 
 searchButton.addEventListener('click', async () => {
-    let {dx, dy, period} = parseSpeed(speedInput.value);
+    let data = parseSpeed(speedInput.value);
+    if (!data) {
+        return;
+    }
+    let {dx, dy, period} = data;
     let resp = await fetch(`./api/get?type=${typeSelect.value}&dx=${dx}&dy=${dy}&period=${period}`);
     if (resp.ok) {
         searchOutput.textContent = await resp.text();
