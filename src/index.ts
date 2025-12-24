@@ -79,6 +79,9 @@ export function parseData(data: string): Ship[] {
             continue;
         }
         let info = line.split(', ');
+        if (info[5] === undefined) {
+            continue;
+        }
         out.push({
             pop: parseInt(info[0]),
             rule: info[1],
@@ -282,11 +285,12 @@ function compareShips(x: Ship, y: Ship): number {
 
 export async function addShipsToFiles(type: string, ships: Ship[], limit?: number): Promise<string> {
     let start = performance.now();
-    let [ships2, invalidShips] = normalizeShips(ships, false, limit);
+    // let [ships2, invalidShips] = normalizeShips(ships, false, limit);
+    let invalidShips: Ship[] = [];
     let orthogonals: Ship[] = [];
     let diagonals: Ship[] = [];
     let obliques: Ship[] = [];
-    for (let ship of ships2) {
+    for (let ship of ships) {
         validateType(type, ship);
         if (ship.dy === 0) {
             orthogonals.push(ship);
