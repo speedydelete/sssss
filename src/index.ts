@@ -313,71 +313,71 @@ export async function addShipsToFiles(type: string, ships: Ship[], limit?: numbe
             console.log('Adding ' + name + 's');
         }
         let data = parseData((await fs.readFile(join(dataPath, type, name + '.sss'))).toString());
-        for (let i = 0; i < part.length; i++) {
-            if (i % 100 === 0 && i > 0) {
-                console.log(`${i}/${part.length} ships added`);
-            }
-            let ship = part[i];
-        // for (let ship of part) {
-            let low = 0;
-            let high = data.length;
-            while (low < high) {
-                let mid = (low + high) >>> 1;
-                if (compareShips(data[mid], ship) < 0) {
-                    low = mid + 1;
-                } else {
-                    high = mid;
-                }
-            }
-            if (low < data.length && compareShips(data[low], ship) === 0) {
-                let ship2 = data[low];
-                if (ship2.pop < ship.pop) {
-                    ship2.pop = ship.pop;
-                    ship2.rule = ship.rule;
-                    ship2.rle = ship.rle;
-                    improvedShips.push(speedToString(ship));
-                } else {
-                    unchangedShips.push(speedToString(ship));
-                }
-            } else {
-                data.splice(low, 0, ship);
-                newShips.push(speedToString(ship));
-            }
-        }
-        // let found: Ship[] = [];
+        // for (let i = 0; i < part.length; i++) {
+        //     if (i % 100 === 0 && i > 0) {
+        //         console.log(`${i}/${part.length} ships added`);
+        //     }
+        //     let ship = part[i];
+        // // for (let ship of part) {
+        //     let low = 0;
+        //     let high = data.length;
+        //     while (low < high) {
+        //         let mid = (low + high) >>> 1;
+        //         if (compareShips(data[mid], ship) < 0) {
+        //             low = mid + 1;
+        //         } else {
+        //             high = mid;
+        //         }
+        //     }
+        //     if (low < data.length && compareShips(data[low], ship) === 0) {
+        //         let ship2 = data[low];
+        //         if (ship2.pop < ship.pop) {
+        //             ship2.pop = ship.pop;
+        //             ship2.rule = ship.rule;
+        //             ship2.rle = ship.rle;
+        //             improvedShips.push(speedToString(ship));
+        //         } else {
+        //             unchangedShips.push(speedToString(ship));
+        //         }
+        //     } else {
+        //         data.splice(low, 0, ship);
+        //         newShips.push(speedToString(ship));
+        //     }
+        // }
+        let found: Ship[] = [];
         // for (let i = 0; i < data.length; i++) {
         //     if (i % 10000 === 0 && i > 0) {
         //         console.log(`${i}/${data.length} ships checked`);
         //     }
         //     let ship = data[i];
-        // // for (let ship of data) {
-        //     for (let newShip of part) {
-        //         if (found.includes(newShip)) {
-        //             continue;
-        //         }
-        //         if (newShip.period === ship.period && newShip.dx === ship.dx && newShip.dy === ship.dy) {
-        //             if (newShip.pop < ship.pop) {
-        //                 ship.pop = newShip.pop;
-        //                 ship.rule = newShip.rule;
-        //                 ship.rle = newShip.rle;
-        //                 improvedShips.push(speedToString(ship));
-        //             } else {
-        //                 unchangedShips.push(speedToString(ship));
-        //             }
-        //             found.push(newShip);
-        //             break;
-        //         }
-        //     }
-        //     if (found.length === ships.length) {
-        //         break;
-        //     }
-        // }
-        // for (let ship of part) {
-        //     if (!found.includes(ship)) {
-        //         data.push(ship);
-        //         newShips.push(speedToString(ship));
-        //     }
-        // }
+        for (let ship of data) {
+            for (let newShip of part) {
+                if (found.includes(newShip)) {
+                    continue;
+                }
+                if (newShip.period === ship.period && newShip.dx === ship.dx && newShip.dy === ship.dy) {
+                    if (newShip.pop < ship.pop) {
+                        ship.pop = newShip.pop;
+                        ship.rule = newShip.rule;
+                        ship.rle = newShip.rle;
+                        improvedShips.push(speedToString(ship));
+                    } else {
+                        unchangedShips.push(speedToString(ship));
+                    }
+                    found.push(newShip);
+                    break;
+                }
+            }
+            if (found.length === ships.length) {
+                break;
+            }
+        }
+        for (let ship of part) {
+            if (!found.includes(ship)) {
+                data.push(ship);
+                newShips.push(speedToString(ship));
+            }
+        }
         data = sortShips(data);
         await fs.writeFile(join(dataPath, type, name + '.sss'), shipsToString(data));
     }
@@ -441,24 +441,26 @@ export async function findSpeedRLE(type: string, speed: string): Promise<string>
 }
 
 
-// let data = parseData((await fs.readFile(join(dataPath, 'int', 'orthogonal.sss'))).toString());
-// for (let i = 0; i < data.length; i++) {
-//     let ship = data[i];
-//     if (ship.rule === 'B2-ak3ce4eikqrz5-iknq6-ek8/S1c2aek3aekn4eiknry5eiky6-ei7c8') {
+
+// let part = 'intb0';
+
+// for (let type of ['diagonal', 'orthogonal', 'oblique']) {
+//     let data = parseData((await fs.readFile(join(dataPath, part, type + '.sss'))).toString());
+//     for (let i = 0; i < data.length; i++) {
+//         let ship = data[i];
 //         let prev = data[i - 1];
-//         let next = data[i];
-//         if (prev.dx === ship.dx && prev.dy === ship.dy && prev.period === ship.period) {
-//             if (prev.pop < ship.pop) {
+//         let next = data[i + 1];
+//         if (prev && prev.dx === ship.dx && prev.dy === ship.dy && prev.period === ship.period) {
+//             if (prev.pop <= ship.pop) {
 //                 data.splice(i, 1);
 //                 console.log('Removing false ' + speedToString(ship));
 //             }
-//         } else if (next.dx === ship.dx && next.dy === ship.dy && prev.period === ship.period) {
-//             if (prev.pop < ship.pop) {
+//         } else if (next && next.dx === ship.dx && next.dy === ship.dy && next.period === ship.period) {
+//             if (next.pop <= ship.pop) {
 //                 data.splice(i, 1);
 //                 console.log('Removing false ' + speedToString(ship));
 //             }
 //         }
 //     }
+//     await fs.writeFile(join(dataPath, part, type + '.sss'), shipsToString(data));
 // }
-
-// await fs.writeFile(join(dataPath, 'int', 'orthogonal.sss'), shipsToString(data));
