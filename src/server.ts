@@ -92,7 +92,7 @@ let server = createServer(async (req, out) => {
                     out.end();
                 } catch (error) {
                     console.error(error);
-                    out.writeHead(500, String(error).replaceAll('\n', ' '));
+                    out.writeHead(500);
                     out.end();
                 }
             });
@@ -103,7 +103,7 @@ let server = createServer(async (req, out) => {
         }
     } catch (error) {
         console.error(error);
-        out.writeHead(500, String(error).replaceAll('\n', ' '));
+        out.writeHead(500);
         out.end();
     }
 });
