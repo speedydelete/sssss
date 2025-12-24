@@ -79,6 +79,9 @@ export function parseData(data: string): Ship[] {
             continue;
         }
         let info = line.split(', ');
+        if (!info[5]) {
+            continue;
+        }
         out.push({
             pop: parseInt(info[0]),
             rule: info[1],
@@ -309,7 +312,7 @@ export async function addShipsToFiles(type: string, ships: Ship[], limit?: numbe
             if (i % 100 === 0 && i > 0) {
                 console.log(`${i}/${part.length} ships checked`);
             }
-            let ship = data[i];
+            let ship = part[i];
         // for (let ship of part) {
             let low = 0;
             let high = data.length;
