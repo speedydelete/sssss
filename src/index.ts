@@ -439,3 +439,26 @@ export async function findSpeedRLE(type: string, speed: string): Promise<string>
     let {dx, dy, period} = parseSpeed(speed);
     return await findShipRLE(type, dx, dy, period);
 }
+
+
+// let data = parseData((await fs.readFile(join(dataPath, 'int', 'orthogonal.sss'))).toString());
+// for (let i = 0; i < data.length; i++) {
+//     let ship = data[i];
+//     if (ship.rule === 'B2-ak3ce4eikqrz5-iknq6-ek8/S1c2aek3aekn4eiknry5eiky6-ei7c8') {
+//         let prev = data[i - 1];
+//         let next = data[i];
+//         if (prev.dx === ship.dx && prev.dy === ship.dy && prev.period === ship.period) {
+//             if (prev.pop < ship.pop) {
+//                 data.splice(i, 1);
+//                 console.log('Removing false ' + speedToString(ship));
+//             }
+//         } else if (next.dx === ship.dx && next.dy === ship.dy && prev.period === ship.period) {
+//             if (prev.pop < ship.pop) {
+//                 data.splice(i, 1);
+//                 console.log('Removing false ' + speedToString(ship));
+//             }
+//         }
+//     }
+// }
+
+// await fs.writeFile(join(dataPath, 'int', 'orthogonal.sss'), shipsToString(data));
