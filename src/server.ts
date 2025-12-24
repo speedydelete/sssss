@@ -13,6 +13,7 @@ let server = createServer(async (req, out) => {
             let value = lastRequestTime.get(ip);
             if (value !== undefined) {
                 if (time - value < 5) {
+                    console.log(`${ip} exceeded rate limit after ${(time - value).toFixed(3)} seconds`);
                     out.writeHead(429);
                     out.end();
                     return;
@@ -40,7 +41,7 @@ let server = createServer(async (req, out) => {
         }
         if (endpoint === 'get') {
             if (!params) {
-                out.writeHead(400);
+                out.writeHead(400, 'Expected type, dx, dy, and period parameters');
                 out.end();
                 return;
             }
@@ -49,22 +50,28 @@ let server = createServer(async (req, out) => {
             let dy = params.get('dy');
             let period = params.get('period');
             if (!type || !dx || !dy || !period) {
-                out.writeHead(400);
+                out.writeHead(400, 'Expected type, dx, dy, and period parameters');
                 out.end();
                 return;
             }
+            out.setHeader('Access-Control-Allow-Origin', '*');
             out.writeHead(200);
             out.write(await findShipRLE(type, parseInt(dx), parseInt(dy), parseInt(period)));
             out.end();
         } else if (endpoint === 'add') {
-            if (req.method !== 'POST' || !params) {
-                out.writeHead(400);
+            if (req.method !== 'POST') {
+                out.writeHead(404);
+                out.end();
+                return;
+            }
+            if (!params) {
+                out.writeHead(400, 'Expected type parameter');
                 out.end();
                 return;
             }
             let type = params.get('type');
             if (!type) {
-                out.writeHead(400);
+                out.writeHead(400, 'Expected type parameter');
                 out.end();
                 return;
             }
@@ -72,17 +79,33 @@ let server = createServer(async (req, out) => {
             req.on('data', chunk => {
                 data += String(chunk);
             });
-            req.on('end', () => {
-                let ships = parseData(data);
-                addShipsToFiles(type, ships);
+            req.on('end', async () => {
+                try {
+                    let ships = parseData(data);
+                    if (ships.length > 100) {
+                        out.writeHead(400, 'Max 100 ships');
+                        out.end();
+                        return;
+                    }
+                    let text = await addShipsToFiles(type, ships);
+                    out.setHeader('Access-Control-Allow-Origin', '*');
+                    out.writeHead(200);
+                    out.write(text);
+                    out.end();
+                } catch (error) {
+                    console.error(error);
+                    out.writeHead(500, String(error).replaceAll('\n', ' '));
+                    out.end();
+                }
             });
         } else {
             out.writeHead(404);
             out.end();
+            return;
         }
     } catch (error) {
         console.error(error);
-        out.writeHead(500);
+        out.writeHead(500, String(error).replaceAll('\n', ' '));
         out.end();
     }
 });

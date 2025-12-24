@@ -147,6 +147,12 @@ option {
 
 #ships-out {
     display: none;
+    white-space: pre-wrap;
+    min-height: 0;
+    overflow-wrap: anywhere;
+    overflow-y: auto;
+    font-family: 'Courier New', Courier, monospace;
+    white-space: pre-wrap;
 }
 
         </style>
@@ -183,10 +189,10 @@ option {
                 <button id="submit">Submit</button>
             </div>
         </div>
-        <script>'use strict';function printError(e,c='red'){let x=String(e instanceof Error?('stack' in e?e.stack:e):e);if(!(document.readyState==='complete')){alert(x);return;}document.querySelectorAll('body > *').forEach(x=>x.remove());let t=document.createElement('pre');t.style.color=c;t.style.paddingLeft='15px';t.style.fontFamily='\'Courier New\',Courier,monospace';t.style.fontSize='14px';t.style.overflowX='wrap';t.textContent=x.replaceAll(/file:\/\/\/media\/fuse\/drivefs-[0-9a-f]+\/root\/code\//g,'');document.body.appendChild(t);let l=setInterval(()=>{},0);for(let j=1;j<=l;j++){clearInterval(j);}window.onkeydown=()=>{};}window.addEventListener('error',e=>{printError(e.error);return true;});window.addEventListener('unhandledrejection',e=>{d.preventDefault();printError(e.reason);});</script>
+        <script>'use strict';function printError(e,c='red'){let x=String(e instanceof Error?('stack' in e?e.stack:e):e);if(!x.includes('Error')){x=String(e)+'\n'+x}x=x.replaceAll('@',' at ');if(!(document.readyState==='complete')){alert(x);return;}document.querySelectorAll('body > *').forEach(x=>x.remove());let t=document.createElement('pre');t.style.color=c;t.style.marginTop='100px';t.style.fontFamily='\'Courier New\',Courier,monospace';t.style.fontSize='14px';t.style.overflowWrap='break-word';t.textContent=x.replaceAll(/file:\/\/\/media\/fuse\/drivefs-[0-9a-f]+\/root\/code\//g,'');document.body.appendChild(t);let l=setInterval(()=>{},0);for(let j=1;j<=l;j++){clearInterval(j);}window.onkeydown=()=>{};}window.addEventListener('error',e=>{printError(e.error);return true;});window.addEventListener('unhandledrejection',e=>{e.preventDefault();printError(e.reason);});</script>
         <script type="module">
 
-import {findType, parse} from './lifeweb/index.js';
+import {MAPB0Pattern, MAPB0GenPattern, findType, findMinmax, parse} from '../lifeweb/lib/index.js';
 
 
 function parseSpeed(speed) {
@@ -230,6 +236,24 @@ function parseSpeed(speed) {
     return {dx: x, dy: y, period: p};
 }
 
+function speedToString({dx, dy, period}) {
+    if (dy === 0) {
+        if (dx === 1) {
+            return `c/${period}o`;
+        } else {
+            return `${dx}c/${period}o`;
+        }
+    } else if (dx === dy) {
+        if (dx === 1) {
+            return `c/${period}d`;
+        } else {
+            return `${dx}c/${period}d`;
+        }
+    } else {
+        return `(${dx}, ${dy})c/${period}`;
+    }
+}
+
 
 function normalizeShips(ships, throwInvalid) {
     let out = [];
@@ -237,22 +261,45 @@ function normalizeShips(ships, throwInvalid) {
     for (let i = 0; i < ships.length; i++) {
         let ship = ships[i];
         let p = parse(`x = 0, y = 0, rule = ${ship.rule}\n${ship.rle}`);
-        let type = findType(p, ship.period + 1);
-        if (type.period !== ship.period || !type.disp || type.disp[0] !== ship.dx || type.disp[1] !== ship.dy) {
+        let limit = Math.ceil(ship.period / p.rulePeriod) * p.rulePeriod + 1;
+        let type = findType(p, limit, false);
+        if (!type.disp || (type.disp[0] === 0 && type.disp[1] === 0)) {
             if (throwInvalid) {
-                throw new Error(`Invalid ship detected: ${shipsToString([ship])}`);
+                throw new Error(`Invalid ship detected: ${shipsToString([ship]).slice(0, -1)}`);
             } else {
-                console.error(`Invalid ship detected: ${shipsToString([ship])}`);
+                console.log(`Invalid ship detected: ${shipsToString([ship]).slice(0, -1)}`);
                 invalidShips.push(speedToString(ship));
                 continue;
+            }
+        }
+        if (ship.dx !== type.disp[0] || ship.dy !== type.disp[1] || ship.period !== type.period) {
+            console.log(`Warning: Replacing ${speedToString(ship)} with ${speedToString({dx: type.disp[0], dy: type.disp[1], period: type.period})}`);
+        }
+        ship.dx = type.disp[0];
+        ship.dy = type.disp[1];
+        if (ship.dx === 0 && ship.dy !== 0) {
+            p.rotateRight();
+            ship.dx = -ship.dy;
+            ship.dy = 0;
+            type = findType(p, limit, false);
+            if (type.period !== ship.period || !type.disp || ship.dx !== type.disp[0] || ship.dy !== type.disp[1]) {
+                if (throwInvalid) {
+                    throw new Error(`Invalid ship detected: ${shipsToString([ship]).slice(0, -1)}`);
+                } else {
+                    console.log(`Invalid ship detected: ${shipsToString([ship]).slice(0, -1)}`);
+                    invalidShips.push(speedToString(ship));
+                    continue;
+                }
             }
         }
         if (ship.dx < 0 || ship.dy < 0 || Math.abs(ship.dx) < Math.abs(ship.dy)) {
             if (ship.dx < 0) {
                 p.flipHorizontal();
+                ship.dx = -ship.dx;
             }
             if (ship.dy < 0) {
                 p.flipVertical();
+                ship.dy = -ship.dy;
             }
             if (ship.dx < ship.dy) {
                 let temp = ship.dx;
@@ -260,35 +307,112 @@ function normalizeShips(ships, throwInvalid) {
                 ship.dy = temp;
                 p.rotateLeft().flipVertical();
             }
-            type = findType(p, ship.period + 1);
-            if (type.period !== ship.period || !type.disp || type.disp[0] !== ship.dx || type.disp[1] !== ship.dy) {
+            type = findType(p, limit, false);
+            if (type.period !== ship.period || !type.disp || ship.dx !== type.disp[0] || ship.dy !== type.disp[1]) {
                 if (throwInvalid) {
-                    throw new Error(`Invalid ship detected: ${shipsToString([ship])}`);
+                    throw new Error(`Invalid ship detected: ${shipsToString([ship]).slice(0, -1)}`);
                 } else {
-                    console.error(`Invalid ship detected: ${shipsToString([ship])}`);
+                    console.log(`Invalid ship detected: ${shipsToString([ship]).slice(0, -1)}`);
                     invalidShips.push(speedToString(ship));
                     continue;
                 }
             }
         }
-        ship.rule = findMinmax(p, ship.period + 1)[0];
-        let minPop = type.phases[0].population;
-        let minPhase = type.phases[0];
-        for (let phase of type.phases) {
-            if (phase.population < minPop) {
-                minPop = phase.population;
-                minPhase = phase;
+        ship.rule = findMinmax(p, limit)[0];
+        if (p instanceof MAPB0Pattern || p instanceof MAPB0GenPattern) {
+            let minPop = type.phases[0].population;
+            let minPhase = type.phases[0];
+            let evenRule = ship.rule;
+            let [bTrs, sTrs] = arrayToTransitions(p.evenTrs.reverse(), TRANSITIONS);
+            let oddRule = `B${unparseTransitions(bTrs, VALID_TRANSITIONS, false)}/S${unparseTransitions(sTrs, VALID_TRANSITIONS, false)}`;
+            for (let i = 0; i < type.phases.length; i++) {
+                let phase = type.phases[i];
+                if (phase.population < minPop) {
+                    minPop = phase.population;
+                    minPhase = phase;
+                    ship.rule = i % 2 === 0 ? evenRule : oddRule;
+                }
             }
+            ship.pop = minPop;
+            ship.rle = minPhase.toRLE().split('\n').slice(1).join('');
+            if (ship.rule === oddRule) {
+                p = parse(`x = 0, y = 0, rule = ${ship.rule}\n${ship.rle}`);
+                ship.rule = findMinmax(p, limit)[0];
+            }
+        } else {
+            let minPop = type.phases[0].population;
+            let minPhase = type.phases[0];
+            for (let i = 0; i < type.phases.length; i++) {
+                let phase = type.phases[i];
+                if (phase.population < minPop) {
+                    minPop = phase.population;
+                    minPhase = phase;
+                }
+            }
+            ship.pop = minPop;
+            ship.rle = minPhase.toRLE().split('\n').slice(1).join('');
         }
-        ship.rle = minPhase.toRLE().split('\n').slice(1).join('');
         out.push(ship);
+        if (i % 100 === 0 && i > 0) {
+            console.log(`${i}/${ships.length} ships normalized`);
+        }
     }
     return throwInvalid === false ? [out, invalidShips] : out;
 }
 
 function parseData(data) {
     let out = [];
-    if (data.includes(',')) {
+    if (data.match((/x\s*=\s*\d+\s*,?\s*y\s*=\s*\d+\s*,?\s*(?:rule\s*=\s*(.*))/))) {
+        let currentRLE = '';
+        let rleNumber = 0;
+        let isFirstLine = false;
+        for (let line of data.split('\n')) {
+            line = line.trim();
+            if (line === '' || line.startsWith('#')) {
+                continue;
+            }
+            if (line.startsWith('x')) {
+                if (currentRLE !== '') {
+                    let p = parse(currentRLE);
+                    let type = findType(p, 32768, false);
+                    if (!type.disp || (type.disp[0] === 0 && type.disp[1] === 1)) {
+                        alert(`Pattern #${rleNumber} is not a spaceship or its period is higher than 32768!`);
+                    } else {
+                        out.push({
+                            pop: 0,
+                            rule: p.ruleStr,
+                            dx: type.disp[0],
+                            dy: type.disp[1],
+                            period: type.period,
+                            rle: p.toRLE().split('\n').slice(1).join(''),
+                        });
+                    }
+                }
+                currentRLE = line + '\n';
+                rleNumber++;
+            } else if (isFirstLine) {
+                alert('First line must be a RLE header');
+            } else {
+                currentRLE += line + '\n';
+            }
+        }
+        if (currentRLE !== '') {
+            let p = parse(currentRLE);
+            let type = findType(p, 32768, false);
+            if (!type.disp || (type.disp[0] === 0 && type.disp[1] === 1)) {
+                alert(`Pattern #${rleNumber} is not a spaceship or its period is higher than 32768!`);
+            } else {
+                out.push({
+                    pop: 0,
+                    rule: p.ruleStr,
+                    dx: type.disp[0],
+                    dy: type.disp[1],
+                    period: type.period,
+                    rle: p.toRLE().split('\n').slice(1).join(''),
+                });
+            }
+        }
+    } else {
         for (let line of data.split('\n')) {
             line = line.trim();
             if (line === '' || line.startsWith('#')) {
@@ -304,37 +428,6 @@ function parseData(data) {
                 rle: info[5],
             });
         }
-    } else {
-        let currentRLE = '';
-        let rleNumber = 0;
-        let isFirstLine = false;
-        for (let line of data.split('\n')) {
-            line = line.trim();
-            if (line === '' || line.startsWith('#')) {
-                continue;
-            }
-            if (line.startsWith('x')) {
-                if (currentRLE !== '') {
-                    let p = parse(currentRLE);
-                    let type = findType(p, 4096);
-                    if (!type.disp || (type.disp[0] === 0 && type.disp[1] === 1)) {
-                        alert(`Pattern #${rleNumber} is not a spaceship or its period is higher than 4096!`);
-                    } else {
-                        out.push({
-                            pop: 0,
-                            rule: p.ruleStr,
-                            dx: type.disp[0],
-                            dy: type.disp[1],
-                            period: type.period,
-                            rle: p.toRLE().split('\n').slice(1).join(''),
-                        });
-                    }
-                }
-                rleNumber++;
-            } else if (isFirstLine) {
-                alert('First line must be a RLE header');
-            }
-        }
     }
     return out;
 }
@@ -347,6 +440,7 @@ function shipsToString(ships) {
     return out;
 }
 
+let typeSelect = document.getElementById('type');
 let speedInput = document.getElementById('speed');
 let searchButton = document.getElementById('search');
 let searchOutput = document.getElementById('out');
@@ -356,7 +450,7 @@ let submitButton = document.getElementById('submit');
 
 searchButton.addEventListener('click', async () => {
     let {dx, dy, period} = parseSpeed(speedInput.value);
-    let resp = await fetch(`./api/get?dx=${dx}&dy=${dy}&period=${period}`);
+    let resp = await fetch(`http://localhost:3000/get?type=${typeSelect.value}&dx=${dx}&dy=${dy}&period=${period}`);
     if (resp.ok) {
         searchOutput.textContent = await resp.text();
     } else {
@@ -375,15 +469,21 @@ submitButton.addEventListener('click', async () => {
         shipsInput.style.display = 'block';
         shipsOutput.style.display = 'none';
         submitButton.textContent = 'Submit';
+        isBackButton = false;
         return;
     }
     let rawShips = parseData(document.getElementById('ships').value);
     let [ships, invalidShips] = normalizeShips(rawShips, false);
     if (ships.length === 0) {
-        alert(`All ships are invalid!`);
+        alert(`No ships provided or all ships are invalid!`);
         return;
     }
-    let resp = await fetch('./api/add', {
+    shipsInput.style.display = 'none';
+    shipsOutput.style.display = 'block';
+    shipsOutput.textContent = 'Adding ships...';
+    submitButton.textContent = 'Back';
+    isBackButton = true;
+    let resp = await fetch(`http://localhost:3000/add?type=${typeSelect.value}`, {
         method: 'POST',
         body: shipsToString(ships),
     });
@@ -396,11 +496,16 @@ submitButton.addEventListener('click', async () => {
             out = `${invalidShips.length} invalid ships removed before submitting: ${invalidShips.join(', ')}\n${out}`;
         }
         shipsOutput.textContent = out;
+        isBackButton = true;
     } else {
         if (resp.status === 429) {
+            shipsInput.style.display = 'block';
+            shipsOutput.style.display = 'none';
+            submitButton.textContent = 'Submit';
+            isBackButton = false;
             alert('You are being rate limited! Try again in 5 seconds!');
         } else {
-            alert(`Error: Server returned ${resp.status} ${resp.statusText}!`);
+            shipsOutput.textContent = `Error: Server returned ${resp.status} ${resp.statusText}!`;
         }
     }
 });

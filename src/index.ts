@@ -4,6 +4,64 @@ import * as fs from 'node:fs/promises';
 import {Pattern, TRANSITIONS, VALID_TRANSITIONS, unparseTransitions, arrayToTransitions, MAPPattern, MAPB0Pattern, MAPB0GenPattern, findType, findMinmax, createPattern, parse} from '../lifeweb/lib/index.js';
 
 
+export function parseSpeed(speed: string): {dx: number, dy: number, period: number} {
+    if (!speed.includes('c')) {
+        throw new Error('Invalid speed!');
+    }
+    let [disp, period] = speed.split('c');
+    if (period.startsWith('/')) {
+        period = period.slice(1);
+    }
+    let p = parseInt(period);
+    let x: number;
+    let y: number;
+    let num = parseInt(disp);
+    if (!Number.isNaN(num)) {
+        x = num;
+        if (period.endsWith('d')) {
+            y = num;
+        } else {
+            y = 0;
+        }
+    } else if (disp.startsWith('(')) {
+        let parts = disp.slice(1, -1).split(',');
+        x = parseInt(parts[0]);
+        y = parseInt(parts[1]);
+        if (Number.isNaN(x) || Number.isNaN(y) || parts.length !== 2) {
+            throw new Error('Invalid speed!');
+        }
+    } else if (disp === '') {
+        x = 1;
+        if (period.endsWith('d')) {
+            y = 1;
+        } else {
+            y = 0;
+        }
+    } else {
+        throw new Error('Invalid speed!');
+    }
+    return {dx: x, dy: y, period: p};
+}
+
+export function speedToString({dx, dy, period}: {dx: number, dy: number, period: number}): string {
+    if (dy === 0) {
+        if (dx === 1) {
+            return `c/${period}o`;
+        } else {
+            return `${dx}c/${period}o`;
+        }
+    } else if (dx === dy) {
+        if (dx === 1) {
+            return `c/${period}d`;
+        } else {
+            return `${dx}c/${period}d`;
+        }
+    } else {
+        return `(${dx}, ${dy})c/${period}`;
+    }
+}
+
+
 export interface Ship {
     pop: number;
     rule: string;
@@ -68,8 +126,8 @@ export function normalizeShips<T extends boolean | undefined = undefined>(ships:
         let ship = ships[i];
         let p = parse(`x = 0, y = 0, rule = ${ship.rule}\n${ship.rle}`);
         let limit = Math.ceil(ship.period / p.rulePeriod) * p.rulePeriod + 1;
-        let type = findType(p, limit);
-        if (type.stabilizedAt > 0 || !type.disp || (type.disp[0] === 0 && type.disp[1] === 0)) {
+        let type = findType(p, limit, false);
+        if (!type.disp || (type.disp[0] === 0 && type.disp[1] === 0)) {
             if (throwInvalid) {
                 throw new Error(`Invalid ship detected: ${shipsToString([ship]).slice(0, -1)}`);
             } else {
@@ -87,7 +145,7 @@ export function normalizeShips<T extends boolean | undefined = undefined>(ships:
             p.rotateRight();
             ship.dx = -ship.dy;
             ship.dy = 0;
-            type = findType(p, limit);
+            type = findType(p, limit, false);
             if (type.period !== ship.period || !type.disp || ship.dx !== type.disp[0] || ship.dy !== type.disp[1]) {
                 if (throwInvalid) {
                     throw new Error(`Invalid ship detected: ${shipsToString([ship]).slice(0, -1)}`);
@@ -113,7 +171,7 @@ export function normalizeShips<T extends boolean | undefined = undefined>(ships:
                 ship.dy = temp;
                 p.rotateLeft().flipVertical();
             }
-            type = findType(p, limit);
+            type = findType(p, limit, false);
             if (type.period !== ship.period || !type.disp || ship.dx !== type.disp[0] || ship.dy !== type.disp[1]) {
                 if (throwInvalid) {
                     throw new Error(`Invalid ship detected: ${shipsToString([ship]).slice(0, -1)}`);
@@ -159,6 +217,9 @@ export function normalizeShips<T extends boolean | undefined = undefined>(ships:
             ship.rle = minPhase.toRLE().split('\n').slice(1).join('');
         }
         out.push(ship);
+        if (i % 100 === 0 && i > 0) {
+            console.log(`${i}/${ships.length} ships normalized`);
+        }
     }
     // @ts-ignore
     return throwInvalid === false ? [out, invalidShips] : out;
@@ -166,7 +227,7 @@ export function normalizeShips<T extends boolean | undefined = undefined>(ships:
 
 
 export function patternToShip(p: Pattern, limit: number = 32768): Ship | undefined {
-    let type = findType(p, limit);
+    let type = findType(p, limit, false);
     if (!type.disp) {
         throw new Error(`Pattern is not a ship or its period is greater than ${limit} generations`);
     }
@@ -181,64 +242,6 @@ export function patternToShip(p: Pattern, limit: number = 32768): Ship | undefin
         period: type.period,
         rle: p.toRLE().split('\n').slice(1).join(''),
     }])[0];
-}
-
-
-export function parseSpeed(speed: string): {dx: number, dy: number, period: number} {
-    if (!speed.includes('c')) {
-        throw new Error('Invalid speed!');
-    }
-    let [disp, period] = speed.split('c');
-    if (period.startsWith('/')) {
-        period = period.slice(1);
-    }
-    let p = parseInt(period);
-    let x: number;
-    let y: number;
-    let num = parseInt(disp);
-    if (!Number.isNaN(num)) {
-        x = num;
-        if (period.endsWith('d')) {
-            y = num;
-        } else {
-            y = 0;
-        }
-    } else if (disp.startsWith('(')) {
-        let parts = disp.slice(1, -1).split(',');
-        x = parseInt(parts[0]);
-        y = parseInt(parts[1]);
-        if (Number.isNaN(x) || Number.isNaN(y) || parts.length !== 2) {
-            throw new Error('Invalid speed!');
-        }
-    } else if (disp === '') {
-        x = 1;
-        if (period.endsWith('d')) {
-            y = 1;
-        } else {
-            y = 0;
-        }
-    } else {
-        throw new Error('Invalid speed!');
-    }
-    return {dx: x, dy: y, period: p};
-}
-
-export function speedToString({dx, dy, period}: {dx: number, dy: number, period: number}): string {
-    if (dy === 0) {
-        if (dx === 1) {
-            return `c/${period}o`;
-        } else {
-            return `${dx}c/${period}o`;
-        }
-    } else if (dx === dy) {
-        if (dx === 1) {
-            return `c/${period}d`;
-        } else {
-            return `${dx}c/${period}d`;
-        }
-    } else {
-        return `(${dx}, ${dy})c/${period}`;
-    }
 }
 
 
@@ -290,7 +293,12 @@ export async function addShipsToFiles(type: string, ships: Ship[]): Promise<stri
         console.log('Adding ' + name + 's');
         let data = parseData((await fs.readFile(join(dataPath, type, name + '.sss'))).toString());
         let found: Ship[] = [];
-        for (let ship of data) {
+        for (let i = 0; i < data.length; i++) {
+            if (i % 10000 === 0 && i > 0) {
+                console.log(`${i}/${data.length} ships checked`);
+            }
+            let ship = data[i];
+        // for (let ship of data) {
             for (let newShip of part) {
                 if (found.includes(newShip)) {
                     continue;
@@ -366,21 +374,6 @@ export async function findShip(type: string, dx: number, dy: number, period: num
     }
     return null;
 }
-
-// export function findAdjustableShip(dx: number, dy: number, period: number): Ship | null {
-//     let p = createAdjustable(dx, dy, period);
-//     if (!p) {
-//         return null;
-//     }
-//     return normalizeShips([{
-//         pop: 0,
-//         rule: p.ruleStr,
-//         dx,
-//         dy,
-//         period,
-//         rle: p.toRLE().split('\n').slice(1).join(''),
-//     }])[0];
-// }
 
 export async function findShipRLE(type: string, dx: number, dy: number, period: number): Promise<string> {
     let data = await findShip(type, dx, dy, period);
