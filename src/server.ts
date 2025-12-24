@@ -86,7 +86,7 @@ let server = createServer(async (req, out) => {
                         out.end();
                         return;
                     }
-                    let text = await addShipsToFiles(type, ships);
+                    let text = await addShipsToFiles(type, ships, 32768);
                     out.writeHead(200);
                     out.write(text);
                     out.end();
