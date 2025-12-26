@@ -1,7 +1,7 @@
 
 import {join} from 'node:path';
 import * as fs from 'node:fs/promises';
-import {Pattern, TRANSITIONS, VALID_TRANSITIONS, unparseTransitions, arrayToTransitions, MAPPattern, MAPB0Pattern, MAPB0GenPattern, findType, findMinmax, createPattern, parse, parseSpeed, speedToString} from '../lifeweb/lib/index.js';
+import {Pattern, TRANSITIONS, VALID_TRANSITIONS, unparseTransitions, arrayToTransitions, MAPPattern, MAPB0Pattern, MAPGenPattern, MAPB0GenPattern, findType, findMinmax, createPattern, parse, parseSpeed, speedToString} from '../lifeweb/lib/index.js';
 
 
 export interface Ship {
@@ -154,7 +154,14 @@ export function normalizeShips<T extends boolean | undefined = undefined>(ships:
             let minPhase = type.phases[0];
             let evenRule = ship.rule;
             let [bTrs, sTrs] = arrayToTransitions(p.evenTrs.reverse(), TRANSITIONS);
-            let oddRule = `B${unparseTransitions(bTrs, VALID_TRANSITIONS, false)}/S${unparseTransitions(sTrs, VALID_TRANSITIONS, false)}`;
+            let bStr = unparseTransitions(bTrs, VALID_TRANSITIONS, false);
+            let sStr = unparseTransitions(sTrs, VALID_TRANSITIONS, false);
+            let oddRule: string;
+            if (p instanceof MAPB0Pattern) {
+                oddRule = `B${bStr}/S${sStr}`;
+            } else {
+                oddRule = `${sStr}/${bStr}/${p.states}`;
+            }
             for (let i = 0; i < type.phases.length; i++) {
                 let phase = type.phases[i];
                 if (phase.population < minPop) {
@@ -223,6 +230,30 @@ function validateType(type: string, ship: Ship): void {
         if (p instanceof MAPB0Pattern && p.ruleSymmetry === 'D8') {
             correct = true;
         }
+    } else if (type === 'ot') {
+        if (p instanceof MAPPattern && p.ruleStr.match(/^B[1-8]*\/S[0-8]*$/)) {
+            correct = true;
+        }
+    } else if (type === 'otb0') {
+        if (p instanceof MAPPattern && p.ruleStr.match(/^B0[1-8]*\/S[0-8]*$/)) {
+            correct = true;
+        }
+    } else if (type === 'intgen') {
+        if (p instanceof MAPGenPattern && p.ruleSymmetry === 'D8') {
+            correct = true;
+        }
+    } else if (type === 'intgenb0') {
+        if (p instanceof MAPB0GenPattern && p.ruleSymmetry === 'D8') {
+            correct = true;
+        }
+    } else if (type === 'otgen') {
+        if (p instanceof MAPGenPattern && p.ruleStr.match(/^[0-8]*\/[1-8]*\/\d+$/)) {
+            correct = true;
+        }
+    } else if (type === 'otgenb0') {
+        if (p instanceof MAPB0GenPattern && p.ruleStr.match(/^[0-8]*\/0[1-8]*\/\d+$/)) {
+            correct = true;
+        }
     } else {
         throw new Error(`Invalid ship type: '${type}'`);
     }
@@ -234,15 +265,15 @@ function validateType(type: string, ship: Ship): void {
 
 let dataPath = join(import.meta.dirname, '..', 'data');
 
-function compareShips(x: Ship, y: Ship): number {
-    if (x.period !== y.period) {
-        return x.period - y.period;
-    } else if (x.dx !== y.dx) {
-        return x.dx - y.dx;
-    } else {
-        return x.dy - y.dy;
-    }
-}
+// function compareShips(x: Ship, y: Ship): number {
+//     if (x.period !== y.period) {
+//         return x.period - y.period;
+//     } else if (x.dx !== y.dx) {
+//         return x.dx - y.dx;
+//     } else {
+//         return x.dy - y.dy;
+//     }
+// }
 
 export async function addShipsToFiles(type: string, ships: Ship[], limit?: number): Promise<string> {
     let start = performance.now();

@@ -166,6 +166,12 @@ option {
                     <select id="type">
                         <option value="int">INT</option>
                         <option value="intb0">INT B0</option>
+                        <option value="ot">OT</option>
+                        <option value="otb0">OT B0</option>
+                        <option value="intgen">INT Generations</option>
+                        <option value="intgenb0">INT Generations B0</option>
+                        <option value="otgen">OT Generations</option>
+                        <option value="otgenb0">OT Generations B0</option>
                     </select>
                 </div>
                 <a href="https://conwaylife.com/forums/viewtopic.php?f=11&t=2892">More information</a>
@@ -183,7 +189,7 @@ option {
             </div>
             <div>
                 <h2>Submit Spaceships</h2>
-                Enter spaceships in RLE or 5S format. The maximum period is 32768. If you would like to submit higher-period ship, or an adjustable ship (don't submit adjustable ships here!) please contact speedydelete on the ConwayLife.com forums or Discord.
+                Enter spaceships in RLE or CSV format. The maximum period is 32768. If you would like to submit higher-period ship, or an adjustable ship (don't submit adjustable ships here!) please contact speedydelete on the ConwayLife.com forums or Discord.
                 <textarea id="ships"></textarea>
                 <div id="ships-out"></div>
                 <button id="submit">Submit</button>
@@ -193,6 +199,87 @@ option {
         <script type="module">
 
 import {TRANSITIONS, VALID_TRANSITIONS, unparseTransitions, arrayToTransitions, MAPB0Pattern, MAPB0GenPattern, findType, findMinmax, parse, parseSpeed, speedToString} from '../lifeweb/index.js';
+
+
+function parseData(data) {
+    let out = [];
+    if (data.match((/x\s*=\s*\d+\s*,?\s*y\s*=\s*\d+\s*,?\s*(?:rule\s*=\s*(.*))/))) {
+        let currentRLE = '';
+        let rleNumber = 0;
+        let isFirstLine = false;
+        for (let line of data.split('\n')) {
+            line = line.trim();
+            if (line === '' || line.startsWith('#')) {
+                continue;
+            }
+            if (line.startsWith('x')) {
+                if (currentRLE !== '') {
+                    let p = parse(currentRLE);
+                    let type = findType(p, 32768, false);
+                    if (!type.disp || (type.disp[0] === 0 && type.disp[1] === 1)) {
+                        alert(`Pattern #${rleNumber} is not a spaceship or its period is higher than 32768!`);
+                    } else {
+                        out.push({
+                            pop: 0,
+                            rule: p.ruleStr,
+                            dx: type.disp[0],
+                            dy: type.disp[1],
+                            period: type.period,
+                            rle: p.toRLE().split('\n').slice(1).join(''),
+                        });
+                    }
+                }
+                currentRLE = line + '\n';
+                rleNumber++;
+            } else if (isFirstLine) {
+                alert('First line must be a RLE header');
+            } else {
+                currentRLE += line + '\n';
+            }
+        }
+        if (currentRLE !== '') {
+            let p = parse(currentRLE);
+            let type = findType(p, 32768, false);
+            if (!type.disp || (type.disp[0] === 0 && type.disp[1] === 1)) {
+                alert(`Pattern #${rleNumber} is not a spaceship or its period is higher than 32768!`);
+            } else {
+                out.push({
+                    pop: 0,
+                    rule: p.ruleStr,
+                    dx: type.disp[0],
+                    dy: type.disp[1],
+                    period: type.period,
+                    rle: p.toRLE().split('\n').slice(1).join(''),
+                });
+            }
+        }
+    } else {
+        for (let line of data.split('\n')) {
+            line = line.trim();
+            if (line === '' || line.startsWith('#')) {
+                continue;
+            }
+            let info = line.split(', ');
+            out.push({
+                pop: parseInt(info[0]),
+                rule: info[1],
+                dx: parseInt(info[2]),
+                dy: parseInt(info[3]),
+                period: parseInt(info[4]),
+                rle: info[5],
+            });
+        }
+    }
+    return out;
+}
+
+function shipsToString(ships) {
+    let out = '';
+    for (let ship of ships) {
+        out += ship.pop + ', ' + ship.rule + ', ' + ship.dx + ', ' + ship.dy + ', ' + ship.period + ', ' + ship.rle + '\n';
+    }
+    return out;
+}
 
 
 function removeDuplicateShips(ships) {
@@ -319,84 +406,25 @@ function normalizeShips(ships, throwInvalid, globalLimit) {
     return throwInvalid === false ? [out, invalidShips] : out;
 }
 
-function parseData(data) {
-    let out = [];
-    if (data.match((/x\s*=\s*\d+\s*,?\s*y\s*=\s*\d+\s*,?\s*(?:rule\s*=\s*(.*))/))) {
-        let currentRLE = '';
-        let rleNumber = 0;
-        let isFirstLine = false;
-        for (let line of data.split('\n')) {
-            line = line.trim();
-            if (line === '' || line.startsWith('#')) {
-                continue;
-            }
-            if (line.startsWith('x')) {
-                if (currentRLE !== '') {
-                    let p = parse(currentRLE);
-                    let type = findType(p, 32768, false);
-                    if (!type.disp || (type.disp[0] === 0 && type.disp[1] === 1)) {
-                        alert(`Pattern #${rleNumber} is not a spaceship or its period is higher than 32768!`);
-                    } else {
-                        out.push({
-                            pop: 0,
-                            rule: p.ruleStr,
-                            dx: type.disp[0],
-                            dy: type.disp[1],
-                            period: type.period,
-                            rle: p.toRLE().split('\n').slice(1).join(''),
-                        });
-                    }
-                }
-                currentRLE = line + '\n';
-                rleNumber++;
-            } else if (isFirstLine) {
-                alert('First line must be a RLE header');
-            } else {
-                currentRLE += line + '\n';
-            }
+
+function validateType(type, ship) {
+    let correct = false;
+    let p = createPattern(ship.rule);
+    if (type === 'int') {
+        if (p instanceof MAPPattern && p.ruleSymmetry === 'D8') {
+            correct = true;
         }
-        if (currentRLE !== '') {
-            let p = parse(currentRLE);
-            let type = findType(p, 32768, false);
-            if (!type.disp || (type.disp[0] === 0 && type.disp[1] === 1)) {
-                alert(`Pattern #${rleNumber} is not a spaceship or its period is higher than 32768!`);
-            } else {
-                out.push({
-                    pop: 0,
-                    rule: p.ruleStr,
-                    dx: type.disp[0],
-                    dy: type.disp[1],
-                    period: type.period,
-                    rle: p.toRLE().split('\n').slice(1).join(''),
-                });
-            }
+    } else if (type === 'intb0') {
+        if (p instanceof MAPB0Pattern && p.ruleSymmetry === 'D8') {
+            correct = true;
         }
     } else {
-        for (let line of data.split('\n')) {
-            line = line.trim();
-            if (line === '' || line.startsWith('#')) {
-                continue;
-            }
-            let info = line.split(', ');
-            out.push({
-                pop: parseInt(info[0]),
-                rule: info[1],
-                dx: parseInt(info[2]),
-                dy: parseInt(info[3]),
-                period: parseInt(info[4]),
-                rle: info[5],
-            });
-        }
+        alert(`Invalid ship type: '${type}'`);
     }
-    return out;
-}
-
-function shipsToString(ships) {
-    let out = '';
-    for (let ship of ships) {
-        out += ship.pop + ', ' + ship.rule + ', ' + ship.dx + ', ' + ship.dy + ', ' + ship.period + ', ' + ship.rle + '\n';
+    if (!correct) {
+        alert(`Invalid rule for ${type}: ${ship.rule}`);
     }
-    return out;
+    return correct;
 }
 
 
@@ -441,6 +469,11 @@ submitButton.addEventListener('click', async () => {
     if (ships.length === 0) {
         alert(`No ships provided or all ships are invalid!`);
         return;
+    }
+    for (let ship of ships) {
+        if (!validateType(typeSelect.value, ship)) {
+            return;
+        }
     }
     shipsInput.style.display = 'none';
     shipsOutput.style.display = 'block';
