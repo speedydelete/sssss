@@ -433,25 +433,26 @@ export async function findSpeedRLE(type: string, speed: string): Promise<string>
 }
 
 
-// let part = 'intb0';
+// let nonB0Ships: Ship[] = [];
+// let b0Ships: Ship[] = [];
 
-// for (let type of ['diagonal', 'orthogonal', 'oblique']) {
-//     let data = parseData((await fs.readFile(join(dataPath, part, type + '.sss'))).toString());
-//     for (let i = 0; i < data.length; i++) {
-//         let ship = data[i];
-//         let prev = data[i - 1];
-//         let next = data[i + 1];
-//         if (prev && prev.dx === ship.dx && prev.dy === ship.dy && prev.period === ship.period) {
-//             if (prev.pop <= ship.pop) {
-//                 data.splice(i, 1);
-//                 console.log('Removing false ' + speedToString(ship));
-//             }
-//         } else if (next && next.dx === ship.dx && next.dy === ship.dy && next.period === ship.period) {
-//             if (next.pop <= ship.pop) {
-//                 data.splice(i, 1);
-//                 console.log('Removing false ' + speedToString(ship));
-//             }
-//         }
+// for (let line of (await fs.readFile('glider.db.txt')).toString().split('\n')) {
+//     let parts = line.split(':');
+//     let rule = parts[2];
+//     let ship: Ship = {
+//         pop: 0,
+//         rule,
+//         dx: parseInt(parts[5]),
+//         dy: parseInt(parts[6]),
+//         period: parseInt(parts[4]),
+//         rle: parts[9],
+//     };
+//     if (rule.startsWith('B0')) {
+//         b0Ships.push(ship);
+//     } else {
+//         nonB0Ships.push(ship);
 //     }
-//     await fs.writeFile(join(dataPath, part, type + '.sss'), shipsToString(data));
 // }
+
+// nonB0Ships = normalizeShips('ot', removeDuplicateShips(nonB0Ships));
+// b0Ships = normalizeShips('otb0', removeDuplicateShips(b0Ships));

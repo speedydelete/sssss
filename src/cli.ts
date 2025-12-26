@@ -1,7 +1,7 @@
 
 import * as fs from 'node:fs/promises';
 import {parse} from '../lifeweb/lib/index.js';
-import {parseData, patternToShip, addShipsToFiles, findSpeedRLE} from './index.js';
+import {Ship, parseData, patternToShip, addShipsToFiles, findSpeedRLE} from './index.js';
 
 
 let command = process.argv[2];
@@ -16,7 +16,14 @@ if (command === 'get') {
     let data = parseData((await fs.readFile(arg)).toString());
     out = await addShipsToFiles(type, data);
 } else if (process.argv[2] === 'add_rle') {
-    let data = patternToShip(type, parse((await fs.readFile(arg)).toString()));
+    let data: Ship[] = [];
+    for (let rle of (await fs.readFile(arg)).toString().split('!')) {
+        rle = rle.trim();
+        if (rle === '') {
+            continue;
+        }
+        data.push(...patternToShip(type, parse(rle + '!'), 1048576));
+    }
     out = await addShipsToFiles(type, data);
 } else {
     throw new Error(`Invalid subcommand: ${process.argv[2]}`);
