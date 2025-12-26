@@ -16,13 +16,8 @@ if (command === 'get') {
     let data = parseData((await fs.readFile(arg)).toString());
     out = await addShipsToFiles(type, data);
 } else if (process.argv[2] === 'add_rle') {
-    let data = patternToShip(parse((await fs.readFile(arg)).toString()));
-    if (!data) {
-        out = '';
-    } else {
-        out = await addShipsToFiles(type, [data]);
-    }
-
+    let data = patternToShip(type, parse((await fs.readFile(arg)).toString()));
+    out = await addShipsToFiles(type, data);
 } else {
     throw new Error(`Invalid subcommand: ${process.argv[2]}`);
 }

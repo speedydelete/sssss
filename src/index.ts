@@ -66,7 +66,7 @@ export function sortShips(ships: Ship[]): Ship[] {
 
 export function removeDuplicateShips(ships: Ship[]): Ship[] {
     ships = sortShips(ships);
-    let out: Ship[] = [];
+    let out: Ship[] = [ships[0]];
     let prev = ships[0];
     for (let ship of ships.slice(1)) {
         if (prev.dx === ship.dx && prev.dy === ship.dy && prev.period === ship.period) {
@@ -82,7 +82,8 @@ export function removeDuplicateShips(ships: Ship[]): Ship[] {
     return out;
 }
 
-export function normalizeShips<T extends boolean | undefined = undefined>(ships: Ship[], throwInvalid?: T, globalLimit?: number): T extends false ? [Ship[], string[]] : Ship[] {
+export function normalizeShips<T extends boolean | undefined = undefined>(type: string, ships: Ship[], throwInvalid?: T, globalLimit?: number): T extends false ? [Ship[], string[]] : Ship[] {
+    let isOT = type.startsWith('ot');
     let out: Ship[] = [];
     let invalidShips: string[] = [];
     for (let i = 0; i < ships.length; i++) {
@@ -148,7 +149,7 @@ export function normalizeShips<T extends boolean | undefined = undefined>(ships:
                 }
             }
         }
-        ship.rule = findMinmax(p, limit)[0];
+        ship.rule = findMinmax(p, limit, undefined, undefined, isOT)[0];
         if (p instanceof MAPB0Pattern || p instanceof MAPB0GenPattern) {
             let minPop = type.phases[0].population;
             let minPhase = type.phases[0];
@@ -174,7 +175,7 @@ export function normalizeShips<T extends boolean | undefined = undefined>(ships:
             ship.rle = minPhase.toRLE().split('\n').slice(1).join('');
             if (ship.rule === oddRule) {
                 p = parse(`x = 0, y = 0, rule = ${ship.rule}\n${ship.rle}`);
-                ship.rule = findMinmax(p, limit)[0];
+                ship.rule = findMinmax(p, limit, undefined, undefined, isOT)[0];
             }
         } else {
             let minPop = type.phases[0].population;
@@ -200,22 +201,22 @@ export function normalizeShips<T extends boolean | undefined = undefined>(ships:
 }
 
 
-export function patternToShip(p: Pattern, limit: number = 32768): Ship | undefined {
-    let type = findType(p, limit, false);
-    if (!type.disp) {
+export function patternToShip(type: string, p: Pattern, limit: number = 32768): Ship[] {
+    let data = findType(p, limit, false);
+    if (!data.disp) {
         throw new Error(`Pattern is not a ship or its period is greater than ${limit} generations`);
     }
-    if (type.disp[0] === 0 && type.disp[1] === 0) {
+    if (data.disp[0] === 0 && data.disp[1] === 0) {
         throw new Error('Pattern does not move');
     }
-    return normalizeShips([{
+    return normalizeShips(type, [{
         pop: p.population,
         rule: p.ruleStr,
-        dx: type.disp[0],
-        dy: type.disp[1],
-        period: type.period,
+        dx: data.disp[0],
+        dy: data.disp[1],
+        period: data.period,
         rle: p.toRLE().split('\n').slice(1).join(''),
-    }])[0];
+    }], true);
 }
 
 
@@ -277,7 +278,7 @@ let dataPath = join(import.meta.dirname, '..', 'data');
 
 export async function addShipsToFiles(type: string, ships: Ship[], limit?: number): Promise<string> {
     let start = performance.now();
-    let [ships2, invalidShips] = normalizeShips(ships, false, limit);
+    let [ships2, invalidShips] = normalizeShips(type, ships, false, limit);
     // let ships2 = ships;
     // let invalidShips: Ship[] = [];
     let orthogonals: Ship[] = [];
@@ -369,7 +370,7 @@ export async function addShipsToFiles(type: string, ships: Ship[], limit?: numbe
                 newShips.push(speedToString(ship));
             }
         }
-        data = sortShips(data);
+        data = removeDuplicateShips(data);
         await fs.writeFile(join(dataPath, type, name + '.sss'), shipsToString(data));
     }
     let out = '';

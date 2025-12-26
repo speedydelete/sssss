@@ -300,7 +300,8 @@ function removeDuplicateShips(ships) {
     return out;
 }
 
-function normalizeShips(ships, throwInvalid, globalLimit) {
+function normalizeShips(type, ships, throwInvalid, globalLimit) {
+    let isOT = type.startsWith('ot');
     let out = [];
     let invalidShips = [];
     for (let i = 0; i < ships.length; i++) {
@@ -315,7 +316,7 @@ function normalizeShips(ships, throwInvalid, globalLimit) {
             if (throwInvalid) {
                 throw new Error(`Invalid ship detected: ${shipsToString([ship]).slice(0, -1)}`);
             } else {
-                alert(`Invalid ship detected: ${shipsToString([ship]).slice(0, -1)}`);
+                console.log(`Invalid ship detected: ${shipsToString([ship]).slice(0, -1)}`);
                 invalidShips.push(speedToString(ship));
                 continue;
             }
@@ -334,7 +335,7 @@ function normalizeShips(ships, throwInvalid, globalLimit) {
                 if (throwInvalid) {
                     throw new Error(`Invalid ship detected: ${shipsToString([ship]).slice(0, -1)}`);
                 } else {
-                    alert(`Invalid ship detected: ${shipsToString([ship]).slice(0, -1)}`);
+                    console.log(`Invalid ship detected: ${shipsToString([ship]).slice(0, -1)}`);
                     invalidShips.push(speedToString(ship));
                     continue;
                 }
@@ -360,19 +361,26 @@ function normalizeShips(ships, throwInvalid, globalLimit) {
                 if (throwInvalid) {
                     throw new Error(`Invalid ship detected: ${shipsToString([ship]).slice(0, -1)}`);
                 } else {
-                    alert(`Invalid ship detected: ${shipsToString([ship]).slice(0, -1)}`);
+                    console.log(`Invalid ship detected: ${shipsToString([ship]).slice(0, -1)}`);
                     invalidShips.push(speedToString(ship));
                     continue;
                 }
             }
         }
-        ship.rule = findMinmax(p, limit)[0];
+        ship.rule = findMinmax(p, limit, undefined, undefined, isOT)[0];
         if (p instanceof MAPB0Pattern || p instanceof MAPB0GenPattern) {
             let minPop = type.phases[0].population;
             let minPhase = type.phases[0];
             let evenRule = ship.rule;
             let [bTrs, sTrs] = arrayToTransitions(p.evenTrs.reverse(), TRANSITIONS);
-            let oddRule = `B${unparseTransitions(bTrs, VALID_TRANSITIONS, false)}/S${unparseTransitions(sTrs, VALID_TRANSITIONS, false)}`;
+            let bStr = unparseTransitions(bTrs, VALID_TRANSITIONS, false);
+            let sStr = unparseTransitions(sTrs, VALID_TRANSITIONS, false);
+            let oddRule;
+            if (p instanceof MAPB0Pattern) {
+                oddRule = `B${bStr}/S${sStr}`;
+            } else {
+                oddRule = `${sStr}/${bStr}/${p.states}`;
+            }
             for (let i = 0; i < type.phases.length; i++) {
                 let phase = type.phases[i];
                 if (phase.population < minPop) {
@@ -385,7 +393,7 @@ function normalizeShips(ships, throwInvalid, globalLimit) {
             ship.rle = minPhase.toRLE().split('\n').slice(1).join('');
             if (ship.rule === oddRule) {
                 p = parse(`x = 0, y = 0, rule = ${ship.rule}\n${ship.rle}`);
-                ship.rule = findMinmax(p, limit)[0];
+                ship.rule = findMinmax(p, limit, undefined, undefined, isOT)[0];
             }
         } else {
             let minPop = type.phases[0].population;
@@ -401,8 +409,12 @@ function normalizeShips(ships, throwInvalid, globalLimit) {
             ship.rle = minPhase.toRLE().split('\n').slice(1).join('');
         }
         out.push(ship);
+        if (i % 20 === 0 && i > 0) {
+            console.log(`${i}/${ships.length} ships normalized`);
+        }
     }
     out = removeDuplicateShips(out);
+    // @ts-ignore
     return throwInvalid === false ? [out, invalidShips] : out;
 }
 
@@ -465,7 +477,7 @@ submitButton.addEventListener('click', async () => {
         return;
     }
     let rawShips = parseData(document.getElementById('ships').value);
-    let [ships, invalidShips] = normalizeShips(rawShips, false, 32768);
+    let [ships, invalidShips] = normalizeShips(typeSelect.value, rawShips, false, 32768);
     if (ships.length === 0) {
         alert(`No ships provided or all ships are invalid!`);
         return;
