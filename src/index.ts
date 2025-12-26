@@ -70,7 +70,7 @@ export function removeDuplicateShips(ships: Ship[]): Ship[] {
     let prev = ships[0];
     for (let ship of ships.slice(1)) {
         if (prev.dx === ship.dx && prev.dy === ship.dy && prev.period === ship.period) {
-            if (prev.pop < ship.pop) {
+            if (prev.pop <= ship.pop) {
                 continue;
             } else if (prev.pop > ship.pop) {
                 out.pop();
@@ -104,7 +104,7 @@ export function normalizeShips<T extends boolean | undefined = undefined>(type: 
             }
         }
         if (ship.dx !== type.disp[0] || ship.dy !== type.disp[1] || ship.period !== type.period) {
-            console.log(`Warning: Replacing ${speedToString(ship)} with ${speedToString({dx: type.disp[0], dy: type.disp[1], period: type.period})}`);
+            // console.log(`Warning: Replacing ${speedToString(ship)} with ${speedToString({dx: type.disp[0], dy: type.disp[1], period: type.period})}`);
         }
         ship.dx = type.disp[0];
         ship.dy = type.disp[1];
@@ -236,7 +236,7 @@ function validateType(type: string, ship: Ship): void {
             correct = true;
         }
     } else if (type === 'otb0') {
-        if (p instanceof MAPPattern && p.ruleStr.match(/^B0[1-8]*\/S[0-8]*$/)) {
+        if (p instanceof MAPB0Pattern && p.ruleStr.match(/^B0[1-8]*\/S[0-8]*$/)) {
             correct = true;
         }
     } else if (type === 'intgen') {
@@ -431,28 +431,3 @@ export async function findSpeedRLE(type: string, speed: string): Promise<string>
     let {dx, dy, period} = parseSpeed(speed);
     return await findShipRLE(type, dx, dy, period);
 }
-
-
-// let nonB0Ships: Ship[] = [];
-// let b0Ships: Ship[] = [];
-
-// for (let line of (await fs.readFile('glider.db.txt')).toString().split('\n')) {
-//     let parts = line.split(':');
-//     let rule = parts[2];
-//     let ship: Ship = {
-//         pop: 0,
-//         rule,
-//         dx: parseInt(parts[5]),
-//         dy: parseInt(parts[6]),
-//         period: parseInt(parts[4]),
-//         rle: parts[9],
-//     };
-//     if (rule.startsWith('B0')) {
-//         b0Ships.push(ship);
-//     } else {
-//         nonB0Ships.push(ship);
-//     }
-// }
-
-// nonB0Ships = normalizeShips('ot', removeDuplicateShips(nonB0Ships));
-// b0Ships = normalizeShips('otb0', removeDuplicateShips(b0Ships));
