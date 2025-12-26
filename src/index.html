@@ -192,82 +192,43 @@ option {
         <script>'use strict';function printError(e,c='red'){let x=String(e instanceof Error?('stack' in e?e.stack:e):e);if(!x.includes('Error')){x=String(e)+'\n'+x}x=x.replaceAll('@',' at ');if(!(document.readyState==='complete')){alert(x);return;}document.querySelectorAll('body > *').forEach(x=>x.remove());let t=document.createElement('pre');t.style.color=c;t.style.marginTop='100px';t.style.fontFamily='\'Courier New\',Courier,monospace';t.style.fontSize='14px';t.style.overflowWrap='break-word';t.textContent=x.replaceAll(/file:\/\/\/media\/fuse\/drivefs-[0-9a-f]+\/root\/code\//g,'');document.body.appendChild(t);let l=setInterval(()=>{},0);for(let j=1;j<=l;j++){clearInterval(j);}window.onkeydown=()=>{};}window.addEventListener('error',e=>{printError(e.error);return true;});window.addEventListener('unhandledrejection',e=>{e.preventDefault();printError(e.reason);});</script>
         <script type="module">
 
-import {TRANSITIONS, VALID_TRANSITIONS, unparseTransitions, arrayToTransitions, MAPB0Pattern, MAPB0GenPattern, findType, findMinmax, parse} from '../lifeweb/index.js';
+import {TRANSITIONS, VALID_TRANSITIONS, unparseTransitions, arrayToTransitions, MAPB0Pattern, MAPB0GenPattern, findType, findMinmax, parse, parseSpeed, speedToString} from '../lifeweb/index.js';
 
 
-function parseSpeed(speed) {
-    if (!speed.includes('c')) {
-        alert('Invalid speed!');
-        return;
-    }
-    let [disp, period] = speed.split('c');
-    if (period.startsWith('/')) {
-        period = period.slice(1);
-    }
-    let p = parseInt(period);
-    let x, y;
-    let num = parseInt(disp);
-    if (!Number.isNaN(num)) {
-        x = num;
-        if (period.endsWith('d')) {
-            y = num;
-        } else {
-            y = 0;
+function removeDuplicateShips(ships) {
+    ships = sortShips(ships);
+    let out = [];
+    let prev = ships[0];
+    for (let ship of ships.slice(1)) {
+        if (prev.dx === ship.dx && prev.dy === ship.dy && prev.period === ship.period) {
+            if (prev.pop < ship.pop) {
+                continue;
+            } else if (prev.pop > ship.pop) {
+                out.pop();
+            }
         }
-    } else if (disp.startsWith('(')) {
-        let parts = disp.slice(1, -1).split(',');
-        x = parseInt(parts[0]);
-        y = parseInt(parts[1]);
-        if (Number.isNaN(x) || Number.isNaN(y) || parts.length !== 2) {
-            alert('Invalid speed!');
-            return;
-        }
-    } else if (disp === '') {
-        x = 1;
-        if (period.endsWith('d')) {
-            y = 1;
-        } else {
-            y = 0;
-        }
-    } else {
-        alert('Invalid speed!');
-        return;
+        out.push(ship);
+        prev = ship;
     }
-    return {dx: x, dy: y, period: p};
+    return out;
 }
 
-function speedToString({dx, dy, period}) {
-    if (dy === 0) {
-        if (dx === 1) {
-            return `c/${period}o`;
-        } else {
-            return `${dx}c/${period}o`;
-        }
-    } else if (dx === dy) {
-        if (dx === 1) {
-            return `c/${period}d`;
-        } else {
-            return `${dx}c/${period}d`;
-        }
-    } else {
-        return `(${dx}, ${dy})c/${period}`;
-    }
-}
-
-
-function normalizeShips(ships, throwInvalid) {
+function normalizeShips(ships, throwInvalid, globalLimit) {
     let out = [];
     let invalidShips = [];
     for (let i = 0; i < ships.length; i++) {
         let ship = ships[i];
         let p = parse(`x = 0, y = 0, rule = ${ship.rule}\n${ship.rle}`);
         let limit = Math.ceil(ship.period / p.rulePeriod) * p.rulePeriod + 1;
+        if (globalLimit !== undefined) {
+            limit = Math.min(limit, globalLimit);
+        }
         let type = findType(p, limit, false);
         if (!type.disp || (type.disp[0] === 0 && type.disp[1] === 0)) {
             if (throwInvalid) {
                 throw new Error(`Invalid ship detected: ${shipsToString([ship]).slice(0, -1)}`);
             } else {
-                console.log(`Invalid ship detected: ${shipsToString([ship]).slice(0, -1)}`);
+                alert(`Invalid ship detected: ${shipsToString([ship]).slice(0, -1)}`);
                 invalidShips.push(speedToString(ship));
                 continue;
             }
@@ -286,7 +247,7 @@ function normalizeShips(ships, throwInvalid) {
                 if (throwInvalid) {
                     throw new Error(`Invalid ship detected: ${shipsToString([ship]).slice(0, -1)}`);
                 } else {
-                    console.log(`Invalid ship detected: ${shipsToString([ship]).slice(0, -1)}`);
+                    alert(`Invalid ship detected: ${shipsToString([ship]).slice(0, -1)}`);
                     invalidShips.push(speedToString(ship));
                     continue;
                 }
@@ -312,7 +273,7 @@ function normalizeShips(ships, throwInvalid) {
                 if (throwInvalid) {
                     throw new Error(`Invalid ship detected: ${shipsToString([ship]).slice(0, -1)}`);
                 } else {
-                    console.log(`Invalid ship detected: ${shipsToString([ship]).slice(0, -1)}`);
+                    alert(`Invalid ship detected: ${shipsToString([ship]).slice(0, -1)}`);
                     invalidShips.push(speedToString(ship));
                     continue;
                 }
@@ -353,10 +314,8 @@ function normalizeShips(ships, throwInvalid) {
             ship.rle = minPhase.toRLE().split('\n').slice(1).join('');
         }
         out.push(ship);
-        if (i % 100 === 0 && i > 0) {
-            console.log(`${i}/${ships.length} ships normalized`);
-        }
     }
+    out = removeDuplicateShips(out);
     return throwInvalid === false ? [out, invalidShips] : out;
 }
 
@@ -440,6 +399,7 @@ function shipsToString(ships) {
     return out;
 }
 
+
 let typeSelect = document.getElementById('type');
 let speedInput = document.getElementById('speed');
 let searchButton = document.getElementById('search');
@@ -477,7 +437,7 @@ submitButton.addEventListener('click', async () => {
         return;
     }
     let rawShips = parseData(document.getElementById('ships').value);
-    let [ships, invalidShips] = normalizeShips(rawShips, false);
+    let [ships, invalidShips] = normalizeShips(rawShips, false, 32768);
     if (ships.length === 0) {
         alert(`No ships provided or all ships are invalid!`);
         return;

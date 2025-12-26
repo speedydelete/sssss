@@ -1,66 +1,7 @@
 
 import {join} from 'node:path';
 import * as fs from 'node:fs/promises';
-import {Pattern, TRANSITIONS, VALID_TRANSITIONS, unparseTransitions, arrayToTransitions, MAPPattern, MAPB0Pattern, MAPB0GenPattern, findType, findMinmax, createPattern, parse} from '../lifeweb/lib/index.js';
-import {create} from 'node:domain';
-
-
-export function parseSpeed(speed: string): {dx: number, dy: number, period: number} {
-    if (!speed.includes('c')) {
-        throw new Error('Invalid speed!');
-    }
-    let [disp, period] = speed.split('c');
-    if (period.startsWith('/')) {
-        period = period.slice(1);
-    }
-    let p = parseInt(period);
-    let x: number;
-    let y: number;
-    let num = parseInt(disp);
-    if (!Number.isNaN(num)) {
-        x = num;
-        if (period.endsWith('d')) {
-            y = num;
-        } else {
-            y = 0;
-        }
-    } else if (disp.startsWith('(')) {
-        let parts = disp.slice(1, -1).split(',');
-        x = parseInt(parts[0]);
-        y = parseInt(parts[1]);
-        if (Number.isNaN(x) || Number.isNaN(y) || parts.length !== 2) {
-            throw new Error('Invalid speed!');
-        }
-    } else if (disp === '') {
-        x = 1;
-        if (period.endsWith('d')) {
-            y = 1;
-        } else {
-            y = 0;
-        }
-    } else {
-        throw new Error('Invalid speed!');
-    }
-    return {dx: x, dy: y, period: p};
-}
-
-export function speedToString({dx, dy, period}: {dx: number, dy: number, period: number}): string {
-    if (dy === 0) {
-        if (dx === 1) {
-            return `c/${period}o`;
-        } else {
-            return `${dx}c/${period}o`;
-        }
-    } else if (dx === dy) {
-        if (dx === 1) {
-            return `c/${period}d`;
-        } else {
-            return `${dx}c/${period}d`;
-        }
-    } else {
-        return `(${dx}, ${dy})c/${period}`;
-    }
-}
+import {Pattern, TRANSITIONS, VALID_TRANSITIONS, unparseTransitions, arrayToTransitions, MAPPattern, MAPB0Pattern, MAPB0GenPattern, findType, findMinmax, createPattern, parse, parseSpeed, speedToString} from '../lifeweb/lib/index.js';
 
 
 export interface Ship {
@@ -122,6 +63,24 @@ export function sortShips(ships: Ship[]): Ship[] {
     });
 }
 
+
+export function removeDuplicateShips(ships: Ship[]): Ship[] {
+    ships = sortShips(ships);
+    let out: Ship[] = [];
+    let prev = ships[0];
+    for (let ship of ships.slice(1)) {
+        if (prev.dx === ship.dx && prev.dy === ship.dy && prev.period === ship.period) {
+            if (prev.pop < ship.pop) {
+                continue;
+            } else if (prev.pop > ship.pop) {
+                out.pop();
+            }
+        }
+        out.push(ship);
+        prev = ship;
+    }
+    return out;
+}
 
 export function normalizeShips<T extends boolean | undefined = undefined>(ships: Ship[], throwInvalid?: T, globalLimit?: number): T extends false ? [Ship[], string[]] : Ship[] {
     let out: Ship[] = [];
@@ -228,6 +187,7 @@ export function normalizeShips<T extends boolean | undefined = undefined>(ships:
             console.log(`${i}/${ships.length} ships normalized`);
         }
     }
+    out = removeDuplicateShips(out);
     // @ts-ignore
     return throwInvalid === false ? [out, invalidShips] : out;
 }
@@ -439,7 +399,6 @@ export async function findSpeedRLE(type: string, speed: string): Promise<string>
     let {dx, dy, period} = parseSpeed(speed);
     return await findShipRLE(type, dx, dy, period);
 }
-
 
 
 // let part = 'intb0';
