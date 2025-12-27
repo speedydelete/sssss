@@ -104,7 +104,7 @@ export function normalizeShips<T extends boolean | undefined = undefined>(type: 
             }
         }
         if (ship.dx !== type.disp[0] || ship.dy !== type.disp[1] || ship.period !== type.period) {
-            // console.log(`Warning: Replacing ${speedToString(ship)} with ${speedToString({dx: type.disp[0], dy: type.disp[1], period: type.period})}`);
+            console.log(`Warning: Replacing ${speedToString(ship)} with ${speedToString({dx: type.disp[0], dy: type.disp[1], period: type.period})}`);
         }
         ship.dx = type.disp[0];
         ship.dy = type.disp[1];
