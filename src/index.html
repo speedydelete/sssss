@@ -472,11 +472,12 @@ function validateType(type, ship) {
             correct = true;
         }
     } else {
-        throw new Error(`Invalid ship type: '${type}'`);
+        alert(`Invalid ship type: '${type}'`);
     }
     if (!correct) {
-        throw new Error(`Invalid rule for ${type}: ${ship.rule}`);
+        alert(`Invalid rule for ${type}: ${ship.rule}`);
     }
+    return correct;
 }
 
 
