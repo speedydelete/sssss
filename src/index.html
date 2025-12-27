@@ -113,6 +113,11 @@ option {
     align-items: center;
 }
 
+#counts {
+    margin-top: 1em;
+    text-align: center;
+}
+
 #type {
     box-sizing: content-box;
     width: calc(16ch + 21px);
@@ -485,12 +490,30 @@ function validateType(type, ship) {
 
 
 let typeSelect = document.getElementById('type');
+let countsOutput = document.getElementById('counts');
 let speedInput = document.getElementById('speed');
 let searchButton = document.getElementById('search');
 let searchOutput = document.getElementById('out');
 let shipsInput = document.getElementById('ships');
 let shipsOutput = document.getElementById('ships-out');
 let submitButton = document.getElementById('submit');
+
+typeSelect.addEventListener('change', async () => {
+    let resp = await fetch(`./api/getcounts?type=${typeSelect.value}`);
+    if (resp.ok) {
+        countsOutput.textContent = await resp.text();
+    } else {
+        countsOutput.textContent = '';
+        if (resp.status === 429) {
+            setTimeout(async () => {
+                let resp = await fetch(`./api/getcounts?type=${typeSelect.value}`);
+                if (resp.ok) {
+                    countsOutput.textContent = await resp.text();
+                }
+            }, 600);
+        }
+    }
+});
 
 searchButton.addEventListener('click', async () => {
     let data = parseSpeed(speedInput.value);
