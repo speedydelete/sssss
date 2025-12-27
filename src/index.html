@@ -239,7 +239,8 @@ function parseData(data) {
         }
         if (currentRLE !== '') {
             let p = parse(currentRLE);
-            let type = findType(p, 32768, false);
+            let type = findType(p, 32768);
+            p.run(type.stabilizedAt);
             if (!type.disp || (type.disp[0] === 0 && type.disp[1] === 0)) {
                 alert(`Pattern #${rleNumber} is not a spaceship or its period is higher than 32768!`);
             } else {
@@ -329,7 +330,8 @@ function normalizeShips(type, ships, throwInvalid, globalLimit) {
         if (globalLimit !== undefined) {
             limit = Math.min(limit, globalLimit);
         }
-        let type = findType(p, limit, false);
+        let type = findType(p, limit);
+        p.run(type.stabilizedAt);
         if (!type.disp || (type.disp[0] === 0 && type.disp[1] === 0)) {
             if (throwInvalid) {
                 throw new Error(`Invalid ship detected: ${shipsToString([ship]).slice(0, -1)}`);

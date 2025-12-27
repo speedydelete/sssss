@@ -93,7 +93,8 @@ export function normalizeShips<T extends boolean | undefined = undefined>(type: 
         if (globalLimit !== undefined) {
             limit = Math.min(limit, globalLimit);
         }
-        let type = findType(p, limit, false);
+        let type = findType(p, limit);
+        p.run(type.stabilizedAt);
         if (!type.disp || (type.disp[0] === 0 && type.disp[1] === 0)) {
             if (throwInvalid) {
                 throw new Error(`Invalid ship detected: ${shipsToString([ship]).slice(0, -1)}`);
@@ -202,7 +203,8 @@ export function normalizeShips<T extends boolean | undefined = undefined>(type: 
 
 
 export function patternToShip(type: string, p: Pattern, limit: number = 32768): Ship[] {
-    let data = findType(p, limit, false);
+    let data = findType(p, limit);
+    p.run(data.stabilizedAt);
     if (!data.disp) {
         throw new Error(`Pattern is not a ship or its period is greater than ${limit} generations`);
     }
