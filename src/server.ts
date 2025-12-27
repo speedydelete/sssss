@@ -34,7 +34,7 @@ let lastGetCountsTime = new Map<string, number>();
 
 let server = createServer(async (req, out) => {
     try {
-        let ip = req.socket.remoteAddress;
+        let ip = req.headers['x-forwarded-for'] as string;
         if (!ip) {
             out.writeHead(400, 'No IP address; cannot determine rate limits');
             out.end();
