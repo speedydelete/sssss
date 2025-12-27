@@ -498,7 +498,7 @@ let shipsInput = document.getElementById('ships');
 let shipsOutput = document.getElementById('ships-out');
 let submitButton = document.getElementById('submit');
 
-typeSelect.addEventListener('change', async () => {
+async function getCounts() {
     let resp = await fetch(`./api/getcounts?type=${typeSelect.value}`);
     if (resp.ok) {
         countsOutput.textContent = await resp.text();
@@ -513,7 +513,11 @@ typeSelect.addEventListener('change', async () => {
             }, 600);
         }
     }
-});
+}
+
+typeSelect.addEventListener('change', getCounts);
+
+getCounts();
 
 searchButton.addEventListener('click', async () => {
     let data = parseSpeed(speedInput.value);
