@@ -302,11 +302,11 @@ function sortShips(ships) {
 
 function removeDuplicateShips(ships) {
     ships = sortShips(ships);
-    let out = [];
+    let out = [ships[0]];
     let prev = ships[0];
     for (let ship of ships.slice(1)) {
         if (prev.dx === ship.dx && prev.dy === ship.dy && prev.period === ship.period) {
-            if (prev.pop < ship.pop) {
+            if (prev.pop <= ship.pop) {
                 continue;
             } else if (prev.pop > ship.pop) {
                 out.pop();
