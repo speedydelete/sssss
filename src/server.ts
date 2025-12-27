@@ -15,8 +15,8 @@ let counts: {[key: string]: string} = {};
 async function updateCountFor(type: string): Promise<void> {
     let data = [];
     let total = 0;
-    for (let type of ['orthogonal', 'diagonal', 'oblique']) {
-        let count = (await fs.readFile(join(basePath, type, 'orthogonal.sss'))).toString().split('\n').length - 1;
+    for (let part of ['orthogonal', 'diagonal', 'oblique']) {
+        let count = (await fs.readFile(join(basePath, type, part + '.sss'))).toString().split('\n').length - 1;
         total += count;
         data.push(count);
     }
@@ -152,7 +152,7 @@ let server = createServer(async (req, out) => {
             });
             updateCountFor(type);
         } else if (endpoint === 'getcounts') {
-            let value = lastGetTime.get(ip);
+            let value = lastGetCountsTime.get(ip);
             if (value !== undefined) {
                 if (time - value < 0.3) {
                     console.log(`${ip} exceeded rate limit on getcounts after ${(time - value).toFixed(3)} seconds`);
@@ -160,10 +160,10 @@ let server = createServer(async (req, out) => {
                     out.end();
                     return;
                 } else {
-                    lastGetTime.set(ip, time);
+                    lastGetCountsTime.set(ip, time);
                 }
             } else {
-                lastGetTime.set(ip, time);
+                lastGetCountsTime.set(ip, time);
             }
             if (!params) {
                 out.writeHead(400, 'Expected type parameter');
