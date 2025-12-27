@@ -198,7 +198,7 @@ option {
         <script>'use strict';function printError(e,c='red'){let x=String(e instanceof Error?('stack' in e?e.stack:e):e);if(!x.includes('Error')){x=String(e)+'\n'+x}x=x.replaceAll('@',' at ');if(!(document.readyState==='complete')){alert(x);return;}document.querySelectorAll('body > *').forEach(x=>x.remove());let t=document.createElement('pre');t.style.color=c;t.style.marginTop='100px';t.style.fontFamily='\'Courier New\',Courier,monospace';t.style.fontSize='14px';t.style.overflowWrap='break-word';t.textContent=x.replaceAll(/file:\/\/\/media\/fuse\/drivefs-[0-9a-f]+\/root\/code\//g,'');document.body.appendChild(t);let l=setInterval(()=>{},0);for(let j=1;j<=l;j++){clearInterval(j);}window.onkeydown=()=>{};}window.addEventListener('error',e=>{printError(e.error);return true;});window.addEventListener('unhandledrejection',e=>{e.preventDefault();printError(e.reason);});</script>
         <script type="module">
 
-import {TRANSITIONS, VALID_TRANSITIONS, unparseTransitions, arrayToTransitions, MAPB0Pattern, MAPB0GenPattern, findType, findMinmax, parse, parseSpeed, speedToString} from '../lifeweb/index.js';
+import {TRANSITIONS, VALID_TRANSITIONS, unparseTransitions, arrayToTransitions, MAPPattern, MAPGenPattern, MAPB0Pattern, MAPB0GenPattern, findType, findMinmax, createPattern, parse, parseSpeed, speedToString} from '../lifeweb/index.js';
 
 
 function parseData(data) {
@@ -447,13 +447,36 @@ function validateType(type, ship) {
         if (p instanceof MAPB0Pattern && p.ruleSymmetry === 'D8') {
             correct = true;
         }
+    } else if (type === 'ot') {
+        if (p instanceof MAPPattern && p.ruleStr.match(/^B[1-8]*\/S[0-8]*$/)) {
+            correct = true;
+        }
+    } else if (type === 'otb0') {
+        if (p instanceof MAPB0Pattern && p.ruleStr.match(/^B0[1-8]*\/S[0-8]*$/)) {
+            correct = true;
+        }
+    } else if (type === 'intgen') {
+        if (p instanceof MAPGenPattern && p.ruleSymmetry === 'D8') {
+            correct = true;
+        }
+    } else if (type === 'intgenb0') {
+        if (p instanceof MAPB0GenPattern && p.ruleSymmetry === 'D8') {
+            correct = true;
+        }
+    } else if (type === 'otgen') {
+        if (p instanceof MAPGenPattern && p.ruleStr.match(/^[0-8]*\/[1-8]*\/\d+$/)) {
+            correct = true;
+        }
+    } else if (type === 'otgenb0') {
+        if (p instanceof MAPB0GenPattern && p.ruleStr.match(/^[0-8]*\/0[1-8]*\/\d+$/)) {
+            correct = true;
+        }
     } else {
-        alert(`Invalid ship type: '${type}'`);
+        throw new Error(`Invalid ship type: '${type}'`);
     }
     if (!correct) {
-        alert(`Invalid rule for ${type}: ${ship.rule}`);
+        throw new Error(`Invalid rule for ${type}: ${ship.rule}`);
     }
-    return correct;
 }
 
 
