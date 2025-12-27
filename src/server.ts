@@ -133,8 +133,8 @@ server.listen(3000, 'localhost');
 let basePath = join(import.meta.dirname, '..');
 
 function updateDataZip() {
-    execSync(join(basePath, 'update_data_zip'));
-    execSync(`cp ${join(basePath, 'data.zip')} /var/www/html/5s/data.zip`);
+    execSync(join(basePath, 'update_data_zip'), {stdio: 'inherit'});
+    execSync(`cp ${join(basePath, 'data.zip')} /var/www/html/5s/data.zip`, {stdio: 'inherit'});
 }
 
 updateDataZip();
