@@ -3,27 +3,18 @@ import {createServer} from 'node:http';
 import {findShipRLE, parseData, addShipsToFiles} from './index.js';
 
 
-let lastRequestTime = new Map<string, number>();
+let lastGetTime = new Map<string, number>();
+let lastAddTime = new Map<string, number>();
 
 let server = createServer(async (req, out) => {
     try {
         let ip = req.socket.remoteAddress;
-        if (ip) {
-            let time = performance.now() / 1000;
-            let value = lastRequestTime.get(ip);
-            if (value !== undefined) {
-                if (time - value < 5) {
-                    console.log(`${ip} exceeded rate limit after ${(time - value).toFixed(3)} seconds`);
-                    out.writeHead(429);
-                    out.end();
-                    return;
-                } else {
-                    lastRequestTime.set(ip, time);
-                }
-            } else {
-                lastRequestTime.set(ip, time);
-            }
+        if (!ip) {
+            out.writeHead(400, 'No IP address; cannot determine rate limits');
+            out.end();
+            return;
         }
+        let time = performance.now() / 1000;
         if (!req.url) {
             out.writeHead(400);
             out.end();
@@ -40,6 +31,19 @@ let server = createServer(async (req, out) => {
             params = null;
         }
         if (endpoint === 'get') {
+            let value = lastGetTime.get(ip);
+            if (value !== undefined) {
+                if (time - value < 5) {
+                    console.log(`${ip} exceeded rate limit after ${(time - value).toFixed(3)} seconds`);
+                    out.writeHead(429);
+                    out.end();
+                    return;
+                } else {
+                    lastGetTime.set(ip, time);
+                }
+            } else {
+                lastGetTime.set(ip, time);
+            }
             if (!params) {
                 out.writeHead(400, 'Expected type, dx, dy, and period parameters');
                 out.end();
@@ -58,6 +62,19 @@ let server = createServer(async (req, out) => {
             out.write(await findShipRLE(type, parseInt(dx), parseInt(dy), parseInt(period)));
             out.end();
         } else if (endpoint === 'add') {
+            let value = lastAddTime.get(ip);
+            if (value !== undefined) {
+                if (time - value < 5) {
+                    console.log(`${ip} exceeded rate limit after ${(time - value).toFixed(3)} seconds`);
+                    out.writeHead(429);
+                    out.end();
+                    return;
+                } else {
+                    lastAddTime.set(ip, time);
+                }
+            } else {
+                lastAddTime.set(ip, time);
+            }
             if (req.method !== 'POST') {
                 out.writeHead(404);
                 out.end();
