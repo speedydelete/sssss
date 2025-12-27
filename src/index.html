@@ -115,7 +115,7 @@ option {
 
 #type {
     box-sizing: content-box;
-    width: calc(6ch + 21px);
+    width: calc(18ch + 21px);
 }
 
 #speed-wrapper {
@@ -414,7 +414,6 @@ function normalizeShips(type, ships, throwInvalid, globalLimit) {
         }
     }
     out = removeDuplicateShips(out);
-    // @ts-ignore
     return throwInvalid === false ? [out, invalidShips] : out;
 }
 
@@ -520,25 +519,18 @@ submitButton.addEventListener('click', async () => {
 });
 
 
-document.querySelectorAll('input').forEach(elt => {
-    let value = localStorage['5s-input-' + elt.id];
-    if (value) {
-        elt.value = value;
-    }
-    elt.addEventListener('change', () => {
-        localStorage['5s-input-' + elt.id] = elt.value;
+for (let type of ['input', 'textarea', 'select']) {
+    document.querySelectorAll(type).forEach(elt => {
+        let key = '5s-' + type + '-' + elt.id;
+        let value = localStorage[key];
+        if (value) {
+            elt.value = value;
+        }
+        elt.addEventListener('change', () => {
+            localStorage[key] = elt.value;
+        });
     });
-});
-
-document.querySelectorAll('textarea').forEach(elt => {
-    let value = localStorage['5s-textarea-' + elt.id];
-    if (value) {
-        elt.value = value;
-    }
-    elt.addEventListener('change', () => {
-        localStorage['5s-textarea-' + elt.id] = elt.value;
-    });
-});
+}
 
         </script>
     </body>
