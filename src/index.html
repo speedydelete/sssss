@@ -308,7 +308,7 @@ function removeDuplicateShips(ships) {
         if (prev.dx === ship.dx && prev.dy === ship.dy && prev.period === ship.period) {
             if (prev.pop <= ship.pop) {
                 continue;
-            } else if (prev.pop > ship.pop) {
+            } else {
                 out.pop();
             }
         }
