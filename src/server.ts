@@ -16,7 +16,7 @@ async function updateCountFor(type: string): Promise<void> {
     let data = [];
     let total = 0;
     for (let part of ['orthogonal', 'diagonal', 'oblique']) {
-        let count = (await fs.readFile(join(basePath, type, part + '.sss'))).toString().split('\n').length - 1;
+        let count = (await fs.readFile(join(basePath, 'data', type, part + '.sss'))).toString().split('\n').length - 1;
         total += count;
         data.push(count);
     }
