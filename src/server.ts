@@ -40,6 +40,10 @@ let server = createServer(async (req, out) => {
             out.end();
             return;
         }
+        let index = ip.indexOf(',');
+        if (index !== -1) {
+            ip = ip.slice(0, index);
+        }
         let time = performance.now() / 1000;
         if (!req.url) {
             out.writeHead(400);
