@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd)
+rm -f "$SCRIPT_DIR/data.zip"
+(cd $SCRIPT_DIR; zip -r data.zip data)

@@ -1,4 +1,5 @@
 
+import {join} from 'node:path';
 import {execSync} from 'node:child_process';
 import {createServer} from 'node:http';
 import {findShipRLE, parseData, addShipsToFiles} from './index.js';
@@ -129,11 +130,11 @@ let server = createServer(async (req, out) => {
 server.listen(3000, 'localhost');
 
 
+let basePath = join(import.meta.dirname, '..');
+
 function updateDataZip() {
-    execSync('rm data.zip');
-    execSync('zip -r data.zip data');
-    execSync('rm /var/www/html/5s/data.zip');
-    execSync('cp data.zip /var/www/html/5s/data.zip');
+    execSync(join(basePath, 'update_data_zip'));
+    execSync(`cp ${join(basePath, 'data.zip')} /var/www/html/5s/data.zip`);
 }
 
 updateDataZip();
