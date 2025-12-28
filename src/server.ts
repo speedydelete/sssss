@@ -208,7 +208,7 @@ let server = createServer(async (req, out) => {
                 lastGetNewShipsTIme.set(ip, time);
             }
             if (ip !== '192.9.227.225') {
-                console.log(`${ip} attempted to getcounts (wrong ip)`);
+                console.log(`${ip} attempted to getnewships (wrong ip)`);
                 out.writeHead(403);
                 out.end();
                 return;
