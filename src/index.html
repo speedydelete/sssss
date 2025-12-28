@@ -208,6 +208,19 @@ option {
 import {TRANSITIONS, VALID_TRANSITIONS, unparseTransitions, arrayToTransitions, MAPPattern, MAPGenPattern, MAPB0Pattern, MAPB0GenPattern, findType, findMinmax, createPattern, parse, parseSpeed, speedToString} from '../lifeweb/index.js';
 
 
+const TYPES = ['int', 'intb0', 'ot', 'otb0', 'intgen', 'intgenb0', 'otgen', 'otgenb0'];
+
+const TYPE_NAMES = {
+    'int': 'INT',
+    'intb0': 'INT B0',
+    'ot': 'OT',
+    'otb0': 'OT B0',
+    'intgen': 'INT Generations',
+    'intgenb0': 'INT Generations B0',
+    'otgen': 'OT Generations',
+    'otgenb0': 'OT Generations B0',
+};
+
 function parseData(data) {
     let out = [];
     if (data.match((/x\s*=\s*\d+\s*,?\s*y\s*=\s*\d+\s*,?\s*(?:rule\s*=\s*(.*))/))) {
@@ -484,7 +497,7 @@ function validateType(type, ship) {
         alert(`Invalid ship type: '${type}'`);
     }
     if (!correct) {
-        alert(`Invalid rule for ${type}: ${ship.rule}`);
+        alert(`Invalid rule for ${TYPE_NAMES[type]}: ${ship.rule}`);
     }
     return correct;
 }

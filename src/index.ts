@@ -4,6 +4,20 @@ import * as fs from 'node:fs/promises';
 import {Pattern, TRANSITIONS, VALID_TRANSITIONS, unparseTransitions, arrayToTransitions, MAPPattern, MAPB0Pattern, MAPGenPattern, MAPB0GenPattern, findType, findMinmax, createPattern, parse, parseSpeed, speedToString} from '../lifeweb/lib/index.js';
 
 
+export const TYPES = ['int', 'intb0', 'ot', 'otb0', 'intgen', 'intgenb0', 'otgen', 'otgenb0'];
+
+export const TYPE_NAMES = {
+    'int': 'INT',
+    'intb0': 'INT B0',
+    'ot': 'OT',
+    'otb0': 'OT B0',
+    'intgen': 'INT Generations',
+    'intgenb0': 'INT Generations B0',
+    'otgen': 'OT Generations',
+    'otgenb0': 'OT Generations B0',
+};
+
+
 export interface Ship {
     pop: number;
     rule: string;
@@ -261,7 +275,7 @@ function validateType(type: string, ship: Ship): void {
         throw new Error(`Invalid ship type: '${type}'`);
     }
     if (!correct) {
-        throw new Error(`Invalid rule for ${type}: ${ship.rule}`);
+        throw new Error(`Invalid rule for ${TYPE_NAMES[type]}: ${ship.rule}`);
     }
 }
 
