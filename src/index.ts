@@ -278,7 +278,7 @@ let dataPath = join(import.meta.dirname, '..', 'data');
 //     }
 // }
 
-export async function addShipsToFiles(type: string, ships: Ship[], limit?: number): Promise<string> {
+export async function addShipsToFiles(type: string, ships: Ship[], limit?: number): Promise<[string, [string, number][], [string, number, number][]]> {
     let start = performance.now();
     let [ships2, invalidShips] = normalizeShips(type, ships, false, limit);
     // let ships2 = ships;
@@ -296,9 +296,9 @@ export async function addShipsToFiles(type: string, ships: Ship[], limit?: numbe
             obliques.push(ship);
         }
     }
-    let improvedShips: string[] = [];
+    let improvedShips: [string, number, number][] = [];
     let unchangedShips: string[] = [];
-    let newShips: string[] = [];
+    let newShips: [string, number][] = [];
     for (let [part, name] of [[orthogonals, 'orthogonal'], [diagonals, 'diagonal'], [obliques, 'oblique']] as const) {
         if (part.length === 0) {
             continue;
@@ -351,10 +351,10 @@ export async function addShipsToFiles(type: string, ships: Ship[], limit?: numbe
                 }
                 if (newShip.period === ship.period && newShip.dx === ship.dx && newShip.dy === ship.dy) {
                     if (newShip.pop < ship.pop) {
+                        improvedShips.push([speedToString(ship), newShip.pop, ship.pop]);
                         ship.pop = newShip.pop;
                         ship.rule = newShip.rule;
                         ship.rle = newShip.rle;
-                        improvedShips.push(speedToString(ship));
                     } else {
                         unchangedShips.push(speedToString(ship));
                     }
@@ -369,7 +369,7 @@ export async function addShipsToFiles(type: string, ships: Ship[], limit?: numbe
         for (let ship of part) {
             if (!found.includes(ship)) {
                 data.push(ship);
-                newShips.push(speedToString(ship));
+                newShips.push([speedToString(ship), ship.pop]);
             }
         }
         data = removeDuplicateShips(data);
@@ -380,10 +380,10 @@ export async function addShipsToFiles(type: string, ships: Ship[], limit?: numbe
         out += `${invalidShips.length} invalid ships: ${invalidShips.join(', ')}\n`;
     }
     if (newShips.length > 0) {
-        out += `${newShips.length} new ships: ${newShips.join(', ')}\n`;
+        out += `${newShips.length} new ships: ${newShips.map(x => x[0]).join(', ')}\n`;
     }
     if (improvedShips.length > 0) {
-        out += `${improvedShips.length} improved ships: ${improvedShips.join(', ')}\n`;
+        out += `${improvedShips.length} improved ships: ${improvedShips.map(x => x[0]).join(', ')}\n`;
     }
     if (unchangedShips.length > 0) {
         out += `${unchangedShips.length} unchanged ships: ${unchangedShips.join(', ')}\n`;
@@ -392,7 +392,7 @@ export async function addShipsToFiles(type: string, ships: Ship[], limit?: numbe
         out = 'No changes made\n';
     }
     out += `Update took ${((performance.now() - start) / 1000).toFixed(3)} seconds\n`;
-    return out;
+    return [out, newShips, improvedShips];
 }
 
 

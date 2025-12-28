@@ -28,9 +28,13 @@ for (let type of await fs.readdir(join(basePath, 'data'))) {
 }
 
 
+let newShips: [string, string, number][] = [];
+let improvedShips: [string, string, number, number][] = [];
+
 let lastGetTime = new Map<string, number>();
 let lastAddTime = new Map<string, number>();
 let lastGetCountsTime = new Map<string, number>();
+let lastGetNewShipsTIme = new Map<string, number>();
 
 let server = createServer(async (req, out) => {
     try {
@@ -143,7 +147,9 @@ let server = createServer(async (req, out) => {
                         console.log(`${ip} attempted to add ${ships.length} ships to type ${type}`);
                         return;
                     }
-                    let text = await addShipsToFiles(type, ships, 32768);
+                    let [text, newNewShips, newImprovedShips] = (await addShipsToFiles(type, ships, 32768));
+                    newShips.push(...newNewShips.map(x => [type, x[0], x[1]] as [string, string, number]));
+                    improvedShips.push(...newImprovedShips.map(x => [type, x[0], x[1], x[2]] as [string, string, number, number]));
                     out.writeHead(200);
                     out.write(text);
                     out.end();
@@ -186,6 +192,32 @@ let server = createServer(async (req, out) => {
             out.write(counts[type]);
             out.end();
             console.log(`${ip} got counts on type ${type}`);
+            return;
+        } else if (endpoint === 'getnewships') {
+            let value = lastGetNewShipsTIme.get(ip);
+            if (value !== undefined) {
+                if (time - value < 50) {
+                    console.log(`${ip} exceeded rate limit on getcounts after ${(time - value).toFixed(3)} seconds`);
+                    out.writeHead(429);
+                    out.end();
+                    return;
+                } else {
+                    lastGetNewShipsTIme.set(ip, time);
+                }
+            } else {
+                lastGetNewShipsTIme.set(ip, time);
+            }
+            if (ip !== '192.9.227.225') {
+                console.log(`${ip} attempted to getcounts (wrong ip)`);
+                out.writeHead(403);
+                out.end();
+            }
+            out.writeHead(200);
+            out.write(JSON.stringify({newShips, improvedShips}));
+            out.end();
+            newShips = [];
+            improvedShips = [];
+            console.log(`${ip} got new ships`);
             return;
         } else {
             console.log(`${ip} attempted to ${req.method} endpoint ${endpoint}`);

@@ -14,7 +14,7 @@ if (command === 'get') {
     out = await findSpeedRLE(type, arg);
 } else if (process.argv[2] === 'add') {
     let data = parseData((await fs.readFile(arg)).toString());
-    out = await addShipsToFiles(type, data);
+    out = (await addShipsToFiles(type, data))[0];
 } else if (process.argv[2] === 'add_rle') {
     let data: Ship[] = [];
     for (let rle of (await fs.readFile(arg)).toString().split('!')) {
@@ -24,7 +24,7 @@ if (command === 'get') {
         }
         data.push(...patternToShip(type, parse(rle + '!'), 1048576));
     }
-    out = await addShipsToFiles(type, data);
+    out = (await addShipsToFiles(type, data))[0];
 } else {
     throw new Error(`Invalid subcommand: ${process.argv[2]}`);
 }
