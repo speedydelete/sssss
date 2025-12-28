@@ -1,9 +1,10 @@
 
-import {join} from 'node:path';
+import {join, resolve} from 'node:path';
 import * as fs from 'node:fs/promises';
 import {execSync} from 'node:child_process';
+import {Worker} from 'node:worker_threads';
 import {createServer} from 'node:http';
-import {findShipRLE, parseData, addShipsToFiles} from './index.js';
+import {Ship, findShipRLE, parseData} from './index.js';
 import {speedToString} from '../lifeweb/lib/index.js';
 
 
@@ -25,6 +26,88 @@ async function updateCountFor(type: string): Promise<void> {
 
 for (let type of await fs.readdir(join(basePath, 'data'))) {
     updateCountFor(type);
+}
+
+
+type WorkerData = [string, [string, number][], [string, number, number][]];
+
+type WorkerResult = {id: number, ok: true, data: WorkerData} | {id: number, ok: false, data: string};
+
+interface JobData {
+    resolve: (data: WorkerData) => void;
+    reject: (reason?: any) => void;
+    timeout: NodeJS.Timeout;
+}
+
+let worker: Worker;
+
+let jobs = new Map<number, JobData>();
+let nextID = 0;
+
+function workerOnMessage(msg: WorkerResult): void {
+    let job = jobs.get(msg.id);
+    if (!job) {
+        return;
+    }
+    if (!msg.ok) {
+        job.reject(msg.data);
+    } else {
+        job.resolve(msg.data);
+    }
+    clearTimeout(job.timeout);
+    jobs.delete(msg.id);
+}
+
+let restarting = false;
+
+function restartWorker() {
+    if (restarting) {
+        return;
+    }
+    restarting = true;
+    try {
+        worker.terminate();
+    } catch {}
+    worker = new Worker('./server_worker.js');
+    worker.on('message', workerOnMessage);
+    worker.on('error', workerOnError);
+    worker.on('exit', workerOnExit);
+    restarting = false;
+}
+
+restartWorker();
+
+function workerHandleFatal(error: Error): void {
+    for (let job of jobs.values()) {
+        clearTimeout(job.timeout);
+        job.reject(error);
+    }
+    jobs.clear();
+    restartWorker();
+}
+
+function workerOnError(error: Error): void {
+    console.log(error);
+    workerHandleFatal(error);
+}
+
+function workerOnExit(code: number): void {
+    let msg = 'Worker exited with code ' + code;
+    console.log(msg + ' restarting worker');
+    workerHandleFatal(new Error(msg));
+}
+
+async function addShipsToFiles(type: string, ships: Ship[], limit?: number): Promise<WorkerData> {
+    return new Promise((resolve, reject) => {
+        let id = nextID++;
+        let timeout = setTimeout(() => {
+            jobs.delete(id);
+            resolve(['Timed out', [], []]);
+            restartWorker();
+        });
+        jobs.set(id, {resolve, reject, timeout});
+        worker.postMessage({id, type, ships, limit});
+    });
 }
 
 
