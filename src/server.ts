@@ -211,6 +211,7 @@ let server = createServer(async (req, out) => {
                 console.log(`${ip} attempted to getcounts (wrong ip)`);
                 out.writeHead(403);
                 out.end();
+                return;
             }
             out.writeHead(200);
             out.write(JSON.stringify({newShips, improvedShips}));
