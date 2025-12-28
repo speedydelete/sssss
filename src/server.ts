@@ -150,7 +150,7 @@ let server = createServer(async (req, out) => {
         if (endpoint === 'get') {
             let value = lastGetTime.get(ip);
             if (value !== undefined) {
-                if (time - value < 5) {
+                if (time - value < 1) {
                     out.writeHead(429);
                     out.end();
                     console.log(`${ip} exceeded rate limit on get after ${(time - value).toFixed(3)} seconds`);
