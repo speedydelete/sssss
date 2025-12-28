@@ -244,7 +244,6 @@ let server = createServer(async (req, out) => {
                     out.end();
                 }
             });
-            updateCountFor(type);
         } else if (endpoint === 'getcounts') {
             let value = lastGetCountsTime.get(ip);
             if (value !== undefined) {
