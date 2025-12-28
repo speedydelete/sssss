@@ -104,7 +104,7 @@ async function addShipsToFiles(type: string, ships: Ship[], limit?: number): Pro
             jobs.delete(id);
             resolve(['Timed out', [], []]);
             restartWorker();
-        });
+        }, 30000);
         jobs.set(id, {resolve, reject, timeout});
         worker.postMessage({id, type, ships, limit});
     });
