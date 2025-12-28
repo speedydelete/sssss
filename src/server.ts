@@ -224,8 +224,8 @@ let server = createServer(async (req, out) => {
             req.on('end', async () => {
                 try {
                     let ships = parseData(data);
-                    if (ships.length > 100) {
-                        out.writeHead(400, 'Max 100 ships');
+                    if (ships.length > 2048) {
+                        out.writeHead(400, 'Max 2048 ships');
                         out.end();
                         console.log(`${ip} attempted to add ${ships.length} ships to type ${type}`);
                         return;
