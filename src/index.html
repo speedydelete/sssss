@@ -560,6 +560,10 @@ submitButton.addEventListener('click', async () => {
         return;
     }
     let rawShips = parseData(document.getElementById('ships').value);
+    if (rawShips.length === 0) {
+        alert(`No ships provided or all ships are invalid!`);
+        return;
+    }
     let [ships, invalidShips] = normalizeShips(typeSelect.value, rawShips, false, 32768);
     if (ships.length === 0) {
         alert(`No ships provided or all ships are invalid!`);
