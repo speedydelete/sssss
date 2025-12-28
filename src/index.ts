@@ -6,7 +6,7 @@ import {Pattern, TRANSITIONS, VALID_TRANSITIONS, unparseTransitions, arrayToTran
 
 export const TYPES = ['int', 'intb0', 'ot', 'otb0', 'intgen', 'intgenb0', 'otgen', 'otgenb0'];
 
-export const TYPE_NAMES = {
+export const TYPE_NAMES: {[key: string]: string} = {
     'int': 'INT',
     'intb0': 'INT B0',
     'ot': 'OT',
