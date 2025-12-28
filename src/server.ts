@@ -1,5 +1,5 @@
 
-import {join, resolve} from 'node:path';
+import {join} from 'node:path';
 import * as fs from 'node:fs/promises';
 import {execSync} from 'node:child_process';
 import {Worker} from 'node:worker_threads';
@@ -68,7 +68,7 @@ function restartWorker() {
     try {
         worker.terminate();
     } catch {}
-    worker = new Worker('./server_worker.js');
+    worker = new Worker(join(import.meta.dirname, 'server_worker.js'));
     worker.on('message', workerOnMessage);
     worker.on('error', workerOnError);
     worker.on('exit', workerOnExit);
