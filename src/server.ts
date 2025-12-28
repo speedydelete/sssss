@@ -236,6 +236,7 @@ let server = createServer(async (req, out) => {
                     out.writeHead(200);
                     out.write(text);
                     out.end();
+                    updateCountFor(type);
                     console.log(`${ip} added ${ships.length} ships to type ${type}`);
                 } catch (error) {
                     console.error(error);
