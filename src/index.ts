@@ -440,7 +440,12 @@ export async function findShipRLE(type: string, dx: number, dy: number, period: 
     if (!data) {
         return `No such ship found in database!\n`;
     }
-    return `#C (${dx}, ${dy})/${period}, population ${data.pop}\nx = 0, y = 0, rule = ${data.rule}\n${data.rle}\n`;
+    let prefix = `(${dx}, ${dy})/${period}, population ${data.pop}`;
+    if (data.rle.startsWith('http')) {
+        return `${prefix}\nThe ship may be downloaded at ${data.rle}`;
+    } else {
+        return `#C ${prefix}\nx = 0, y = 0, rule = ${data.rule}\n${data.rle}\n`;
+    }
 }
 
 export async function findSpeedRLE(type: string, speed: string): Promise<string> {
