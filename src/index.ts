@@ -317,7 +317,7 @@ export async function addShipsToFiles(type: string, ships: Ship[], limit?: numbe
         if (part.length === 0) {
             continue;
         }
-        if (part.length > 100) {
+        if (part.length > 2048) {
             console.log('Adding ' + name + 's');
         }
         let data = parseData((await fs.readFile(join(dataPath, type, name + '.sss'))).toString());
