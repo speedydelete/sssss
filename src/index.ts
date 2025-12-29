@@ -206,7 +206,7 @@ export function normalizeShips<T extends boolean | undefined = undefined>(type: 
             ship.rle = minPhase.toRLE().split('\n').slice(1).join('');
         }
         out.push(ship);
-        if (i % 20 === 0 && i > 0) {
+        if (i % 100 === 0 && i > 0) {
             console.log(`${i}/${ships.length} ships normalized`);
         }
     }
