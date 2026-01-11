@@ -236,7 +236,7 @@ export function patternToShip(type: string, p: Pattern, limit: number = 32768): 
 }
 
 
-function validateType(type: string, ship: Ship): void {
+export function validateType(type: string, ship: Ship): void {
     let correct = false;
     let p = createPattern(ship.rule);
     if (type === 'int') {
@@ -279,6 +279,22 @@ function validateType(type: string, ship: Ship): void {
     }
 }
 
+function classifyShips(ships: Ship[]): [Ship[], Ship[], Ship[]] {
+    let orthogonals: Ship[] = [];
+    let diagonals: Ship[] = [];
+    let obliques: Ship[] = [];
+    for (let ship of ships) {
+        if (ship.dy === 0) {
+            orthogonals.push(ship);
+        } else if (ship.dx === ship.dy) {
+            diagonals.push(ship);
+        } else {
+            obliques.push(ship);
+        }
+    }
+    return [orthogonals, diagonals, obliques];
+}
+
 
 let dataPath = join(import.meta.dirname, '..', 'data');
 
@@ -297,19 +313,10 @@ export async function addShipsToFiles(type: string, ships: Ship[], limit?: numbe
     let [ships2, invalidShips] = normalizeShips(type, ships, false, limit);
     // let ships2 = ships;
     // let invalidShips: Ship[] = [];
-    let orthogonals: Ship[] = [];
-    let diagonals: Ship[] = [];
-    let obliques: Ship[] = [];
     for (let ship of ships2) {
         validateType(type, ship);
-        if (ship.dy === 0) {
-            orthogonals.push(ship);
-        } else if (ship.dx === ship.dy) {
-            diagonals.push(ship);
-        } else {
-            obliques.push(ship);
-        }
     }
+    let [orthogonals, diagonals, obliques] = classifyShips(ships2);
     let improvedShips: [string, number, number][] = [];
     let unchangedShips: string[] = [];
     let newShips: [string, number][] = [];
@@ -407,6 +414,37 @@ export async function addShipsToFiles(type: string, ships: Ship[], limit?: numbe
     }
     out += `Update took ${((performance.now() - start) / 1000).toFixed(3)} seconds\n`;
     return [out, newShips, improvedShips];
+}
+
+export async function mergeShips(type: string, ships: Ship[], limit?: number): Promise<[string, [string, number][], [string, number, number][]]> {
+    for (let ship of ships) {
+        validateType(type, ship);
+    }
+    let [orthogonals, diagonals, obliques] = classifyShips(ships);
+    let out: Ship[] = [];
+    for (let [ships, name] of [[orthogonals, 'orthogonal'], [diagonals, 'diagonal'], [obliques, 'oblique']] as const) {
+        ships = sortShips(ships);
+        let data = parseData((await fs.readFile(join(dataPath, type, name + '.sss'))).toString());
+        let startIndex = 0;
+        for (let newShip of ships) {
+            let found = false;
+            for (let i = startIndex; i < data.length; i++) {
+                let ship = data[i];
+                if (ship.period === newShip.period && ship.dx === newShip.dx && ship.dy === newShip.dy) {
+                    if (newShip.pop < ship.pop) {
+                        out.push(newShip);
+                    }
+                    found = true;
+                    startIndex = i;
+                    break;
+                }
+            }
+            if (!found) {
+                out.push(newShip);
+            }
+        }
+    }
+    return await addShipsToFiles(type, out, limit);
 }
 
 
