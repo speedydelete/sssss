@@ -445,6 +445,7 @@ export async function mergeShips(type: string, ships: Ship[], limit?: number): P
         }
     }
     return await addShipsToFiles(type, out, limit);
+    // return [shipsToString(out), [], []];
 }
 
 
