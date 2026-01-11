@@ -311,7 +311,9 @@ let server = createServer(async (req, out) => {
         }
     } catch (error) {
         console.error(error);
-        out.writeHead(500);
+        if (!out.headersSent) {
+            out.writeHead(500);
+        }
         out.end();
     }
 });
