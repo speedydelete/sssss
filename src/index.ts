@@ -479,7 +479,7 @@ export async function findShipRLE(type: string, dx: number, dy: number, period: 
     if (!data) {
         return `No such ship found in database!\n`;
     }
-    let prefix = `(${dx}, ${dy})/${period}, population ${data.pop}`;
+    let prefix = `(${dx}, ${dy})c/${period}, population ${data.pop}`;
     if (data.rle.startsWith('http')) {
         return `${prefix}\nThe ship may be downloaded at ${data.rle}`;
     } else {
