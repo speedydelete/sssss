@@ -227,7 +227,7 @@ let server = createServer(async (req, out) => {
                     if (ships.length > 2048) {
                         out.writeHead(400, 'Max 2048 ships');
                         out.end();
-                        console.log(`${ip} attempted to add ${ships.length} ships to type ${type}`);
+                        console.log(`${ip} attempted to add ${ships.length} ships to type ${type} (more than 2048)`);
                         return;
                     }
                     let [text, newNewShips, newImprovedShips] = (await addShipsToFiles(type, ships, 32768));
