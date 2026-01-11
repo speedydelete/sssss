@@ -17,3 +17,5 @@ parentPort.on('message', async ({id, type, ships, limit}: {id: number, type: str
         parentPort.postMessage({id, ok: false, data: (error instanceof Error && error.stack) ? error.stack : String(error)});
     }
 });
+
+setInterval(() => {}, 1 << 30);
