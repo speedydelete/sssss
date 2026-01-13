@@ -481,7 +481,7 @@ export async function findShipRLE(type: string, dx: number, dy: number, period: 
     }
     let prefix = `(${dx}, ${dy})c/${period}, population ${data.pop}`;
     if (data.rle.startsWith('http')) {
-        return `${prefix}\nThe ship may be downloaded at ${data.rle}`;
+        return `${prefix}\nThis ship may be downloaded at ${data.rle}`;
     } else {
         return `#C ${prefix}\nx = 0, y = 0, rule = ${data.rule}\n${data.rle}\n`;
     }
