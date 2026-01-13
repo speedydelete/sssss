@@ -327,4 +327,4 @@ function updateDataZip() {
 }
 
 updateDataZip();
-setInterval(updateDataZip, 86400000);
+setInterval(updateDataZip, 3600000);
