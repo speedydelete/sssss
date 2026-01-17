@@ -1,7 +1,7 @@
 
 import {join} from 'node:path';
 import * as fs from 'node:fs/promises';
-import {Pattern, TRANSITIONS, VALID_TRANSITIONS, unparseTransitions, arrayToTransitions, MAPPattern, MAPB0Pattern, MAPGenPattern, MAPB0GenPattern, findType, findMinmax, createPattern, parse, parseSpeed, speedToString} from '../lifeweb/lib/index.js';
+import {Pattern, TRANSITIONS, VALID_TRANSITIONS, unparseTransitions, arrayToTransitions, MAPPattern, MAPB0Pattern, MAPGenPattern, MAPGenB0Pattern, findType, findMinmax, createPattern, parse, parseSpeed, speedToString} from '../lifeweb/lib/index.js';
 
 
 export const TYPES = ['int', 'intb0', 'ot', 'otb0', 'intgen', 'intgenb0', 'otgen', 'otgenb0'];
@@ -165,7 +165,7 @@ export function normalizeShips<T extends boolean | undefined = undefined>(type: 
             }
         }
         ship.rule = findMinmax(p, limit, undefined, undefined, isOT)[0];
-        if (p instanceof MAPB0Pattern || p instanceof MAPB0GenPattern) {
+        if (p instanceof MAPB0Pattern || p instanceof MAPGenB0Pattern) {
             let minPop = type.phases[0].population;
             let minPhase = type.phases[0];
             let evenRule = ship.rule;
@@ -260,7 +260,7 @@ export function validateType(type: string, ship: Ship): void {
             correct = true;
         }
     } else if (type === 'intgenb0') {
-        if (p instanceof MAPB0GenPattern && p.ruleSymmetry === 'D8') {
+        if (p instanceof MAPGenB0Pattern && p.ruleSymmetry === 'D8') {
             correct = true;
         }
     } else if (type === 'otgen') {
@@ -268,7 +268,7 @@ export function validateType(type: string, ship: Ship): void {
             correct = true;
         }
     } else if (type === 'otgenb0') {
-        if (p instanceof MAPB0GenPattern && p.ruleStr.match(/^[0-8]*\/0[1-8]*\/\d+$/)) {
+        if (p instanceof MAPGenB0Pattern && p.ruleStr.match(/^[0-8]*\/0[1-8]*\/\d+$/)) {
             correct = true;
         }
     } else {
