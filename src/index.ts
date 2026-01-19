@@ -25,6 +25,7 @@ export interface Ship {
     dy: number;
     period: number;
     rle: string;
+    comment?: string;
 }
 
 export function parseData(data: string): Ship[] {
@@ -45,6 +46,7 @@ export function parseData(data: string): Ship[] {
             dy: parseInt(info[3]),
             period: parseInt(info[4]),
             rle: info[5],
+            comment: info[6] ? info.slice(6).join(' ') : undefined,
         });
     }
     return out;
@@ -53,7 +55,10 @@ export function parseData(data: string): Ship[] {
 export function shipsToString(ships: Ship[]): string {
     let out = '';
     for (let ship of ships) {
-        out += ship.pop + ', ' + ship.rule + ', ' + ship.dx + ', ' + ship.dy + ', ' + ship.period + ', ' + ship.rle + '\n';
+        out += ship.pop + ', ' + ship.rule + ', ' + ship.dx + ', ' + ship.dy + ', ' + ship.period + ', ' + ship.rle;
+        if (ship.comment) {
+            out += ', ' + ship.comment;
+        }
     }
     return out;
 }
@@ -540,15 +545,15 @@ export async function findShip(type: string, dx: number, dy: number, period: num
 }
 
 export async function findShipRLE(type: string, dx: number, dy: number, period: number): Promise<string> {
-    let data = await findShip(type, dx, dy, period);
-    if (!data) {
+    let ship = await findShip(type, dx, dy, period);
+    if (!ship) {
         return `No such ship found in database!\n`;
     }
-    let prefix = `${dx === 0 && dy === 0 ? 'p' : `(${dx}, ${dy})c/`}${period}, population ${data.pop}`;
-    if (data.rle.startsWith('http')) {
-        return `${prefix}\nThis ship may be downloaded at ${data.rle}`;
+    let prefix = `${dx === 0 && dy === 0 ? 'p' : `(${dx}, ${dy})c/`}${period}, population ${ship.pop}`;
+    if (ship.rle.startsWith('http')) {
+        return `${prefix}\n${ship.comment ? ship.comment + '\n' : ''}This ship may be downloaded at ${ship.rle}`;
     } else {
-        return `#C ${prefix}\nx = 0, y = 0, rule = ${data.rule}\n${data.rle}\n`;
+        return `#C ${prefix}\n${ship.comment ? `#C ${ship.comment}\n` : ''}x = 0, y = 0, rule = ${ship.rule}\n${ship.rle}\n`;
     }
 }
 
