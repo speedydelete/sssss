@@ -29,7 +29,7 @@ for (let type of await fs.readdir(join(basePath, 'data'))) {
 }
 
 
-type WorkerData = [string, [string, number][], [string, number, number][]];
+type WorkerData = [string, {newShips: [string, number][], improvedShips: [string, number, number][], newPeriods: [string, number][], improvedPeriods: [string, number, number][]}];
 
 type WorkerResult = {id: number, ok: true, data: WorkerData} | {id: number, ok: false, data: string};
 
@@ -102,7 +102,7 @@ async function addShipsToFiles(type: string, ships: Ship[], limit?: number): Pro
         let id = nextID++;
         let timeout = setTimeout(() => {
             jobs.delete(id);
-            resolve(['Timed out', [], []]);
+            resolve(['Timed out', {newShips: [], improvedShips: [], newPeriods: [], improvedPeriods: []}]);
             restartWorker();
         }, 30000);
         jobs.set(id, {resolve, reject, timeout});
@@ -113,6 +113,8 @@ async function addShipsToFiles(type: string, ships: Ship[], limit?: number): Pro
 
 let newShips: [string, string, number][] = [];
 let improvedShips: [string, string, number, number][] = [];
+let newPeriods: [string, string, number][] = [];
+let improvedPeriods: [string, string, number, number][] = [];
 
 let lastGetTime = new Map<string, number>();
 let lastAddTime = new Map<string, number>();
@@ -121,12 +123,14 @@ let lastGetNewShipsTIme = new Map<string, number>();
 
 let server = createServer(async (req, out) => {
     try {
-        let ip = req.headers['x-forwarded-for'] as string;
-        if (!ip) {
-            out.writeHead(400, 'No IP address; cannot determine rate limits');
-            out.end();
-            return;
-        }
+        // let ip = req.headers['x-forwarded-for'] as string;
+        // if (!ip) {
+        //     out.writeHead(400, 'No IP address; cannot determine rate limits');
+        //     out.end();
+        //     return;
+        // }
+        let ip = '127.0.0.1';
+        out.setHeader('Access-Control-Allow-Origin', '*');
         let index = ip.indexOf(',');
         if (index !== -1) {
             ip = ip.slice(0, index);
@@ -230,9 +234,11 @@ let server = createServer(async (req, out) => {
                         console.log(`${ip} attempted to add ${ships.length} ships to type ${type} (more than 2048)`);
                         return;
                     }
-                    let [text, newNewShips, newImprovedShips] = (await addShipsToFiles(type, ships, 32768));
-                    newShips.push(...newNewShips.map(x => [type, x[0], x[1]] as [string, string, number]));
-                    improvedShips.push(...newImprovedShips.map(x => [type, x[0], x[1], x[2]] as [string, string, number, number]));
+                    let [text, speeds] = (await addShipsToFiles(type, ships, 32768));
+                    newShips.push(...speeds.newShips.map(x => [type, x[0], x[1]] as [string, string, number]));
+                    improvedShips.push(...speeds.improvedShips.map(x => [type, x[0], x[1], x[2]] as [string, string, number, number]));
+                    newPeriods.push(...speeds.newPeriods.map(x => [type, x[0], x[1]] as [string, string, number]));
+                    improvedPeriods.push(...speeds.improvedPeriods.map(x => [type, x[0], x[1], x[2]] as [string, string, number, number]));
                     out.writeHead(200);
                     out.write(text);
                     out.end();
@@ -297,7 +303,7 @@ let server = createServer(async (req, out) => {
                 return;
             }
             out.writeHead(200);
-            out.write(JSON.stringify({newShips, improvedShips}));
+            out.write(JSON.stringify({newShips, improvedShips, newPeriods, improvedPeriods}));
             out.end();
             newShips = [];
             improvedShips = [];
@@ -326,5 +332,5 @@ function updateDataZip() {
     execSync(`cp ${join(basePath, 'data.zip')} /var/www/html/5s/data.zip`, {stdio: 'inherit'});
 }
 
-updateDataZip();
+// updateDataZip();
 setInterval(updateDataZip, 3600000);

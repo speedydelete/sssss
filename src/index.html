@@ -203,7 +203,75 @@ option {
         <script>'use strict';function printError(e,c='red'){let x=String(e instanceof Error?('stack' in e?e.stack:e):e);if(!x.includes('Error')){x=String(e)+'\n'+x}x=x.replaceAll('@',' at ');if(!(document.readyState==='complete')){alert(x);return;}document.querySelectorAll('body > *').forEach(x=>x.remove());let t=document.createElement('pre');t.style.color=c;t.style.marginTop='100px';t.style.fontFamily='\'Courier New\',Courier,monospace';t.style.fontSize='14px';t.style.overflowWrap='break-word';t.textContent=x.replaceAll(/file:\/\/\/media\/fuse\/drivefs-[0-9a-f]+\/root\/code\//g,'');document.body.appendChild(t);let l=setInterval(()=>{},0);for(let j=1;j<=l;j++){clearInterval(j);}window.onkeydown=()=>{};}window.addEventListener('error',e=>{printError(e.error);return true;});window.addEventListener('unhandledrejection',e=>{e.preventDefault();printError(e.reason);});</script>
         <script type="module">
 
-import {TRANSITIONS, VALID_TRANSITIONS, unparseTransitions, arrayToTransitions, MAPPattern, MAPGenPattern, MAPB0Pattern, MAPB0GenPattern, findType, findMinmax, createPattern, parse, parseSpeed, speedToString} from '../lifeweb/index.js';
+import {TRANSITIONS, VALID_TRANSITIONS, unparseTransitions, arrayToTransitions, MAPPattern, MAPGenPattern, MAPB0Pattern, MAPGenB0Pattern as MAPB0GenPattern, findType, findMinmax, createPattern, parse} from '../lifeweb/lib/index.js';
+
+
+export function parseSpeed(speed) {
+    speed = speed.toLowerCase();
+    let disp;
+    let period;
+    if (speed.includes('c')) {
+        [disp, period] = speed.split('c');
+        if (period.startsWith('/')) {
+            period = period.slice(1);
+        }
+    } else if (speed.includes('/')) {
+        [disp, period] = speed.split('/');
+    } else if (speed.startsWith('p')) {
+        return {dx: 0, dy: 0, period: parseInt(speed.slice(1))};
+    } else {
+        throw new Error('Invalid speed!');
+    }
+    let p = parseInt(period);
+    let x;
+    let y;
+    let num = parseInt(disp);
+    if (!Number.isNaN(num)) {
+        x = num;
+        if (period.endsWith('d')) {
+            y = num;
+        } else {
+            y = 0;
+        }
+    } else if (disp.startsWith('(')) {
+        let parts = disp.slice(1, -1).split(',');
+        x = parseInt(parts[0]);
+        y = parseInt(parts[1]);
+        if (Number.isNaN(x) || Number.isNaN(y) || parts.length !== 2) {
+            throw new Error('Invalid speed!');
+        }
+    } else if (disp === '') {
+        x = 1;
+        if (period.endsWith('d')) {
+            y = 1;
+        } else {
+            y = 0;
+        }
+    } else {
+        throw new Error('Invalid speed!');
+    }
+    return {dx: x, dy: y, period: p};
+}
+
+export function speedToString({dx, dy, period}) {
+    if (dy === 0) {
+        if (dx === 0) {
+            return `p${period}`;
+        } else if (dx === 1) {
+            return `c/${period}o`;
+        } else {
+            return `${dx}c/${period}o`;
+        }
+    } else if (dx === dy) {
+        if (dx === 1) {
+            return `c/${period}d`;
+        } else {
+            return `${dx}c/${period}d`;
+        }
+    } else {
+        return `(${dx}, ${dy})c/${period}`;
+    }
+}
 
 
 const TYPES = ['int', 'intb0', 'ot', 'otb0', 'intgen', 'intgenb0', 'otgen', 'otgenb0'];
@@ -234,7 +302,7 @@ function parseData(data) {
                 if (currentRLE !== '') {
                     let p = parse(currentRLE);
                     let type = findType(p, 32768, false);
-                    if (!type.disp || (type.disp[0] === 0 && type.disp[1] === 0)) {
+                    if (!type.disp) {
                         alert(`Pattern #${rleNumber} is not a spaceship or its period is higher than 32768!`);
                     } else {
                         out.push({
@@ -259,7 +327,7 @@ function parseData(data) {
             let p = parse(currentRLE);
             let type = findType(p, 32768);
             p.run(type.stabilizedAt);
-            if (!type.disp || (type.disp[0] === 0 && type.disp[1] === 0)) {
+            if (!type.disp) {
                 alert(`Pattern #${rleNumber} is not a spaceship or its period is higher than 32768!`);
             } else {
                 out.push({
@@ -522,14 +590,14 @@ let shipsOutput = document.getElementById('ships-out');
 let submitButton = document.getElementById('submit');
 
 async function getCounts() {
-    let resp = await fetch(`./api/getcounts?type=${typeSelect.value}`);
+    let resp = await fetch(`http://localhost:3000/getcounts?type=${typeSelect.value}`);
     if (resp.ok) {
         countsOutput.textContent = await resp.text();
     } else {
         countsOutput.textContent = '';
         if (resp.status === 429) {
             setTimeout(async () => {
-                let resp = await fetch(`./api/getcounts?type=${typeSelect.value}`);
+                let resp = await fetch(`http://localhost:3000/getcounts?type=${typeSelect.value}`);
                 if (resp.ok) {
                     countsOutput.textContent = await resp.text();
                 }
@@ -546,7 +614,7 @@ searchButton.addEventListener('click', async () => {
         return;
     }
     let {dx, dy, period} = data;
-    let resp = await fetch(`./api/get?type=${typeSelect.value}&dx=${dx}&dy=${dy}&period=${period}`);
+    let resp = await fetch(`http://localhost:3000/get?type=${typeSelect.value}&dx=${dx}&dy=${dy}&period=${period}`);
     if (resp.ok) {
         searchOutput.textContent = await resp.text();
     } else {
@@ -588,7 +656,7 @@ submitButton.addEventListener('click', async () => {
     shipsOutput.textContent = 'Adding ships...';
     submitButton.textContent = 'Back';
     isBackButton = true;
-    let resp = await fetch(`./api/add?type=${typeSelect.value}`, {
+    let resp = await fetch(`http://localhost:3000/add?type=${typeSelect.value}`, {
         method: 'POST',
         body: shipsToString(ships),
     });

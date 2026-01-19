@@ -520,7 +520,7 @@ export async function findShip(type: string, dx: number, dy: number, period: num
     }
     let file: 'oscillator' | 'orthogonal' | 'diagonal' | 'oblique';
     if (dy === 0) {
-        if (dy === 0) {
+        if (dx === 0) {
             file = 'oscillator';
         } else {
             file = 'orthogonal';
@@ -544,7 +544,7 @@ export async function findShipRLE(type: string, dx: number, dy: number, period: 
     if (!data) {
         return `No such ship found in database!\n`;
     }
-    let prefix = `(${dx}, ${dy})c/${period}, population ${data.pop}`;
+    let prefix = `${dx === 0 && dy === 0 ? 'p' : `(${dx}, ${dy})c/`}${period}, population ${data.pop}`;
     if (data.rle.startsWith('http')) {
         return `${prefix}\nThis ship may be downloaded at ${data.rle}`;
     } else {
@@ -556,10 +556,3 @@ export async function findSpeedRLE(type: string, speed: string): Promise<string>
     let {dx, dy, period} = parseSpeed(speed);
     return await findShipRLE(type, dx, dy, period);
 }
-
-
-let data = parseData((await fs.readFile('data/int/oscillator.sss')).toString());
-
-data = removeDuplicateShips(normalizeShips('int', data));
-
-await fs.writeFile('oscillator2.sss', shipsToString(data));
