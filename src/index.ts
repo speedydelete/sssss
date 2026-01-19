@@ -103,6 +103,9 @@ export function normalizeShips<T extends boolean | undefined = undefined>(type: 
     for (let i = 0; i < ships.length; i++) {
         let ship = ships[i];
         let p = parse(`x = 0, y = 0, rule = ${ship.rule}\n${ship.rle}`);
+        if (p.isEmpty()) {
+            continue;
+        }
         let limit = Math.ceil(ship.period / p.rulePeriod) * p.rulePeriod + 1;
         if (globalLimit !== undefined) {
             limit = Math.min(limit, globalLimit);
