@@ -344,13 +344,22 @@ function normalizeShips(type, ships, throwInvalid, globalLimit) {
     for (let i = 0; i < ships.length; i++) {
         let ship = ships[i];
         let p = parse(`x = 0, y = 0, rule = ${ship.rule}\n${ship.rle}`);
+        if (p.isEmpty()) {
+            if (throwInvalid) {
+                throw new Error(`Invalid ship detected: ${shipsToString([ship]).slice(0, -1)}`);
+            } else {
+                console.log(`Invalid ship detected: ${shipsToString([ship]).slice(0, -1)}`);
+                invalidShips.push(speedToString(ship));
+                continue;
+            }
+        }
         let limit = Math.ceil(ship.period / p.rulePeriod) * p.rulePeriod + 1;
         if (globalLimit !== undefined) {
             limit = Math.min(limit, globalLimit);
         }
         let type = findType(p, limit);
         p.run(type.stabilizedAt);
-        if (!type.disp || (type.disp[0] === 0 && type.disp[1] === 0)) {
+        if (!type.disp) {
             if (throwInvalid) {
                 throw new Error(`Invalid ship detected: ${shipsToString([ship]).slice(0, -1)}`);
             } else {
@@ -364,44 +373,46 @@ function normalizeShips(type, ships, throwInvalid, globalLimit) {
         }
         ship.dx = type.disp[0];
         ship.dy = type.disp[1];
-        if (ship.dx === 0 && ship.dy !== 0) {
-            p.rotateRight();
-            ship.dx = -ship.dy;
-            ship.dy = 0;
-            type = findType(p, limit, false);
-            if (type.period !== ship.period || !type.disp || ship.dx !== type.disp[0] || ship.dy !== type.disp[1]) {
-                if (throwInvalid) {
-                    throw new Error(`Invalid ship detected: ${shipsToString([ship]).slice(0, -1)}`);
-                } else {
-                    console.log(`Invalid ship detected: ${shipsToString([ship]).slice(0, -1)}`);
-                    invalidShips.push(speedToString(ship));
-                    continue;
+        if (ship.dx !== 0 || ship.dy !== 0) {
+            if (ship.dx === 0 && ship.dy !== 0) {
+                p.rotateRight();
+                ship.dx = -ship.dy;
+                ship.dy = 0;
+                type = findType(p, limit, false);
+                if (type.period !== ship.period || !type.disp || ship.dx !== type.disp[0] || ship.dy !== type.disp[1]) {
+                    if (throwInvalid) {
+                        throw new Error(`Invalid ship detected: ${shipsToString([ship]).slice(0, -1)}`);
+                    } else {
+                        console.log(`Invalid ship detected: ${shipsToString([ship]).slice(0, -1)}`);
+                        invalidShips.push(speedToString(ship));
+                        continue;
+                    }
                 }
             }
-        }
-        if (ship.dx < 0 || ship.dy < 0 || Math.abs(ship.dx) < Math.abs(ship.dy)) {
-            if (ship.dx < 0) {
-                p.flipHorizontal();
-                ship.dx = -ship.dx;
-            }
-            if (ship.dy < 0) {
-                p.flipVertical();
-                ship.dy = -ship.dy;
-            }
-            if (ship.dx < ship.dy) {
-                let temp = ship.dx;
-                ship.dx = ship.dy;
-                ship.dy = temp;
-                p.rotateLeft().flipVertical();
-            }
-            type = findType(p, limit, false);
-            if (type.period !== ship.period || !type.disp || ship.dx !== type.disp[0] || ship.dy !== type.disp[1]) {
-                if (throwInvalid) {
-                    throw new Error(`Invalid ship detected: ${shipsToString([ship]).slice(0, -1)}`);
-                } else {
-                    console.log(`Invalid ship detected: ${shipsToString([ship]).slice(0, -1)}`);
-                    invalidShips.push(speedToString(ship));
-                    continue;
+            if (ship.dx < 0 || ship.dy < 0 || Math.abs(ship.dx) < Math.abs(ship.dy)) {
+                if (ship.dx < 0) {
+                    p.flipHorizontal();
+                    ship.dx = -ship.dx;
+                }
+                if (ship.dy < 0) {
+                    p.flipVertical();
+                    ship.dy = -ship.dy;
+                }
+                if (ship.dx < ship.dy) {
+                    let temp = ship.dx;
+                    ship.dx = ship.dy;
+                    ship.dy = temp;
+                    p.rotateLeft().flipVertical();
+                }
+                type = findType(p, limit, false);
+                if (type.period !== ship.period || !type.disp || ship.dx !== type.disp[0] || ship.dy !== type.disp[1]) {
+                    if (throwInvalid) {
+                        throw new Error(`Invalid ship detected: ${shipsToString([ship]).slice(0, -1)}`);
+                    } else {
+                        console.log(`Invalid ship detected: ${shipsToString([ship]).slice(0, -1)}`);
+                        invalidShips.push(speedToString(ship));
+                        continue;
+                    }
                 }
             }
         }

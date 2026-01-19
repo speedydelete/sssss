@@ -96,15 +96,27 @@ export function removeDuplicateShips(ships: Ship[]): Ship[] {
     return out;
 }
 
-export function normalizeShips<T extends boolean | undefined = undefined>(type: string, ships: Ship[], throwInvalid?: T, globalLimit?: number): T extends false ? [Ship[], string[]] : Ship[] {
+export function normalizeShips<T extends boolean | undefined = undefined>(type: string, ships: Ship[], throwInvalid?: T, globalLimit?: number): T extends false ? [Ship[], string[], string[]] : Ship[] {
     let isOT = type.startsWith('ot');
     let out: Ship[] = [];
     let invalidShips: string[] = [];
+    let invalidPeriods: string[] = [];
     for (let i = 0; i < ships.length; i++) {
         let ship = ships[i];
         let p = parse(`x = 0, y = 0, rule = ${ship.rule}\n${ship.rle}`);
         if (p.isEmpty()) {
-            continue;
+            if (throwInvalid) {
+                throw new Error(`Invalid ship detected: ${shipsToString([ship]).slice(0, -1)}`);
+            } else {
+                console.log(`Invalid ship detected: ${shipsToString([ship]).slice(0, -1)}`);
+                let str = speedToString(ship);
+                if (str.startsWith('p')) {
+                    invalidPeriods.push(str);
+                } else {
+                    invalidShips.push(str);
+                }
+                continue;
+            }
         }
         let limit = Math.ceil(ship.period / p.rulePeriod) * p.rulePeriod + 1;
         if (globalLimit !== undefined) {
@@ -112,12 +124,16 @@ export function normalizeShips<T extends boolean | undefined = undefined>(type: 
         }
         let type = findType(p, limit);
         p.run(type.stabilizedAt);
-        if (!type.disp || (type.disp[0] === 0 && type.disp[1] === 0)) {
+        if (!type.disp) {
             if (throwInvalid) {
                 throw new Error(`Invalid ship detected: ${shipsToString([ship]).slice(0, -1)}`);
             } else {
                 console.log(`Invalid ship detected: ${shipsToString([ship]).slice(0, -1)}`);
-                invalidShips.push(speedToString(ship));
+                if (ship.dx === 0 && ship.dy === 0) {
+                    invalidPeriods.push(speedToString(ship));
+                } else {
+                    invalidShips.push(speedToString(ship));
+                }
                 continue;
             }
         }
@@ -126,44 +142,54 @@ export function normalizeShips<T extends boolean | undefined = undefined>(type: 
         }
         ship.dx = type.disp[0];
         ship.dy = type.disp[1];
-        if (ship.dx === 0 && ship.dy !== 0) {
-            p.rotateRight();
-            ship.dx = -ship.dy;
-            ship.dy = 0;
-            type = findType(p, limit, false);
-            if (type.period !== ship.period || !type.disp || ship.dx !== type.disp[0] || ship.dy !== type.disp[1]) {
-                if (throwInvalid) {
-                    throw new Error(`Invalid ship detected: ${shipsToString([ship]).slice(0, -1)}`);
-                } else {
-                    console.log(`Invalid ship detected: ${shipsToString([ship]).slice(0, -1)}`);
-                    invalidShips.push(speedToString(ship));
-                    continue;
+        if (ship.dx !== 0 || ship.dy !== 0) {
+            if (ship.dx === 0 && ship.dy !== 0) {
+                p.rotateRight();
+                ship.dx = -ship.dy;
+                ship.dy = 0;
+                type = findType(p, limit, false);
+                if (type.period !== ship.period || !type.disp || ship.dx !== type.disp[0] || ship.dy !== type.disp[1]) {
+                    if (throwInvalid) {
+                        throw new Error(`Invalid ship detected: ${shipsToString([ship]).slice(0, -1)}`);
+                    } else {
+                        console.log(`Invalid ship detected: ${shipsToString([ship]).slice(0, -1)}`);
+                        if (ship.dx === 0 && ship.dy === 0) {
+                            invalidPeriods.push(speedToString(ship));
+                        } else {
+                            invalidShips.push(speedToString(ship));
+                        }
+                        continue;
+                    }
                 }
             }
-        }
-        if (ship.dx < 0 || ship.dy < 0 || Math.abs(ship.dx) < Math.abs(ship.dy)) {
-            if (ship.dx < 0) {
-                p.flipHorizontal();
-                ship.dx = -ship.dx;
-            }
-            if (ship.dy < 0) {
-                p.flipVertical();
-                ship.dy = -ship.dy;
-            }
-            if (ship.dx < ship.dy) {
-                let temp = ship.dx;
-                ship.dx = ship.dy;
-                ship.dy = temp;
-                p.rotateLeft().flipVertical();
-            }
-            type = findType(p, limit, false);
-            if (type.period !== ship.period || !type.disp || ship.dx !== type.disp[0] || ship.dy !== type.disp[1]) {
-                if (throwInvalid) {
-                    throw new Error(`Invalid ship detected: ${shipsToString([ship]).slice(0, -1)}`);
-                } else {
-                    console.log(`Invalid ship detected: ${shipsToString([ship]).slice(0, -1)}`);
-                    invalidShips.push(speedToString(ship));
-                    continue;
+            if (ship.dx < 0 || ship.dy < 0 || Math.abs(ship.dx) < Math.abs(ship.dy)) {
+                if (ship.dx < 0) {
+                    p.flipHorizontal();
+                    ship.dx = -ship.dx;
+                }
+                if (ship.dy < 0) {
+                    p.flipVertical();
+                    ship.dy = -ship.dy;
+                }
+                if (ship.dx < ship.dy) {
+                    let temp = ship.dx;
+                    ship.dx = ship.dy;
+                    ship.dy = temp;
+                    p.rotateLeft().flipVertical();
+                }
+                type = findType(p, limit, false);
+                if (type.period !== ship.period || !type.disp || ship.dx !== type.disp[0] || ship.dy !== type.disp[1]) {
+                    if (throwInvalid) {
+                        throw new Error(`Invalid ship detected: ${shipsToString([ship]).slice(0, -1)}`);
+                    } else {
+                        console.log(`Invalid ship detected: ${shipsToString([ship]).slice(0, -1)}`);
+                        if (ship.dx === 0 && ship.dy === 0) {
+                            invalidPeriods.push(speedToString(ship));
+                        } else {
+                            invalidShips.push(speedToString(ship));
+                        }
+                        continue;
+                    }
                 }
             }
         }
@@ -215,7 +241,7 @@ export function normalizeShips<T extends boolean | undefined = undefined>(type: 
     }
     out = removeDuplicateShips(out);
     // @ts-ignore
-    return throwInvalid === false ? [out, invalidShips] : out;
+    return throwInvalid === false ? [out, invalidShips, invalidPeriods] : out;
 }
 
 
@@ -282,20 +308,25 @@ export function validateType(type: string, ship: Ship): void {
     }
 }
 
-function classifyShips(ships: Ship[]): [Ship[], Ship[], Ship[]] {
+function classifyShips(ships: Ship[]): [Ship[], Ship[], Ship[], Ship[]] {
+    let oscillators: Ship[] = [];
     let orthogonals: Ship[] = [];
     let diagonals: Ship[] = [];
     let obliques: Ship[] = [];
     for (let ship of ships) {
         if (ship.dy === 0) {
-            orthogonals.push(ship);
+            if (ship.dx === 0) {
+                oscillators.push(ship);
+            } else {
+                orthogonals.push(ship);
+            }
         } else if (ship.dx === ship.dy) {
             diagonals.push(ship);
         } else {
             obliques.push(ship);
         }
     }
-    return [orthogonals, diagonals, obliques];
+    return [oscillators, orthogonals, diagonals, obliques];
 }
 
 
@@ -311,19 +342,22 @@ let dataPath = join(import.meta.dirname, '..', 'data');
 //     }
 // }
 
-export async function addShipsToFiles(type: string, ships: Ship[], limit?: number): Promise<[string, [string, number][], [string, number, number][]]> {
+export async function addShipsToFiles(type: string, ships: Ship[], limit?: number): Promise<[string, {newShips: [string, number][], improvedShips: [string, number, number][], newPeriods: [string, number][], improvedPeriods: [string, number, number][]}]> {
     let start = performance.now();
-    let [ships2, invalidShips] = normalizeShips(type, ships, false, limit);
+    let [ships2, invalidShips, invalidPeriods] = normalizeShips(type, ships, false, limit);
     // let ships2 = ships;
     // let invalidShips: Ship[] = [];
     for (let ship of ships2) {
         validateType(type, ship);
     }
-    let [orthogonals, diagonals, obliques] = classifyShips(ships2);
+    let [oscillators, orthogonals, diagonals, obliques] = classifyShips(ships2);
+    let newShips: [string, number][] = [];
     let improvedShips: [string, number, number][] = [];
     let unchangedShips: string[] = [];
-    let newShips: [string, number][] = [];
-    for (let [part, name] of [[orthogonals, 'orthogonal'], [diagonals, 'diagonal'], [obliques, 'oblique']] as const) {
+    let newPeriods: [string, number][] = [];
+    let improvedPeriods: [string, number, number][] = [];
+    let unchangedPeriods: string[] = [];
+    for (let [part, name] of [[oscillators, 'oscillator'], [orthogonals, 'orthogonal'], [diagonals, 'diagonal'], [obliques, 'oblique']] as const) {
         if (part.length === 0) {
             continue;
         }
@@ -375,12 +409,20 @@ export async function addShipsToFiles(type: string, ships: Ship[], limit?: numbe
                 }
                 if (newShip.period === ship.period && newShip.dx === ship.dx && newShip.dy === ship.dy) {
                     if (newShip.pop < ship.pop) {
-                        improvedShips.push([speedToString(ship), newShip.pop, ship.pop]);
+                        if (ship.dx === 0 && ship.dy === 0) {
+                            improvedPeriods.push([speedToString(ship), newShip.pop, ship.pop]);
+                        } else {
+                            improvedShips.push([speedToString(ship), newShip.pop, ship.pop]);
+                        }
                         ship.pop = newShip.pop;
                         ship.rule = newShip.rule;
                         ship.rle = newShip.rle;
                     } else {
-                        unchangedShips.push(speedToString(ship));
+                        if (ship.dx === 0 && ship.dy === 0) {
+                            unchangedPeriods.push(speedToString(ship));
+                        } else {
+                            unchangedShips.push(speedToString(ship));
+                        }
                     }
                     found.push(newShip);
                     break;
@@ -393,7 +435,11 @@ export async function addShipsToFiles(type: string, ships: Ship[], limit?: numbe
         for (let ship of part) {
             if (!found.includes(ship)) {
                 data.push(ship);
-                newShips.push([speedToString(ship), ship.pop]);
+                if (ship.dx === 0 && ship.dy === 0) {
+                    newPeriods.push([speedToString(ship), ship.pop]);
+                } else {
+                    newShips.push([speedToString(ship), ship.pop]);
+                }
             }
         }
         data = removeDuplicateShips(data);
@@ -401,31 +447,43 @@ export async function addShipsToFiles(type: string, ships: Ship[], limit?: numbe
     }
     let out = '';
     if (invalidShips.length > 0) {
-        out += `${invalidShips.length} invalid ships: ${invalidShips.join(', ')}\n`;
+        out += `${invalidShips.length} invalid ship${invalidShips.length === 1 ? '' : 's'}: ${invalidShips.join(', ')}\n`;
+    }
+    if (invalidPeriods.length > 0) {
+        out += `${invalidShips.length} invalid period${invalidPeriods.length === 1 ? '' : 's'}: ${invalidShips.join(', ')}\n`;
     }
     if (newShips.length > 0) {
-        out += `${newShips.length} new ships: ${newShips.map(x => x[0]).join(', ')}\n`;
+        out += `${newShips.length} new ship${newShips.length === 1 ? '' : 's'}: ${newShips.map(x => x[0]).join(', ')}\n`;
     }
     if (improvedShips.length > 0) {
-        out += `${improvedShips.length} improved ships: ${improvedShips.map(x => x[0]).join(', ')}\n`;
+        out += `${improvedShips.length} improved ship${improvedShips.length === 1 ? '' : 's'}: ${improvedShips.map(x => x[0]).join(', ')}\n`;
     }
     if (unchangedShips.length > 0) {
-        out += `${unchangedShips.length} unchanged ships: ${unchangedShips.join(', ')}\n`;
+        out += `${unchangedShips.length} unchanged ship${unchangedShips.length === 1 ? '' : 's'}: ${unchangedShips.join(', ')}\n`;
     }
-    if (invalidShips.length === 0 && newShips.length === 0 && improvedShips.length === 0 && unchangedShips.length === 0) {
+    if (newPeriods.length > 0) {
+        out += `${newPeriods.length} new period${newPeriods.length === 1 ? '' : 's'}: ${newPeriods.map(x => x[0]).join(', ')}\n`;
+    }
+    if (improvedPeriods.length > 0) {
+        out += `${improvedPeriods.length} improved period${improvedPeriods.length === 1 ? '' : 's'}: ${improvedPeriods.map(x => x[0]).join(', ')}\n`;
+    }
+    if (unchangedPeriods.length > 0) {
+        out += `${unchangedPeriods.length} unchanged period${unchangedPeriods.length === 1 ? '' : 's'}: ${unchangedPeriods.join(', ')}\n`;
+    }
+    if (invalidShips.length === 0 && invalidPeriods.length === 0 && newShips.length === 0 && improvedShips.length === 0 && unchangedShips.length === 0 && newPeriods.length === 0 && improvedPeriods.length === 0 && unchangedPeriods.length === 0) {
         out = 'No changes made\n';
     }
     out += `Update took ${((performance.now() - start) / 1000).toFixed(3)} seconds\n`;
-    return [out, newShips, improvedShips];
+    return [out, {newShips, improvedShips, newPeriods, improvedPeriods}];
 }
 
-export async function mergeShips(type: string, ships: Ship[], limit?: number): Promise<[string, [string, number][], [string, number, number][]]> {
+export async function mergeShips(type: string, ships: Ship[], limit?: number): ReturnType<typeof addShipsToFiles> {
     for (let ship of ships) {
         validateType(type, ship);
     }
-    let [orthogonals, diagonals, obliques] = classifyShips(ships);
+    let [oscillators, orthogonals, diagonals, obliques] = classifyShips(ships);
     let out: Ship[] = [];
-    for (let [ships, name] of [[orthogonals, 'orthogonal'], [diagonals, 'diagonal'], [obliques, 'oblique']] as const) {
+    for (let [ships, name] of [[oscillators, 'oscillator'], [orthogonals, 'orthogonal'], [diagonals, 'diagonal'], [obliques, 'oblique']] as const) {
         ships = sortShips(ships);
         let data = parseData((await fs.readFile(join(dataPath, type, name + '.sss'))).toString());
         let startIndex = 0;
@@ -460,9 +518,13 @@ export async function findShip(type: string, dx: number, dy: number, period: num
         dy = dx;
         dx = temp;
     }
-    let file: 'orthogonal' | 'diagonal' | 'oblique';
+    let file: 'oscillator' | 'orthogonal' | 'diagonal' | 'oblique';
     if (dy === 0) {
-        file = 'orthogonal';
+        if (dy === 0) {
+            file = 'oscillator';
+        } else {
+            file = 'orthogonal';
+        }
     } else if (dx === dy) {
         file = 'diagonal';
     } else {
