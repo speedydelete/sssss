@@ -16,12 +16,12 @@ let counts: {[key: string]: string} = {};
 async function updateCountFor(type: string): Promise<void> {
     let data = [];
     let total = 0;
-    for (let part of ['orthogonal', 'diagonal', 'oblique']) {
+    for (let part of ['oscillator', 'orthogonal', 'diagonal', 'oblique']) {
         let count = (await fs.readFile(join(basePath, 'data', type, part + '.sss'))).toString().split('\n').length - 1;
         total += count;
         data.push(count);
     }
-    counts[type] = `This rulespace contains ${total} known speeds (${data[0]} orthogonals, ${data[1]} diagonals, and ${data[2]} obliques).`;
+    counts[type] = `This rulespace contains ${total} known speeds (${data[0]} oscillators, ${data[1]} orthogonals, ${data[2]} diagonals, and ${data[3]} obliques).`;
 }
 
 for (let type of await fs.readdir(join(basePath, 'data'))) {
