@@ -305,6 +305,8 @@ let server = createServer(async (req, out) => {
             out.end();
             newShips = [];
             improvedShips = [];
+            newPeriods = [];
+            improvedPeriods = [];
             console.log(`${ip} got new ships`);
             return;
         } else {
