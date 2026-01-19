@@ -123,14 +123,12 @@ let lastGetNewShipsTIme = new Map<string, number>();
 
 let server = createServer(async (req, out) => {
     try {
-        // let ip = req.headers['x-forwarded-for'] as string;
-        // if (!ip) {
-        //     out.writeHead(400, 'No IP address; cannot determine rate limits');
-        //     out.end();
-        //     return;
-        // }
-        let ip = '127.0.0.1';
-        out.setHeader('Access-Control-Allow-Origin', '*');
+        let ip = req.headers['x-forwarded-for'] as string;
+        if (!ip) {
+            out.writeHead(400, 'No IP address; cannot determine rate limits');
+            out.end();
+            return;
+        }
         let index = ip.indexOf(',');
         if (index !== -1) {
             ip = ip.slice(0, index);
