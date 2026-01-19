@@ -556,3 +556,10 @@ export async function findSpeedRLE(type: string, speed: string): Promise<string>
     let {dx, dy, period} = parseSpeed(speed);
     return await findShipRLE(type, dx, dy, period);
 }
+
+
+let data = parseData((await fs.readFile('data/int/oscillator.sss')).toString());
+
+data = removeDuplicateShips(normalizeShips('int', data));
+
+await fs.writeFile('oscillator2.sss', shipsToString(data));
