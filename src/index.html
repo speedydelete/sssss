@@ -3,6 +3,7 @@
     <head>
         <title>5S</title>
         <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
         <style>
 
 * {
@@ -167,7 +168,7 @@ option {
             <h1>Smallest Spaceships Supporting Specific Speeds (5S)</h1>
             <div id="top">
                 <div>
-                    Rulespace:
+                    Type:
                     <select id="type">
                         <option value="int">INT</option>
                         <option value="intb0">INT B0</option>
@@ -185,16 +186,17 @@ option {
         </div>
         <div id="main">
             <div>
-                <h2>Search Speed</h2>
+                <h2>Search</h2>
                 <div id="speed-wrapper">
                     <div>Speed: <input type="text" id="speed" /></div>
+                    <div>Examples: c/2o, p3, c/4d, (2, 1)c/6</div>
                     <button id="search">Search</button>
                 </div>
                 <div id="out"></div>
             </div>
             <div>
-                <h2>Submit Spaceships</h2>
-                Enter spaceships in RLE or CSV format. The maximum period is 32768. If you would like to submit higher-period ship, or an adjustable ship (don't submit adjustable ships here!) please contact speedydelete on the ConwayLife.com forums or Discord.
+                <h2>Submit</h2>
+                Enter spaceships/oscillators in RLE or CSV format. The maximum period is 32768. If you would like to submit higher-period pattern, or an adjustable pattern (don't submit adjustables here!) please contact speedydelete on the ConwayLife.com forums or Discord.
                 <textarea id="ships"></textarea>
                 <div id="ships-out"></div>
                 <button id="submit">Submit</button>
@@ -590,14 +592,14 @@ let shipsOutput = document.getElementById('ships-out');
 let submitButton = document.getElementById('submit');
 
 async function getCounts() {
-    let resp = await fetch(`http://localhost:3000/getcounts?type=${typeSelect.value}`);
+    let resp = await fetch(`./api/getcounts?type=${typeSelect.value}`);
     if (resp.ok) {
         countsOutput.textContent = await resp.text();
     } else {
         countsOutput.textContent = '';
         if (resp.status === 429) {
             setTimeout(async () => {
-                let resp = await fetch(`http://localhost:3000/getcounts?type=${typeSelect.value}`);
+                let resp = await fetch(`./api/getcounts?type=${typeSelect.value}`);
                 if (resp.ok) {
                     countsOutput.textContent = await resp.text();
                 }
@@ -614,7 +616,7 @@ searchButton.addEventListener('click', async () => {
         return;
     }
     let {dx, dy, period} = data;
-    let resp = await fetch(`http://localhost:3000/get?type=${typeSelect.value}&dx=${dx}&dy=${dy}&period=${period}`);
+    let resp = await fetch(`./api/get?type=${typeSelect.value}&dx=${dx}&dy=${dy}&period=${period}`);
     if (resp.ok) {
         searchOutput.textContent = await resp.text();
     } else {
@@ -656,7 +658,7 @@ submitButton.addEventListener('click', async () => {
     shipsOutput.textContent = 'Adding ships...';
     submitButton.textContent = 'Back';
     isBackButton = true;
-    let resp = await fetch(`http://localhost:3000/add?type=${typeSelect.value}`, {
+    let resp = await fetch(`./api/add?type=${typeSelect.value}`, {
         method: 'POST',
         body: shipsToString(ships),
     });
