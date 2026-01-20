@@ -147,6 +147,7 @@ export function normalizeShips<T extends boolean | undefined = undefined>(type: 
         }
         ship.dx = type.disp[0];
         ship.dy = type.disp[1];
+        ship.period = type.period;
         if (ship.dx !== 0 || ship.dy !== 0) {
             if (ship.dx === 0 && ship.dy !== 0) {
                 p.rotateRight();
@@ -349,6 +350,9 @@ let dataPath = join(import.meta.dirname, '..', 'data');
 
 export async function addShipsToFiles(type: string, ships: Ship[], limit?: number): Promise<[string, {newShips: [string, number][], improvedShips: [string, number, number][], newPeriods: [string, number][], improvedPeriods: [string, number, number][]}]> {
     let start = performance.now();
+    for (let ship of ships) {
+        validateType(type, ship);
+    }
     let [ships2, invalidShips, invalidPeriods] = normalizeShips(type, ships, false, limit);
     // let ships2 = ships;
     // let invalidShips: Ship[] = [];
