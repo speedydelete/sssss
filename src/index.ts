@@ -59,6 +59,7 @@ export function shipsToString(ships: Ship[]): string {
         if (ship.comment) {
             out += ', ' + ship.comment;
         }
+        out += '\n';
     }
     return out;
 }

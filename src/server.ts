@@ -25,7 +25,9 @@ async function updateCountFor(type: string): Promise<void> {
 }
 
 for (let type of await fs.readdir(join(basePath, 'data'))) {
-    updateCountFor(type);
+    if (!type.includes('.')) {
+        updateCountFor(type);
+    }
 }
 
 
