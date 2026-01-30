@@ -94,6 +94,9 @@ function workerOnError(error: Error): void {
 }
 
 function workerOnExit(code: number): void {
+    if (code === 0) {
+        process.exit(1);
+    }
     let msg = 'Worker exited with code ' + code;
     console.log(msg + ' restarting worker');
     workerHandleFatal(new Error(msg));
