@@ -2,6 +2,7 @@
 import {join} from 'node:path';
 import * as fs from 'node:fs/promises';
 import {Pattern, TRANSITIONS, VALID_TRANSITIONS, unparseTransitions, arrayToTransitions, MAPPattern, MAPB0Pattern, MAPGenPattern, MAPGenB0Pattern, findType, findMinmax, createPattern, parse, parseSpeed, speedToString} from '../lifeweb/lib/index.js';
+import {createAdjustable} from './adjustable/index.js';
 
 
 export const TYPES = ['int', 'intb0', 'ot', 'otb0', 'intgen', 'intgenb0', 'otgen', 'otgenb0'];
@@ -520,7 +521,31 @@ export async function mergeShips(type: string, ships: Ship[], limit?: number): R
 }
 
 
-export async function findShip(type: string, dx: number, dy: number, period: number): Promise<Ship | null> {
+export async function findShip(type: string, dx: number, dy: number, period: number, adjustables: 'yes' | 'no' | 'only' = 'yes'): Promise<[Ship, boolean] | null> {
+    let adjustable: Ship | null = null;
+    if (adjustables === 'yes' || adjustables === 'only') {
+        let out = createAdjustable(type, dx, dy, period);
+        if (out) {
+            let [p, pop] = out;
+            for (let i = 0; i < period; i++) {
+                if (pop === p.population) {
+                    break;
+                }
+                p.runGeneration();
+            }
+            if (pop !== p.population) {
+                throw new Error('Adjustable generation failed!');
+            }
+            let ship: Ship = {pop, rule: p.ruleStr, dx, dy, period, rle: p.toRLE()};
+            if (adjustables === 'only') {
+                return [ship, true];
+            } else {
+                adjustable = ship;
+            }
+        } else if (adjustables === 'only') {
+            return null;
+        }
+    } 
     dx = Math.abs(dx);
     dy = Math.abs(dy);
     if (dx < dy) {
@@ -543,18 +568,25 @@ export async function findShip(type: string, dx: number, dy: number, period: num
     let data = parseData((await fs.readFile(join(dataPath, type, file + '.sss'))).toString());
     for (let ship of data) {
         if (ship.period === period && ship.dx === dx && ship.dy === dy) {
-            return ship;
+            if (adjustable && adjustable.pop < ship.pop) {
+                return [adjustable, true];
+            } 
+            return [ship, false];
         }
     }
     return null;
 }
 
-export async function findShipRLE(type: string, dx: number, dy: number, period: number): Promise<string> {
-    let ship = await findShip(type, dx, dy, period);
-    if (!ship) {
+export async function findShipRLE(type: string, dx: number, dy: number, period: number, adjustables: 'yes' | 'no' | 'only' = 'yes'): Promise<string> {
+    let data = await findShip(type, dx, dy, period, adjustables);
+    if (!data) {
         return `No such ship found in database!\n`;
     }
+    let [ship, isAdjustable] = data;
     let prefix = `${dx === 0 && dy === 0 ? 'p' : `(${dx}, ${dy})c/`}${period}, population ${ship.pop}`;
+    if (isAdjustable) {
+        prefix += ' (adjustable)';
+    }
     if (ship.rle.startsWith('http')) {
         return `${prefix}\n${ship.comment ? ship.comment + '\n' : ''}This ship may be downloaded at ${ship.rle}`;
     } else {
@@ -562,7 +594,7 @@ export async function findShipRLE(type: string, dx: number, dy: number, period: 
     }
 }
 
-export async function findSpeedRLE(type: string, speed: string): Promise<string> {
+export async function findSpeedRLE(type: string, speed: string, adjustables: 'yes' | 'no' | 'only' = 'yes'): Promise<string> {
     let {dx, dy, period} = parseSpeed(speed);
-    return await findShipRLE(type, dx, dy, period);
+    return await findShipRLE(type, dx, dy, period, adjustables);
 }
