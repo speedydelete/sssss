@@ -11,7 +11,17 @@ let arg = process.argv.slice(4).join(' ');
 let out: string;
 
 if (command === 'get') {
-    out = await findSpeedRLE(type, arg);
+    let adjustables: 'yes' | 'no' | 'only' = 'yes';
+    if (arg.endsWith('yes')) {
+        arg = arg.slice(0, -3);
+    } else if (arg.endsWith('no')) {
+        arg = arg.slice(0, -2);
+        adjustables = 'no';
+    } else if (arg.endsWith('only')) {
+        arg = arg.slice(0, -4);
+        adjustables = 'only';
+    }
+    out = await findSpeedRLE(type, arg, adjustables);
 } else if (process.argv[2] === 'add') {
     let data = parseData((await fs.readFile(arg)).toString());
     out = (await addShipsToFiles(type, data))[0];

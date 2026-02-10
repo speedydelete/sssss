@@ -536,7 +536,9 @@ export async function findShip(type: string, dx: number, dy: number, period: num
             if (pop !== p.population) {
                 throw new Error('Adjustable generation failed!');
             }
-            let ship: Ship = {pop, rule: p.ruleStr, dx, dy, period, rle: p.toRLE()};
+            let rle = p.toRLE();
+            rle = rle.slice(rle.indexOf('\n') + 1);
+            let ship: Ship = {pop, rule: p.ruleStr, dx, dy, period, rle};
             if (adjustables === 'only') {
                 return [ship, true];
             } else {
