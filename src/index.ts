@@ -131,7 +131,7 @@ export function normalizeShips<T extends boolean | undefined = undefined>(type: 
         }
         let type = findType(p, limit);
         p.run(type.stabilizedAt);
-        if (!type.disp) {
+        if (!type.disp || p.population === 0) {
             if (throwInvalid) {
                 throw new Error(`Invalid ship detected: ${shipsToString([ship]).slice(0, -1)}`);
             } else {
