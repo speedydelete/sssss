@@ -22,7 +22,7 @@ async function updateCountFor(type: string): Promise<void> {
         total += count;
         data.push(count);
     }
-    counts[type] = `This rulespace contains ${total} known speeds (${data[0]} oscillators, ${data[1]} orthogonals, ${data[2]} diagonals, and ${data[3]} obliques).`;
+    counts[type] = `This rulespace contains ${total} known nonadjustable speeds (${data[0]} oscillators, ${data[1]} orthogonals, ${data[2]} diagonals, and ${data[3]} obliques).`;
 }
 
 // @ts-ignore
