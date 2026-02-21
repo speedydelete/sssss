@@ -127,7 +127,7 @@ const QUAD_WICKSTRETCHER: AdjustableGenerator & {rules: {[key: number]: [number,
     },
 
     createShip(dx: number, dy: number, period: number): Pattern | null {
-        if (!(dx in this.rules) || dy === 0) {
+        if (!(dx in this.rules && dy === 0)) {
             return null;
         }
         for (let [mod, value] of this.rules[dx]) {

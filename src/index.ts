@@ -496,7 +496,7 @@ export async function findShip(type: string, dx: number, dy: number, period: num
         } else if (adjustables === 'only') {
             return null;
         }
-    } 
+    }
     dx = Math.abs(dx);
     dy = Math.abs(dy);
     if (dx < dy) {
@@ -525,7 +525,11 @@ export async function findShip(type: string, dx: number, dy: number, period: num
             return [ship, false];
         }
     }
-    return null;
+    if (adjustable) {
+        return [adjustable, true];
+    } else {
+        return null;
+    }
 }
 
 export async function findShipRLE(type: string, dx: number, dy: number, period: number, adjustables: 'yes' | 'no' | 'only' = 'yes'): Promise<string> {

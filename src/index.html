@@ -241,7 +241,7 @@ option {
 import {TRANSITIONS, VALID_TRANSITIONS, unparseTransitions, arrayToTransitions, MAPPattern, MAPGenPattern, MAPB0Pattern, MAPGenB0Pattern, findType, findMinmax, createPattern, parse} from '../lifeweb/lib/index.js';
 
 
-const API_PATH = `http://127.0.0.1`;
+const API_PATH = `http://127.0.0.1:3000`;
 
 
 function parseSpeed(speed) {
@@ -651,7 +651,7 @@ searchButton.addEventListener('click', async () => {
         return;
     }
     let {dx, dy, period} = data;
-    let resp = await fetch(`${API_PATH}/get?type=${typeSelect.value}&dx=${dx}&dy=${dy}&period=${period}&adjustable=${adjustablesSelect.value}`);
+    let resp = await fetch(`${API_PATH}/get?type=${typeSelect.value}&dx=${dx}&dy=${dy}&period=${period}&adjustables=${adjustablesSelect.value}`);
     if (resp.ok) {
         searchOutput.textContent = await resp.text();
     } else {

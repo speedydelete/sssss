@@ -131,7 +131,8 @@ let lastGetNewShipsTIme = new Map<string, number>();
 
 let server = createServer(async (req, out) => {
     try {
-        let ip = req.headers['x-forwarded-for'] as string;
+        // let ip = req.headers['x-forwarded-for'] as string;
+        let ip = '127.0.0.1';
         if (!ip) {
             out.writeHead(400, 'No IP address; cannot determine rate limits');
             out.end();
@@ -191,7 +192,7 @@ let server = createServer(async (req, out) => {
             let dx2 = parseInt(dx);
             let dy2 = parseInt(dy);
             let period2 = parseInt(period);
-            if (Number.isNaN(dx2) || Number.isNaN(dy2) || Number.isNaN(period2) || !(adjustables === 'yes' || adjustables === 'no' || adjustables === 'only')) {
+            if (Number.isNaN(dx2) || Number.isNaN(dy2) || Number.isNaN(period2) || (adjustables !== undefined && !(adjustables === 'yes' || adjustables === 'no' || adjustables === 'only'))) {
                 out.writeHead(400, 'Invalid parameters');
                 out.end();
                 console.log(`${ip} attempted to get in type ${type} (invalid parameters)`);
@@ -293,7 +294,7 @@ let server = createServer(async (req, out) => {
             out.writeHead(200);
             out.write(counts[type]);
             out.end();
-            console.log(`${ip} got counts on type ${type}`);
+            console.log(`${ip} got counts in type ${type}`);
             return;
         } else if (endpoint === 'getnewships') {
             let value = lastGetNewShipsTIme.get(ip);
