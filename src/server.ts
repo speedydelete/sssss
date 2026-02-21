@@ -347,5 +347,5 @@ function updateDataZip() {
     execSync(`cp ${join(basePath, 'data.zip')} /var/www/html/5s/data.zip`, {stdio: 'inherit'});
 }
 
-updateDataZip();
-setInterval(updateDataZip, 3600000);
+// updateDataZip();
+// setInterval(updateDataZip, 3600000);
