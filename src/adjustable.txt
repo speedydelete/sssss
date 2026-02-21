@@ -1,24 +1,6 @@
 
 orthogonal:
 
-c/(n)o, pop 3: https://conwaylife.com/forums/viewtopic.php?f=11&t=3081&start=150#p164618
-2c/(n)o, pop 3: https://conwaylife.com/forums/viewtopic.php?f=11&t=3081&start=150#p164618
-3c/(n)o, pop 3: https://conwaylife.com/forums/viewtopic.php?f=11&t=3081&start=175#p186761
-4c/(n)o, pop 3: https://conwaylife.com/forums/viewtopic.php?f=11&t=3081&start=175#p186761
-5c/(n)o, pop 3: https://conwaylife.com/forums/viewtopic.php?f=11&t=3081&start=175#p186761
-
-3c/(4n)o, pop 11: https://conwaylife.com/forums/viewtopic.php?f=11&t=3081&start=100#p101606
-3c/(4n + 1)o, pop 7: https://conwaylife.com/forums/viewtopic.php?f=11&t=3081&start=100#p101606
-3c/(4n + 2)o, pop 14: https://conwaylife.com/forums/viewtopic.php?f=11&t=3081&start=100#p101606
-3c/(4n + 3)o, pop 5: https://conwaylife.com/forums/viewtopic.php?f=11&t=3081&start=125#p117590
-
-3c/(12n + 2)o, pop 5: https://conwaylife.com/forums/viewtopic.php?f=11&t=3081&start=125#p117590
-3c/(12n + 4)o, pop 5: https://conwaylife.com/forums/viewtopic.php?f=11&t=3081&start=125#p117590
-3c/(12n + 9)o, pop 5: https://conwaylife.com/forums/viewtopic.php?f=11&t=3081&start=125#p117590
-3c/(12n + 11)o, pop 5: https://conwaylife.com/forums/viewtopic.php?f=11&t=3081&start=125#p117590
-
-6c/(60n + 32), pop 3: https://conwaylife.com/forums/viewtopic.php?f=11&t=3081&start=175#p186761
-
 8c/(24n + 18)o, pop 5: https://conwaylife.com/forums/viewtopic.php?f=11&t=3081&start=125#p117590
 
 10c/(120n + 104)o, pop 5: https://conwaylife.com/forums/viewtopic.php?f=11&t=3081&start=125#p117643

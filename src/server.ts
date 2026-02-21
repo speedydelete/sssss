@@ -8,6 +8,7 @@ import {Ship, findShipRLE, parseData} from './index.js';
 import {speedToString} from '../lifeweb/lib/index.js';
 
 
+// @ts-ignore
 let basePath = join(import.meta.dirname, '..');
 
 
@@ -24,6 +25,7 @@ async function updateCountFor(type: string): Promise<void> {
     counts[type] = `This rulespace contains ${total} known speeds (${data[0]} oscillators, ${data[1]} orthogonals, ${data[2]} diagonals, and ${data[3]} obliques).`;
 }
 
+// @ts-ignore
 for (let type of await fs.readdir(join(basePath, 'data'))) {
     if (!type.includes('.')) {
         updateCountFor(type);
@@ -70,6 +72,7 @@ function restartWorker() {
     try {
         worker.terminate();
     } catch {}
+    // @ts-ignore
     worker = new Worker(join(import.meta.dirname, 'server_worker.js'));
     worker.on('message', workerOnMessage);
     worker.on('error', workerOnError);
@@ -178,6 +181,7 @@ let server = createServer(async (req, out) => {
             let dx = params.get('dx');
             let dy = params.get('dy');
             let period = params.get('period');
+            let adjustables = params.get('adjustables');
             if (!type || !dx || !dy || !period) {
                 out.writeHead(400, 'Expected type, dx, dy, and period parameters');
                 out.end();
@@ -187,8 +191,14 @@ let server = createServer(async (req, out) => {
             let dx2 = parseInt(dx);
             let dy2 = parseInt(dy);
             let period2 = parseInt(period);
+            if (Number.isNaN(dx2) || Number.isNaN(dy2) || Number.isNaN(period2) || !(adjustables === 'yes' || adjustables === 'no' || adjustables === 'only')) {
+                out.writeHead(400, 'Invalid parameters');
+                out.end();
+                console.log(`${ip} attempted to get in type ${type} (invalid parameters)`);
+                return;
+            }
             out.writeHead(200);
-            out.write(await findShipRLE(type, dx2, dy2, period2));
+            out.write(await findShipRLE(type, dx2, dy2, period2, adjustables));
             out.end();
             console.log(`${ip} got ${speedToString({dx: dx2, dy: dy2, period: period2})} in type ${type}`);
         } else if (endpoint === 'add') {
@@ -337,5 +347,5 @@ function updateDataZip() {
     execSync(`cp ${join(basePath, 'data.zip')} /var/www/html/5s/data.zip`, {stdio: 'inherit'});
 }
 
-// updateDataZip();
+updateDataZip();
 setInterval(updateDataZip, 3600000);

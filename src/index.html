@@ -68,6 +68,7 @@ textarea:focus {
 }
 
 select {
+    font-size: 0.875em;
     padding: 5px;
     appearance: none;
     background-color: #ffffff;
@@ -121,18 +122,43 @@ option {
 
 #type {
     box-sizing: content-box;
-    width: calc(16ch + 21px);
+    width: calc(13ch + 21px);
 }
 
-#speed-wrapper {
+#search-wrapper {
     display: flex;
     flex-direction: column;
     align-items: start;
     gap: 20px;
 }
 
+#speed-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: start;
+    gap: 5px;
+}
+
 #speed {
     width: 24ch;
+}
+
+#speed-examples {
+    font-size: 0.9em;
+}
+
+#adjustables-wrapper {
+    display: flex;
+    flex-direction: row;
+    justify-content: start;
+    align-items: center;
+    gap: 1ch;
+}
+
+
+#adjustables {
+    box-sizing: content-box;
+    width: calc(15ch + 21px);
 }
 
 #out {
@@ -187,9 +213,16 @@ option {
         <div id="main">
             <div>
                 <h2>Search</h2>
-                <div id="speed-wrapper">
-                    <div>Speed: <input type="text" id="speed" /></div>
-                    <div>Examples: c/2o, p3, c/4d, (2, 1)c/6</div>
+                <div id="search-wrapper">
+                    <div id="speed-wrapper">
+                        <div>Speed: <input type="text" id="speed" /></div>
+                        <div id="speed-examples">Examples: c/2o, p3, c/4d, (2, 1)c/6</div>
+                    </div>
+                    <div id="adjustables-wrapper">Adjustable mode: <select id="adjustables">
+                        <option value="yes">Include adjustables</option>
+                        <option value="no">No adjustables</option>
+                        <option value="only">Only adjustables</option>
+                    </select></div>
                     <button id="search">Search</button>
                 </div>
                 <div id="out"></div>
@@ -208,7 +241,7 @@ option {
 import {TRANSITIONS, VALID_TRANSITIONS, unparseTransitions, arrayToTransitions, MAPPattern, MAPGenPattern, MAPB0Pattern, MAPGenB0Pattern as MAPB0GenPattern, findType, findMinmax, createPattern, parse} from '../lifeweb/lib/index.js';
 
 
-export function parseSpeed(speed) {
+function parseSpeed(speed) {
     speed = speed.toLowerCase();
     let disp;
     let period;
@@ -255,7 +288,7 @@ export function parseSpeed(speed) {
     return {dx: x, dy: y, period: p};
 }
 
-export function speedToString({dx, dy, period}) {
+function speedToString({dx, dy, period}) {
     if (dy === 0) {
         if (dx === 0) {
             return `p${period}`;
@@ -560,16 +593,8 @@ function validateType(type, ship) {
         if (p instanceof MAPGenPattern && p.ruleSymmetry === 'D8') {
             correct = true;
         }
-    } else if (type === 'intgenb0') {
-        if (p instanceof MAPB0GenPattern && p.ruleSymmetry === 'D8') {
-            correct = true;
-        }
     } else if (type === 'otgen') {
         if (p instanceof MAPGenPattern && p.ruleStr.match(/^[0-8]*\/[1-8]*\/\d+$/)) {
-            correct = true;
-        }
-    } else if (type === 'otgenb0') {
-        if (p instanceof MAPB0GenPattern && p.ruleStr.match(/^[0-8]*\/0[1-8]*\/\d+$/)) {
             correct = true;
         }
     } else {
@@ -585,6 +610,7 @@ function validateType(type, ship) {
 let typeSelect = document.getElementById('type');
 let countsOutput = document.getElementById('counts');
 let speedInput = document.getElementById('speed');
+let adjustablesSelect = document.getElementById('adjustables');
 let searchButton = document.getElementById('search');
 let searchOutput = document.getElementById('out');
 let shipsInput = document.getElementById('ships');
@@ -616,7 +642,7 @@ searchButton.addEventListener('click', async () => {
         return;
     }
     let {dx, dy, period} = data;
-    let resp = await fetch(`./api/get?type=${typeSelect.value}&dx=${dx}&dy=${dy}&period=${period}`);
+    let resp = await fetch(`./api/get?type=${typeSelect.value}&dx=${dx}&dy=${dy}&period=${period}&adjustable=${adjustablesSelect.value}`);
     if (resp.ok) {
         searchOutput.textContent = await resp.text();
     } else {

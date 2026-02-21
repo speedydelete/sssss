@@ -129,7 +129,7 @@ export function normalizeShips<T extends boolean | undefined = undefined>(type: 
         if (globalLimit !== undefined) {
             limit = Math.min(limit, globalLimit);
         }
-        let type = findType(p, limit);
+        let type = findType(p, limit, true, false);
         p.run(type.stabilizedAt);
         if (!type.disp || p.population === 0) {
             if (throwInvalid) {
@@ -296,16 +296,8 @@ export function validateType(type: string, ship: Ship): void {
         if (p instanceof MAPGenPattern && p.ruleSymmetry === 'D8') {
             correct = true;
         }
-    } else if (type === 'intgenb0') {
-        if (p instanceof MAPGenB0Pattern && p.ruleSymmetry === 'D8') {
-            correct = true;
-        }
     } else if (type === 'otgen') {
         if (p instanceof MAPGenPattern && p.ruleStr.match(/^[0-8]*\/[1-8]*\/\d+$/)) {
-            correct = true;
-        }
-    } else if (type === 'otgenb0') {
-        if (p instanceof MAPGenB0Pattern && p.ruleStr.match(/^[0-8]*\/0[1-8]*\/\d+$/)) {
             correct = true;
         }
     } else {
@@ -338,24 +330,17 @@ function classifyShips(ships: Ship[]): [Ship[], Ship[], Ship[], Ship[]] {
 }
 
 
+// @ts-ignore
 let dataPath = join(import.meta.dirname, '..', 'data');
-
-// function compareShips(x: Ship, y: Ship): number {
-//     if (x.period !== y.period) {
-//         return x.period - y.period;
-//     } else if (x.dx !== y.dx) {
-//         return x.dx - y.dx;
-//     } else {
-//         return x.dy - y.dy;
-//     }
-// }
 
 export async function addShipsToFiles(type: string, ships: Ship[], limit?: number): Promise<[string, {newShips: [string, number][], improvedShips: [string, number, number][], newPeriods: [string, number][], improvedPeriods: [string, number, number][]}]> {
     let start = performance.now();
+    ships = ships.filter(x => x);
     for (let ship of ships) {
         validateType(type, ship);
     }
     let [ships2, invalidShips, invalidPeriods] = normalizeShips(type, ships, false, limit);
+    ships2 = ships2.filter(x => x);
     // let ships2 = ships;
     // let invalidShips: Ship[] = [];
     for (let ship of ships2) {
@@ -376,43 +361,7 @@ export async function addShipsToFiles(type: string, ships: Ship[], limit?: numbe
             console.log('Adding ' + name + 's');
         }
         let data = parseData((await fs.readFile(join(dataPath, type, name + '.sss'))).toString());
-        // for (let i = 0; i < part.length; i++) {
-        //     if (i % 100 === 0 && i > 0) {
-        //         console.log(`${i}/${part.length} ships added`);
-        //     }
-        //     let ship = part[i];
-        // // for (let ship of part) {
-        //     let low = 0;
-        //     let high = data.length;
-        //     while (low < high) {
-        //         let mid = (low + high) >>> 1;
-        //         if (compareShips(data[mid], ship) < 0) {
-        //             low = mid + 1;
-        //         } else {
-        //             high = mid;
-        //         }
-        //     }
-        //     if (low < data.length && compareShips(data[low], ship) === 0) {
-        //         let ship2 = data[low];
-        //         if (ship2.pop < ship.pop) {
-        //             ship2.pop = ship.pop;
-        //             ship2.rule = ship.rule;
-        //             ship2.rle = ship.rle;
-        //             improvedShips.push(speedToString(ship));
-        //         } else {
-        //             unchangedShips.push(speedToString(ship));
-        //         }
-        //     } else {
-        //         data.splice(low, 0, ship);
-        //         newShips.push(speedToString(ship));
-        //     }
-        // }
         let found: Ship[] = [];
-        // for (let i = 0; i < data.length; i++) {
-        //     if (i % 10000 === 0 && i > 0) {
-        //         console.log(`${i}/${data.length} ships checked`);
-        //     }
-        //     let ship = data[i];
         for (let ship of data) {
             for (let newShip of part) {
                 if (found.includes(newShip)) {
