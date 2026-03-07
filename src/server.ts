@@ -205,7 +205,7 @@ let server = createServer(async (req, out) => {
         } else if (endpoint === 'add') {
             let value = lastAddTime.get(ip);
             if (value !== undefined) {
-                if (time - value < 5) {
+                if (time - value < 32) {
                     out.writeHead(429);
                     out.end();
                     console.log(`${ip} exceeded rate limit on add after ${(time - value).toFixed(3)} seconds`);
