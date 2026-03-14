@@ -682,6 +682,7 @@ submitButton.addEventListener('click', async () => {
         alert(`No ships provided or all ships are invalid!`);
         return;
     }
+    ships = ships.filter(x => x);
     for (let ship of ships) {
         if (!validateType(typeSelect.value, ship)) {
             return;
