@@ -641,8 +641,6 @@ async function getCounts() {
 
 typeSelect.addEventListener('change', getCounts);
 
-getCounts();
-
 
 searchButton.addEventListener('click', async () => {
     let data = parseSpeed(speedInput.value);
@@ -733,6 +731,8 @@ for (let type of ['input', 'textarea', 'select']) {
         });
     });
 }
+
+getCounts();
 
         </script>
     </body>
