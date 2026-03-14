@@ -53,11 +53,11 @@ export function parseData(data: string): Ship[] {
     return out;
 }
 
-export function shipsToString(ships: Ship[]): string {
+export function shipsToString(ships: Ship[], includeComments: boolean = true): string {
     let out = '';
     for (let ship of ships) {
         out += ship.pop + ', ' + ship.rule + ', ' + ship.dx + ', ' + ship.dy + ', ' + ship.period + ', ' + ship.rle;
-        if (ship.comment) {
+        if (includeComments && ship.comment) {
             out += ', ' + ship.comment;
         }
         out += '\n';
@@ -333,7 +333,7 @@ function classifyShips(ships: Ship[]): [Ship[], Ship[], Ship[], Ship[]] {
 // @ts-ignore
 let dataPath = join(import.meta.dirname, '..', 'data');
 
-export async function addShipsToFiles(type: string, ships: Ship[], limit?: number): Promise<[string, {newShips: [string, number][], improvedShips: [string, number, number][], newPeriods: [string, number][], improvedPeriods: [string, number, number][]}]> {
+export async function addShipsToFiles(type: string, ships: Ship[], limit?: number, includeComments: boolean = true): Promise<[string, {newShips: [string, number][], improvedShips: [string, number, number][], newPeriods: [string, number][], improvedPeriods: [string, number, number][]}]> {
     let start = performance.now();
     ships = ships.filter(x => x);
     for (let ship of ships) {
@@ -404,7 +404,7 @@ export async function addShipsToFiles(type: string, ships: Ship[], limit?: numbe
             }
         }
         data = removeDuplicateShips(data);
-        await fs.writeFile(join(dataPath, type, name + '.sss'), shipsToString(data));
+        await fs.writeFile(join(dataPath, type, name + '.sss'), shipsToString(data, includeComments));
     }
     let out = '';
     if (invalidShips.length > 0) {

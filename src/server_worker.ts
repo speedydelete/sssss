@@ -12,7 +12,7 @@ parentPort.on('message', async ({id, type, ships, limit}: {id: number, type: str
         throw new Error('No parent port');
     }
     try {
-        parentPort.postMessage({id, ok: true, data: await addShipsToFiles(type, ships, limit)});
+        parentPort.postMessage({id, ok: true, data: await addShipsToFiles(type, ships, limit, false)});
     } catch (error) {
         parentPort.postMessage({id, ok: false, data: (error instanceof Error && error.stack) ? error.stack : String(error)});
     }
