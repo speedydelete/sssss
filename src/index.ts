@@ -343,6 +343,7 @@ export async function addShipsToFiles(type: string, ships: Ship[], limit?: numbe
     ships2 = ships2.filter(x => x);
     // let ships2 = ships;
     // let invalidShips: Ship[] = [];
+    // let invalidPeriods: Ship[] = [];
     for (let ship of ships2) {
         validateType(type, ship);
     }
