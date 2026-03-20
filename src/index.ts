@@ -544,9 +544,9 @@ export async function findShipRLE(type: string, dx: number, dy: number, period: 
         prefix += ' (adjustable)';
     }
     if (ship.rle.startsWith('http')) {
-        return `${prefix}\n${ship.comment ? ship.comment + '\n' : ''}This ship may be downloaded at ${ship.rle}`;
+        return `${prefix}${ship.comment ? ', ' + ship.comment : ''}\nThis ship may be downloaded at ${ship.rle}`;
     } else {
-        return `#C ${prefix}\n${ship.comment ? `#C ${ship.comment}\n` : ''}x = 0, y = 0, rule = ${ship.rule}\n${ship.rle}\n`;
+        return `#C ${prefix}${ship.comment ? ', ' + ship.comment : ''}\nx = 0, y = 0, rule = ${ship.rule}\n${ship.rle}\n`;
     }
 }
 
