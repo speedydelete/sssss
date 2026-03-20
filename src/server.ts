@@ -136,7 +136,8 @@ let lastAddTime = new Map<string, number>();
 let lastGetCountsTime = new Map<string, number>();
 let lastGetNewShipsTIme = new Map<string, number>();
 
-const API: {[key: string]: (req: IncomingMessage, params: URLSearchParams | null, out: ServerResponse<IncomingMessage>, ip: string, time: number) => void | Promise<void>} = {
+
+const ENDPOINTS: {[key: string]: (req: IncomingMessage, params: URLSearchParams | null, out: ServerResponse<IncomingMessage>, ip: string, time: number) => void | Promise<void>} = {
 
     async get(req: IncomingMessage, params: URLSearchParams | null, out: ServerResponse<IncomingMessage>, ip: string, time: number): Promise<void> {
         let value = lastGetTime.get(ip);
@@ -460,6 +461,7 @@ const API: {[key: string]: (req: IncomingMessage, params: URLSearchParams | null
 
 };
 
+
 let server = createServer(async (req, out) => {
     try {
         // let ip = req.headers['x-forwarded-for'] as string;
@@ -489,8 +491,8 @@ let server = createServer(async (req, out) => {
             endpoint = req.url.slice(1);
             params = null;
         }
-        if (endpoint in API) {
-            await API[endpoint](req, params, out, ip, time);
+        if (endpoint in ENDPOINTS) {
+            await ENDPOINTS[endpoint](req, params, out, ip, time);
         } else {
             console.log(`${ip} attempted to ${req.method} endpoint ${endpoint}`);
             out.writeHead(404);
