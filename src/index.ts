@@ -1,5 +1,5 @@
 
-import {join} from 'node:path';
+import {normalize} from 'node:path';
 import * as fs from 'node:fs/promises';
 import {Pattern, TRANSITIONS, VALID_TRANSITIONS, unparseTransitions, arrayToTransitions, MAPPattern, MAPB0Pattern, MAPGenPattern, MAPGenB0Pattern, findType, findMinmax, createPattern, parse, parseSpeed, speedToString} from '../lifeweb/lib/index.js';
 import {createAdjustable} from './adjustable/index.js';
@@ -110,13 +110,14 @@ export function normalizeShips<T extends boolean | undefined = undefined>(type: 
     let invalidPeriods: string[] = [];
     for (let i = 0; i < ships.length; i++) {
         let ship = ships[i];
+        let speed = speedToString(ship.dx, ship.dy, ship.period);
         let p = parse(`x = 0, y = 0, rule = ${ship.rule}\n${ship.rle}`);
         if (p.isEmpty()) {
             if (throwInvalid) {
                 throw new Error(`Invalid ship detected: ${shipsToString([ship]).slice(0, -1)}`);
             } else {
                 console.log(`Invalid ship detected: ${shipsToString([ship]).slice(0, -1)}`);
-                let str = speedToString(ship);
+                let str = speedToString(ship.dx, ship.dy, ship.period);
                 if (str.startsWith('p')) {
                     invalidPeriods.push(str);
                 } else {
@@ -137,15 +138,15 @@ export function normalizeShips<T extends boolean | undefined = undefined>(type: 
             } else {
                 console.log(`Invalid ship detected: ${shipsToString([ship]).slice(0, -1)}`);
                 if (ship.dx === 0 && ship.dy === 0) {
-                    invalidPeriods.push(speedToString(ship));
+                    invalidPeriods.push(speed);
                 } else {
-                    invalidShips.push(speedToString(ship));
+                    invalidShips.push(speed);
                 }
                 continue;
             }
         }
         if (ship.dx !== type.disp[0] || ship.dy !== type.disp[1] || ship.period !== type.period) {
-            console.log(`Warning: Replacing ${speedToString(ship)} with ${speedToString({dx: type.disp[0], dy: type.disp[1], period: type.period})}`);
+            console.log(`Warning: Replacing ${speed} with ${speedToString(type.disp[0], type.disp[1], type.period)}`);
         }
         ship.dx = type.disp[0];
         ship.dy = type.disp[1];
@@ -162,9 +163,9 @@ export function normalizeShips<T extends boolean | undefined = undefined>(type: 
                     } else {
                         console.log(`Invalid ship detected: ${shipsToString([ship]).slice(0, -1)}`);
                         if (ship.dx === 0 && ship.dy === 0) {
-                            invalidPeriods.push(speedToString(ship));
+                            invalidPeriods.push(speed);
                         } else {
-                            invalidShips.push(speedToString(ship));
+                            invalidShips.push(speed);
                         }
                         continue;
                     }
@@ -192,9 +193,9 @@ export function normalizeShips<T extends boolean | undefined = undefined>(type: 
                     } else {
                         console.log(`Invalid ship detected: ${shipsToString([ship]).slice(0, -1)}`);
                         if (ship.dx === 0 && ship.dy === 0) {
-                            invalidPeriods.push(speedToString(ship));
+                            invalidPeriods.push(speed);
                         } else {
-                            invalidShips.push(speedToString(ship));
+                            invalidShips.push(speed);
                         }
                         continue;
                     }
@@ -330,20 +331,25 @@ function classifyShips(ships: Ship[]): [Ship[], Ship[], Ship[], Ship[]] {
 }
 
 
-// @ts-ignore
-let dataPath = join(import.meta.dirname, '..', 'data');
+let dataPath = normalize(`${import.meta.dirname}/../data`);
 
-export async function addShipsToFiles(type: string, ships: Ship[], limit?: number, includeComments: boolean = true): Promise<[string, {newShips: [string, number][], improvedShips: [string, number, number][], newPeriods: [string, number][], improvedPeriods: [string, number, number][]}]> {
+export async function addShipsToFiles(type: string, ships: Ship[], limit?: number, includeComments: boolean = true, verify: boolean = true): Promise<[string, {newShips: [string, number][], improvedShips: [string, number, number][], newPeriods: [string, number][], improvedPeriods: [string, number, number][]}]> {
     let start = performance.now();
     ships = ships.filter(x => x);
     for (let ship of ships) {
         validateType(type, ship);
     }
-    let [ships2, invalidShips, invalidPeriods] = normalizeShips(type, ships, false, limit);
-    ships2 = ships2.filter(x => x);
-    // let ships2 = ships;
-    // let invalidShips: Ship[] = [];
-    // let invalidPeriods: Ship[] = [];
+    let ships2: Ship[];
+    let invalidShips: string[];
+    let invalidPeriods: string[];
+    if (verify) {
+        [ships2, invalidShips, invalidPeriods] = normalizeShips(type, ships, false, limit);
+        ships2 = ships2.filter(x => x);
+    } else {
+        ships2 = ships;
+        invalidShips = [];
+        invalidPeriods = [];
+    }
     for (let ship of ships2) {
         validateType(type, ship);
     }
@@ -361,7 +367,7 @@ export async function addShipsToFiles(type: string, ships: Ship[], limit?: numbe
         if (part.length > 2048) {
             console.log('Adding ' + name + 's');
         }
-        let data = parseData((await fs.readFile(join(dataPath, type, name + '.sss'))).toString());
+        let data = parseData((await fs.readFile(`${dataPath}/${type}/${name}.sss`)).toString());
         let found: Ship[] = [];
         for (let ship of data) {
             for (let newShip of part) {
@@ -369,20 +375,21 @@ export async function addShipsToFiles(type: string, ships: Ship[], limit?: numbe
                     continue;
                 }
                 if (newShip.period === ship.period && newShip.dx === ship.dx && newShip.dy === ship.dy) {
+                    let speed = speedToString(ship.dx, ship.dy, ship.period);
                     if (newShip.pop < ship.pop) {
                         if (ship.dx === 0 && ship.dy === 0) {
-                            improvedPeriods.push([speedToString(ship), newShip.pop, ship.pop]);
+                            improvedPeriods.push([speed, newShip.pop, ship.pop]);
                         } else {
-                            improvedShips.push([speedToString(ship), newShip.pop, ship.pop]);
+                            improvedShips.push([speed, newShip.pop, ship.pop]);
                         }
                         ship.pop = newShip.pop;
                         ship.rule = newShip.rule;
                         ship.rle = newShip.rle;
                     } else {
                         if (ship.dx === 0 && ship.dy === 0) {
-                            unchangedPeriods.push(speedToString(ship));
+                            unchangedPeriods.push(speed);
                         } else {
-                            unchangedShips.push(speedToString(ship));
+                            unchangedShips.push(speed);
                         }
                     }
                     found.push(newShip);
@@ -396,15 +403,16 @@ export async function addShipsToFiles(type: string, ships: Ship[], limit?: numbe
         for (let ship of part) {
             if (!found.includes(ship)) {
                 data.push(ship);
+                let speed = speedToString(ship.dx, ship.dy, ship.period);
                 if (ship.dx === 0 && ship.dy === 0) {
-                    newPeriods.push([speedToString(ship), ship.pop]);
+                    newPeriods.push([speed, ship.pop]);
                 } else {
-                    newShips.push([speedToString(ship), ship.pop]);
+                    newShips.push([speed, ship.pop]);
                 }
             }
         }
         data = removeDuplicateShips(data);
-        await fs.writeFile(join(dataPath, type, name + '.sss'), shipsToString(data, includeComments));
+        await fs.writeFile(`${dataPath}/${type}/${name}.sss`, shipsToString(data, includeComments));
     }
     let out = '';
     if (invalidShips.length > 0) {
@@ -446,7 +454,7 @@ export async function mergeShips(type: string, ships: Ship[], limit?: number): R
     let out: Ship[] = [];
     for (let [ships, name] of [[oscillators, 'oscillator'], [orthogonals, 'orthogonal'], [diagonals, 'diagonal'], [obliques, 'oblique']] as const) {
         ships = sortShips(ships);
-        let data = parseData((await fs.readFile(join(dataPath, type, name + '.sss'))).toString());
+        let data = parseData((await fs.readFile(`${dataPath}/${type}/${name}.sss`)).toString());
         let startIndex = 0;
         for (let newShip of ships) {
             let found = false;
@@ -517,7 +525,7 @@ export async function findShip(type: string, dx: number, dy: number, period: num
     } else {
         file = 'oblique';
     }
-    let data = parseData((await fs.readFile(join(dataPath, type, file + '.sss'))).toString());
+    let data = parseData((await fs.readFile(`${dataPath}/${type}/${file}.sss`)).toString());
     for (let ship of data) {
         if (ship.period === period && ship.dx === dx && ship.dy === dy) {
             if (adjustable && adjustable.pop < ship.pop) {

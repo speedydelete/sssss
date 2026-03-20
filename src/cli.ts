@@ -1,16 +1,17 @@
 
 import * as fs from 'node:fs/promises';
+import crypto from 'node:crypto';
 import {parse} from '../lifeweb/lib/index.js';
 import {Ship, parseData, patternToShip, addShipsToFiles, mergeShips, findSpeedRLE} from './index.js';
 
 
-let command = process.argv[2];
+let cmd = process.argv[2];
 let type = process.argv[3];
 let arg = process.argv.slice(4).join(' ');
 
 let out: string;
 
-if (command === 'get') {
+if (cmd === 'get') {
     let adjustables: 'yes' | 'no' | 'only' = 'yes';
     if (arg.endsWith('yes')) {
         arg = arg.slice(0, -3);
@@ -22,10 +23,10 @@ if (command === 'get') {
         adjustables = 'only';
     }
     out = await findSpeedRLE(type, arg, adjustables);
-} else if (process.argv[2] === 'add') {
+} else if (cmd === 'add') {
     let data = parseData((await fs.readFile(arg)).toString());
     out = (await addShipsToFiles(type, data))[0];
-} else if (process.argv[2] === 'add_rle') {
+} else if (cmd === 'add_rle') {
     let data: Ship[] = [];
     for (let rle of (await fs.readFile(arg)).toString().split('!')) {
         rle = rle.trim();
@@ -35,9 +36,12 @@ if (command === 'get') {
         data.push(...patternToShip(type, parse(rle + '!'), 1048576));
     }
     out = (await addShipsToFiles(type, data))[0];
-} else if (process.argv[2] === 'merge') {
+} else if (cmd === 'merge') {
     let data = parseData((await fs.readFile(arg)).toString());
     out = (await mergeShips(type, data))[0];
+} else if (cmd === 'get_admin_key') {
+    let key = process.argv.slice(3).join(' ');
+    out = crypto.createHash('sha3-256').update(key, 'utf-8').digest('hex');
 } else {
     throw new Error(`Invalid subcommand: ${process.argv[2]}`);
 }
