@@ -13,11 +13,11 @@ import {speedToString} from '../lifeweb/lib/index.js';
 let basePath = normalize(`${import.meta.dirname}/..`);
 
 
-let adminKeys = JSON.parse((await fs.readFile(`${basePath}/admin_keys.json`)).toString()) as {[key: string]: string};
+// let adminKeys = JSON.parse((await fs.readFile(`${basePath}/admin_keys.json`)).toString()) as {[key: string]: string};
 
-if (!adminKeys || typeof adminKeys !== 'object' || !Object.keys(adminKeys).every(x => typeof adminKeys[x] === 'string')) {
-    throw new Error('Invalid admin keys!');
-}
+// if (!adminKeys || typeof adminKeys !== 'object' || !Object.keys(adminKeys).every(x => typeof adminKeys[x] === 'string')) {
+//     throw new Error('Invalid admin keys!');
+// }
 
 
 let counts: {[key: string]: string} = {};
@@ -311,152 +311,152 @@ const API: {[key: string]: (req: IncomingMessage, params: URLSearchParams | null
         console.log(`${ip} got new ships`);
     },
 
-    adminforceadd(req: IncomingMessage, params: URLSearchParams | null, out: ServerResponse<IncomingMessage>, ip: string, time: number): void {
-        if (!req.headers['authorization']) {
-            out.writeHead(403);
-            out.end();
-            console.log(`${ip} attempted to admin force add (no authorization header)`);
-            return;
-        }
-        let key = req.headers['authorization'];
-        let hash = crypto.createHash('sha3-256').update(key, 'utf-8').digest('hex');
-        if (!(hash in adminKeys)) {
-            out.writeHead(403);
-            out.end();
-            console.log(`${ip} attempted to admin force add (invalid admin key: ${key})`);
-            return;
-        }
-        let user = adminKeys[hash];
-        if (req.method !== 'POST') {
-            out.writeHead(404);
-            out.end();
-            console.log(`${ip} (${user}) attempted to admin force add (wrong method)`);
-            return;
-        }
-        if (!params) {
-            out.writeHead(400, 'Expected type parameter');
-            out.end();
-            console.log(`${ip} (${user}) attempted to admin force add (no query string)`);
-            return;
-        }
-        let type = params.get('type');
-        if (!type) {
-            out.writeHead(400, 'Expected type parameter');
-            out.end();
-            console.log(`${ip} (${user}) attempted to admin force add (no type parameter)`);
-            return;
-        }
-        let data = '';
-        req.on('data', chunk => {
-            data += String(chunk);
-        });
-        req.on('end', async () => {
-            try {
-                let ships = parseData(data);
-                if (ships.length > 2048) {
-                    out.writeHead(400, 'Max 2048 ships');
-                    out.end();
-                    console.log(`${ip} (${user}) attempted to admin force add ${ships.length} ships to type ${type} (more than 2048)`);
-                    return;
-                }
-                let [text, speeds] = (await addShipsToFiles(type, ships, 32768, true, false));
-                newShips.push(...speeds.newShips.map(x => [type, x[0], x[1]] as [string, string, number]));
-                improvedShips.push(...speeds.improvedShips.map(x => [type, x[0], x[1], x[2]] as [string, string, number, number]));
-                newPeriods.push(...speeds.newPeriods.map(x => [type, x[0], x[1]] as [string, string, number]));
-                improvedPeriods.push(...speeds.improvedPeriods.map(x => [type, x[0], x[1], x[2]] as [string, string, number, number]));
-                out.writeHead(200);
-                out.write(text);
-                out.end();
-                updateCountFor(type);
-                console.log(`${ip} (${user}) admin force added ${ships.length} ships to type ${type}`);
-            } catch (error) {
-                console.error(error);
-                out.writeHead(500);
-                out.end();
-            }
-        });
-    },
+    // adminforceadd(req: IncomingMessage, params: URLSearchParams | null, out: ServerResponse<IncomingMessage>, ip: string, time: number): void {
+    //     if (!req.headers['authorization']) {
+    //         out.writeHead(403);
+    //         out.end();
+    //         console.log(`${ip} attempted to admin force add (no authorization header)`);
+    //         return;
+    //     }
+    //     let key = req.headers['authorization'];
+    //     let hash = crypto.createHash('sha3-256').update(key, 'utf-8').digest('hex');
+    //     if (!(hash in adminKeys)) {
+    //         out.writeHead(403);
+    //         out.end();
+    //         console.log(`${ip} attempted to admin force add (invalid admin key: ${key})`);
+    //         return;
+    //     }
+    //     let user = adminKeys[hash];
+    //     if (req.method !== 'POST') {
+    //         out.writeHead(404);
+    //         out.end();
+    //         console.log(`${ip} (${user}) attempted to admin force add (wrong method)`);
+    //         return;
+    //     }
+    //     if (!params) {
+    //         out.writeHead(400, 'Expected type parameter');
+    //         out.end();
+    //         console.log(`${ip} (${user}) attempted to admin force add (no query string)`);
+    //         return;
+    //     }
+    //     let type = params.get('type');
+    //     if (!type) {
+    //         out.writeHead(400, 'Expected type parameter');
+    //         out.end();
+    //         console.log(`${ip} (${user}) attempted to admin force add (no type parameter)`);
+    //         return;
+    //     }
+    //     let data = '';
+    //     req.on('data', chunk => {
+    //         data += String(chunk);
+    //     });
+    //     req.on('end', async () => {
+    //         try {
+    //             let ships = parseData(data);
+    //             if (ships.length > 2048) {
+    //                 out.writeHead(400, 'Max 2048 ships');
+    //                 out.end();
+    //                 console.log(`${ip} (${user}) attempted to admin force add ${ships.length} ships to type ${type} (more than 2048)`);
+    //                 return;
+    //             }
+    //             let [text, speeds] = (await addShipsToFiles(type, ships, 32768, true, false));
+    //             newShips.push(...speeds.newShips.map(x => [type, x[0], x[1]] as [string, string, number]));
+    //             improvedShips.push(...speeds.improvedShips.map(x => [type, x[0], x[1], x[2]] as [string, string, number, number]));
+    //             newPeriods.push(...speeds.newPeriods.map(x => [type, x[0], x[1]] as [string, string, number]));
+    //             improvedPeriods.push(...speeds.improvedPeriods.map(x => [type, x[0], x[1], x[2]] as [string, string, number, number]));
+    //             out.writeHead(200);
+    //             out.write(text);
+    //             out.end();
+    //             updateCountFor(type);
+    //             console.log(`${ip} (${user}) admin force added ${ships.length} ships to type ${type}`);
+    //         } catch (error) {
+    //             console.error(error);
+    //             out.writeHead(500);
+    //             out.end();
+    //         }
+    //     });
+    // },
 
-    async adminforcedelete(req: IncomingMessage, params: URLSearchParams | null, out: ServerResponse<IncomingMessage>, ip: string, time: number): Promise<void> {
-        if (!req.headers['authorization']) {
-            out.writeHead(403);
-            out.end();
-            console.log(`${ip} attempted to admin force delete (no authorization header)`);
-            return;
-        }
-        let key = req.headers['authorization'];
-        let hash = crypto.createHash('sha3-256').update(key, 'utf-8').digest('hex');
-        if (!(hash in adminKeys)) {
-            out.writeHead(403);
-            out.end();
-            console.log(`${ip} attempted to admin force delete (invalid admin key: ${key})`);
-            return;
-        }
-        let user = adminKeys[hash];
-        if (!params) {
-            out.writeHead(400, 'Expected type, dx, dy, and period parameters');
-            out.end();
-            console.log(`${ip} (${user}) attempted to admin force delete (no query string)`);
-            return;
-        }
-        let type = params.get('type');
-        let dxP = params.get('dx');
-        let dyP = params.get('dy');
-        let periodP = params.get('period');
-        if (!type || !dxP || !dyP || !periodP) {
-            out.writeHead(400, 'Expected type, dx, dy, and period parameters');
-            out.end();
-            console.log(`${ip} (${user}) attempted to admin force delete in type ${type} (invalid parameters)`);
-            return;
-        }
-        let dx = parseInt(dxP);
-        let dy = parseInt(dyP);
-        let period = parseInt(periodP);
-        if (Number.isNaN(dx) || Number.isNaN(dy) || Number.isNaN(period)) {
-            out.writeHead(400, 'Invalid parameters');
-            out.end();
-            console.log(`${ip} (${user}) attempted to admin force delete in type ${type} (invalid parameters)`);
-            return;
-        }
-        dx = Math.abs(dx);
-        dy = Math.abs(dy);
-        if (dx < dy) {
-            let temp = dy;
-            dy = dx;
-            dx = temp;
-        }
-        let file: 'oscillator' | 'orthogonal' | 'diagonal' | 'oblique';
-        if (dy === 0) {
-            if (dx === 0) {
-                file = 'oscillator';
-            } else {
-                file = 'orthogonal';
-            }
-        } else if (dx === dy) {
-            file = 'diagonal';
-        } else {
-            file = 'oblique';
-        }
-        let path = `${basePath}/data/${type}/${file}.sss`;
-        let data = parseData((await fs.readFile(path)).toString());
-        let speed = speedToString(dx, dy, period);
-        for (let i = 0; i < data.length; i++) {
-            let ship = data[i];
-            if (ship.period === period && ship.dx === dx && ship.dy === dy) {
-                data.splice(i, 1);
-                await fs.writeFile(path, shipsToString(data));
-                out.writeHead(200);
-                out.write('Deletion successful!');
-                out.end();
-                console.log(`${ip} (${user}) admin force deleted ${speed} in type ${type}`);
-                return;
-            }
-        }
-        out.writeHead(200);
-        out.write('No such ship found in database!');
-        out.end();
-        console.log(`${ip} (${user}) attempted to admin force delete ${speed} in type ${type} (no ship found)`);
-    },
+    // async adminforcedelete(req: IncomingMessage, params: URLSearchParams | null, out: ServerResponse<IncomingMessage>, ip: string, time: number): Promise<void> {
+    //     if (!req.headers['authorization']) {
+    //         out.writeHead(403);
+    //         out.end();
+    //         console.log(`${ip} attempted to admin force delete (no authorization header)`);
+    //         return;
+    //     }
+    //     let key = req.headers['authorization'];
+    //     let hash = crypto.createHash('sha3-256').update(key, 'utf-8').digest('hex');
+    //     if (!(hash in adminKeys)) {
+    //         out.writeHead(403);
+    //         out.end();
+    //         console.log(`${ip} attempted to admin force delete (invalid admin key: ${key})`);
+    //         return;
+    //     }
+    //     let user = adminKeys[hash];
+    //     if (!params) {
+    //         out.writeHead(400, 'Expected type, dx, dy, and period parameters');
+    //         out.end();
+    //         console.log(`${ip} (${user}) attempted to admin force delete (no query string)`);
+    //         return;
+    //     }
+    //     let type = params.get('type');
+    //     let dxP = params.get('dx');
+    //     let dyP = params.get('dy');
+    //     let periodP = params.get('period');
+    //     if (!type || !dxP || !dyP || !periodP) {
+    //         out.writeHead(400, 'Expected type, dx, dy, and period parameters');
+    //         out.end();
+    //         console.log(`${ip} (${user}) attempted to admin force delete in type ${type} (invalid parameters)`);
+    //         return;
+    //     }
+    //     let dx = parseInt(dxP);
+    //     let dy = parseInt(dyP);
+    //     let period = parseInt(periodP);
+    //     if (Number.isNaN(dx) || Number.isNaN(dy) || Number.isNaN(period)) {
+    //         out.writeHead(400, 'Invalid parameters');
+    //         out.end();
+    //         console.log(`${ip} (${user}) attempted to admin force delete in type ${type} (invalid parameters)`);
+    //         return;
+    //     }
+    //     dx = Math.abs(dx);
+    //     dy = Math.abs(dy);
+    //     if (dx < dy) {
+    //         let temp = dy;
+    //         dy = dx;
+    //         dx = temp;
+    //     }
+    //     let file: 'oscillator' | 'orthogonal' | 'diagonal' | 'oblique';
+    //     if (dy === 0) {
+    //         if (dx === 0) {
+    //             file = 'oscillator';
+    //         } else {
+    //             file = 'orthogonal';
+    //         }
+    //     } else if (dx === dy) {
+    //         file = 'diagonal';
+    //     } else {
+    //         file = 'oblique';
+    //     }
+    //     let path = `${basePath}/data/${type}/${file}.sss`;
+    //     let data = parseData((await fs.readFile(path)).toString());
+    //     let speed = speedToString(dx, dy, period);
+    //     for (let i = 0; i < data.length; i++) {
+    //         let ship = data[i];
+    //         if (ship.period === period && ship.dx === dx && ship.dy === dy) {
+    //             data.splice(i, 1);
+    //             await fs.writeFile(path, shipsToString(data));
+    //             out.writeHead(200);
+    //             out.write('Deletion successful!');
+    //             out.end();
+    //             console.log(`${ip} (${user}) admin force deleted ${speed} in type ${type}`);
+    //             return;
+    //         }
+    //     }
+    //     out.writeHead(200);
+    //     out.write('No such ship found in database!');
+    //     out.end();
+    //     console.log(`${ip} (${user}) attempted to admin force delete ${speed} in type ${type} (no ship found)`);
+    // },
 
 };
 
