@@ -174,7 +174,7 @@ const ENDPOINTS: {[key: string]: (req: IncomingMessage, params: URLSearchParams 
         let dy = parseInt(dyP);
         let period = parseInt(periodP);
         if (Number.isNaN(dx) || Number.isNaN(dy) || Number.isNaN(period) || (adjustables !== undefined && !(adjustables === 'yes' || adjustables === 'no' || adjustables === 'only'))) {
-            out.writeHead(400, 'Invalid parameters');
+            out.writeHead(400, 'Invalid Parameters');
             out.end();
             console.log(`${ip} attempted to get in type ${type} (invalid parameters)`);
             return;
