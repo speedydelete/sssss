@@ -5,6 +5,7 @@
         "lib": ["ESNext"],
         "target": "ESNext",
         "module": "NodeNext",
+        "types": ["node"],
         "strict": true,
         "sourceMap": true,
         "declaration": true

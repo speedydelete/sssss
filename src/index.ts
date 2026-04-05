@@ -243,6 +243,9 @@ export function normalizeShips<T extends boolean | undefined = undefined>(type: 
             ship.pop = minPop;
             ship.rle = minPhase.toRLE().split('\n').slice(1).join('');
         }
+        if (ship.pop === 0) {
+            continue;
+        }
         out.push(ship);
         if (i % 100 === 0 && i > 0) {
             console.log(`${i}/${ships.length} ships normalized`);
