@@ -126,7 +126,7 @@ export function normalizeShips<T extends boolean | undefined = undefined>(type: 
                 continue;
             }
         }
-        let limit = Math.ceil(ship.period / p.rulePeriod) * p.rulePeriod + 1;
+        let limit = Math.ceil(ship.period / p.rule.period) * p.rule.period + 1;
         if (globalLimit !== undefined) {
             limit = Math.min(limit, globalLimit);
         }
@@ -214,7 +214,7 @@ export function normalizeShips<T extends boolean | undefined = undefined>(type: 
             if (p instanceof MAPB0Pattern) {
                 oddRule = `B${bStr}/S${sStr}`;
             } else {
-                oddRule = `${sStr}/${bStr}/${p.states}`;
+                oddRule = `${sStr}/${bStr}/${p.rule.states}`;
             }
             for (let i = 0; i < type.phases.length; i++) {
                 let phase = type.phases[i];
@@ -268,7 +268,7 @@ export function patternToShip(type: string, p: Pattern, limit: number = 32768): 
     }
     return normalizeShips(type, [{
         pop: p.population,
-        rule: p.ruleStr,
+        rule: p.rule.str,
         dx: data.disp[0],
         dy: data.disp[1],
         period: data.period,
@@ -281,27 +281,27 @@ export function validateType(type: string, ship: Ship): void {
     let correct = false;
     let p = createPattern(ship.rule);
     if (type === 'int') {
-        if (p instanceof MAPPattern && p.ruleSymmetry === 'D8') {
+        if (p instanceof MAPPattern && p.rule.symmetry === 'D8') {
             correct = true;
         }
     } else if (type === 'intb0') {
-        if (p instanceof MAPB0Pattern && p.ruleSymmetry === 'D8') {
+        if (p instanceof MAPB0Pattern && p.rule.symmetry === 'D8') {
             correct = true;
         }
     } else if (type === 'ot') {
-        if (p instanceof MAPPattern && p.ruleStr.match(/^B[1-8]*\/S[0-8]*$/)) {
+        if (p instanceof MAPPattern && p.rule.str.match(/^B[1-8]*\/S[0-8]*$/)) {
             correct = true;
         }
     } else if (type === 'otb0') {
-        if (p instanceof MAPB0Pattern && p.ruleStr.match(/^B0[1-8]*\/S[0-8]*$/)) {
+        if (p instanceof MAPB0Pattern && p.rule.str.match(/^B0[1-8]*\/S[0-7]*$/)) {
             correct = true;
         }
     } else if (type === 'intgen') {
-        if (p instanceof MAPGenPattern && p.ruleSymmetry === 'D8') {
+        if (p instanceof MAPGenPattern && p.rule.symmetry === 'D8') {
             correct = true;
         }
     } else if (type === 'otgen') {
-        if (p instanceof MAPGenPattern && p.ruleStr.match(/^[0-8]*\/[1-8]*\/\d+$/)) {
+        if (p instanceof MAPGenPattern && p.rule.str.match(/^[1-8]*\/[1-8]*\/\d+$/)) {
             correct = true;
         }
     } else {
@@ -499,7 +499,7 @@ export async function findShip(type: string, dx: number, dy: number, period: num
             }
             let rle = p.toRLE();
             rle = rle.slice(rle.indexOf('\n') + 1);
-            let ship: Ship = {pop, rule: p.ruleStr, dx, dy, period, rle};
+            let ship: Ship = {pop, rule: p.rule.str, dx, dy, period, rle};
             if (adjustables === 'only') {
                 return [ship, true];
             } else {
