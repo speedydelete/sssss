@@ -367,3 +367,10 @@ function updateDataZip() {
 
 updateDataZip();
 setInterval(updateDataZip, 3600000);
+
+function backupDataZip() {
+    execSync(`mkdir -p ${basePath}/backup && cp ${basePath}/data.zip ${basePath}/backup/data_${Math.floor(Date.now() / 1000)}.zip`, {stdio: 'inherit'});
+}
+
+backupDataZip();
+setInterval(() => backupDataZip, 345600000);
