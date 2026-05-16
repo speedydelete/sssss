@@ -711,7 +711,7 @@ submitButton.addEventListener('click', async () => {
             shipsOutput.style.display = 'none';
             submitButton.textContent = 'Submit';
             isBackButton = false;
-            alert('You are being rate limited! Try again in 10 seconds!');
+            alert('You are being rate limited! Try again in 5 seconds!');
         } else {
             shipsOutput.textContent = `Error: Server returned ${resp.status} ${resp.statusText}!`;
         }

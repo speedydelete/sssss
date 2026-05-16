@@ -133,6 +133,8 @@ let lastAddTime = new Map<string, number>();
 let lastGetCountsTime = new Map<string, number>();
 let lastGetNewShipsTIme = new Map<string, number>();
 
+let maxJobsExceeded = false;
+
 
 const ENDPOINTS: {[key: string]: (req: IncomingMessage, params: URLSearchParams | null, out: ServerResponse<IncomingMessage>, ip: string, time: number) => void | Promise<void>} = {
 
@@ -183,9 +185,26 @@ const ENDPOINTS: {[key: string]: (req: IncomingMessage, params: URLSearchParams 
     },
 
     add(req: IncomingMessage, params: URLSearchParams | null, out: ServerResponse<IncomingMessage>, ip: string, time: number): void {
+        if (maxJobsExceeded) {
+            if (jobs.size === 0) {
+                maxJobsExceeded = false;
+            } else {
+                out.writeHead(500, 'Too Busy');
+                out.end();
+                console.log(`${ip} attempted to add when cleaning up after too many jobs (currently ${jobs.size} active jobs0!`);
+                return;
+            }
+        }
+        if (jobs.size > 4) {
+            maxJobsExceeded = true;
+            out.writeHead(500, 'Too Busy');
+            out.end();
+            console.log(`${ip} attempted to add when there are already ${jobs.size} active jobs!`);
+            return;
+        }
         let value = lastAddTime.get(ip);
         if (value !== undefined) {
-            if (time - value < 32) {
+            if (time - value < 5) {
                 out.writeHead(429);
                 out.end();
                 console.log(`${ip} exceeded rate limit on add after ${(time - value).toFixed(3)} seconds`);
@@ -194,10 +213,7 @@ const ENDPOINTS: {[key: string]: (req: IncomingMessage, params: URLSearchParams 
                 lastAddTime.set(ip, time);
             }
             if (jobs.size > 5) {
-                out.writeHead(500, 'Too Busy');
-                out.end();
-                console.log(`${ip} attempted to add when there are already ${jobs.size} active jobs!`);
-                return;
+
             }
         } else {
             lastAddTime.set(ip, time);
@@ -243,7 +259,7 @@ const ENDPOINTS: {[key: string]: (req: IncomingMessage, params: URLSearchParams 
                 out.write(text);
                 out.end();
                 updateCountFor(type);
-                console.log(`${ip} added ${ships.length} ships to type ${type}`);
+                console.log(`${ip} added ${ships.length} ships to type ${type}: ${text}`);
             } catch (error) {
                 console.error(error);
                 out.writeHead(500);
