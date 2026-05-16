@@ -108,6 +108,7 @@ export function normalizeShips<T extends boolean | undefined = undefined>(type: 
     let out: Ship[] = [];
     let invalidShips: string[] = [];
     let invalidPeriods: string[] = [];
+    let lastUpdate = performance.now();
     for (let i = 0; i < ships.length; i++) {
         let ship = ships[i];
         let speed = speedToString(ship.dx, ship.dy, ship.period);
@@ -247,8 +248,10 @@ export function normalizeShips<T extends boolean | undefined = undefined>(type: 
             continue;
         }
         out.push(ship);
-        if (i % 100 === 0 && i > 0) {
+        let now = performance.now();
+        if (now - lastUpdate > 10000) {
             console.log(`${i}/${ships.length} ships normalized`);
+            lastUpdate = now;
         }
     }
     out = removeDuplicateShips(out);
