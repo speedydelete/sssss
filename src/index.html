@@ -229,7 +229,7 @@ option {
             </div>
             <div>
                 <h2>Submit</h2>
-                Enter spaceships/oscillators in RLE or CSV format. The maximum period is 32768. If you would like to submit a higher-period pattern, or an adjustable pattern (don't submit adjustables here!) please contact speedydelete on the ConwayLife.com forums or Discord.
+                Enter spaceships/oscillators in RLE or CSV format. The maximum period is 65536. If you would like to submit a higher-period pattern, or an adjustable pattern (don't submit adjustables here!) please contact speedydelete on the ConwayLife.com forums or Discord.
                 <textarea id="ships"></textarea>
                 <div id="ships-out"></div>
                 <button id="submit">Submit</button>
@@ -339,9 +339,9 @@ function parseData(data) {
             if (line.startsWith('x')) {
                 if (currentRLE !== '') {
                     let p = parse(currentRLE);
-                    let type = findType(p, 32768, false);
+                    let type = findType(p, 65536, false);
                     if (!type.disp) {
-                        alert(`Pattern #${rleNumber} is not a spaceship or its period is higher than 32768!`);
+                        alert(`Pattern #${rleNumber} is not a spaceship or its period is higher than 65536!`);
                     } else {
                         out.push({
                             pop: 0,
@@ -363,10 +363,10 @@ function parseData(data) {
         }
         if (currentRLE !== '') {
             let p = parse(currentRLE);
-            let type = findType(p, 32768);
+            let type = findType(p, 65536);
             p.run(type.stabilizedAt);
             if (!type.disp) {
-                alert(`Pattern #${rleNumber} is not a spaceship or its period is higher than 32768!`);
+                alert(`Pattern #${rleNumber} is not a spaceship or its period is higher than 65536!`);
             } else {
                 out.push({
                     pop: 0,
@@ -675,7 +675,7 @@ submitButton.addEventListener('click', async () => {
         alert(`No ships provided or all ships are invalid!`);
         return;
     }
-    let [ships, invalidShips] = normalizeShips(typeSelect.value, rawShips, 32768);
+    let [ships, invalidShips] = normalizeShips(typeSelect.value, rawShips, 65536);
     if (ships.length === 0) {
         alert(`No ships provided or all ships are invalid!`);
         return;

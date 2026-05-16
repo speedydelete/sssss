@@ -193,6 +193,12 @@ const ENDPOINTS: {[key: string]: (req: IncomingMessage, params: URLSearchParams 
             } else {
                 lastAddTime.set(ip, time);
             }
+            if (jobs.size > 5) {
+                out.writeHead(500, 'Too Busy');
+                out.end();
+                console.log(`${ip} attempted to add when there are already ${jobs.size} active jobs!`);
+                return;
+            }
         } else {
             lastAddTime.set(ip, time);
         }
@@ -228,7 +234,7 @@ const ENDPOINTS: {[key: string]: (req: IncomingMessage, params: URLSearchParams 
                     console.log(`${ip} attempted to add ${ships.length} ships to type ${type} (more than 2048)`);
                     return;
                 }
-                let [text, speeds] = (await addShipsToFilesWorker(type, ships, 32768, false));
+                let [text, speeds] = (await addShipsToFilesWorker(type, ships, 65536, false));
                 newShips.push(...speeds.newShips.map(x => [type, x[0], x[1]] as [string, string, number]));
                 improvedShips.push(...speeds.improvedShips.map(x => [type, x[0], x[1], x[2]] as [string, string, number, number]));
                 newPeriods.push(...speeds.newPeriods.map(x => [type, x[0], x[1]] as [string, string, number]));
