@@ -244,7 +244,7 @@ option {
 import {TRANSITIONS, VALID_TRANSITIONS, unparseTransitions, arrayToTransitions, MAPPattern, MAPGenPattern, MAPB0Pattern, MAPGenB0Pattern, findType, findMinmax, createPattern, parse} from '../lifeweb.js';
 
 
-const API_PATH = `http://127.0.0.1:3000`;
+const API_PATH = `api`;
 
 
 function parseSpeed(speed) {
@@ -679,7 +679,7 @@ function normalizeShips(shipType, ships, throwInvalid, globalLimit) {
 }
 
 
-export function isValidInType(type, ship) {
+function isValidInType(type, ship) {
     let p = createPattern(ship.rule);
     let out;
     if (type === 'int') {
@@ -719,12 +719,6 @@ export function isValidInType(type, ship) {
         throw new Error(`Invalid ship type: '${type}'`);
     }
     return Boolean(out);
-}
-
-function validateType(type, ship) {
-    if (!isValidInType(type, ship)) {
-        throw new Error(`Invalid rule for ${TYPE_NAMES[type]}: ${ship.rule}`);
-    }
 }
 
 let typeSelect = document.getElementById('type');
