@@ -39,7 +39,8 @@ if (Number.isNaN(limit)) {
 let records: {[key: string]: number} = {};
 
 let count = 0;
-let start = performance.now();
+let start = performance.now() / 1000;
+let lastUpdate = start;
 
 while (true) {
     let p = base.copy();
@@ -124,7 +125,9 @@ while (true) {
         hashes.push(hash);
     }
     count++;
-    if (count % 100000 === 0) {
-        console.log(`# ${count} rules checked (${(count / ((performance.now() - start) / 1000)).toFixed(3)} rules/second)`);
+    let now = performance.now() / 1000;
+    if (now - lastUpdate > 10) {
+        console.log(`# ${count} rules checked (${(count / (now - start)).toFixed(3)} rules/second)`);
+        lastUpdate = now;
     }
 }
