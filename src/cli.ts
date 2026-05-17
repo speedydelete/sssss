@@ -5,6 +5,11 @@ import {parse} from '../lifeweb/lib/index.js';
 import {Type, TYPES, Ship, parseData, patternToShip, addShipsToFiles, mergeShips, findSpeedRLE} from './index.js';
 
 
+if (process.argv[2] === 'randomsearch') {
+    await import('./randomsearch.js');
+    process.exit(0);
+}
+
 let cmd = process.argv[2];
 let type = process.argv[3] as Type;
 let arg = process.argv.slice(4).join(' ');
