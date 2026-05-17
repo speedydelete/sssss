@@ -17,7 +17,7 @@ export const TYPE_NAMES: {[K in Type]: string} = {
     'intgen': 'INT Generations',
     'otgen': 'OT Generations',
     'intb1e': 'INT B1e',
-    'intnos': 'INT Statorless',
+    'intnos': 'INT Phoenix',
     'int1dt': 'INT 1 Death Transition',
 };
 

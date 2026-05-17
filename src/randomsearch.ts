@@ -1,5 +1,6 @@
 
-import {TRANSITIONS, VALID_TRANSITIONS, parseTransitions, unparseTransitions, arrayToTransitions, MAPPattern, createPattern} from '../lifeweb/lib/index.js';
+import {TRANSITIONS, VALID_TRANSITIONS, parseTransitions, unparseTransitions, arrayToTransitions, MAPPattern, createPattern, Pattern} from '../lifeweb/lib/index.js';
+import {TYPES, parseData} from './index.js';
 
 
 function parseRule(rule: string): [string[], string[]] {
@@ -21,28 +22,43 @@ function unparseRule(b: string[], s: string[]): string {
 }
 
 
-let minRule = process.argv[3];
-let maxRule = process.argv[4];
+if (process.argv.length < 8) {
+    throw new Error(`Expected at least 5 arguments`);
+}
+
+let type = process.argv[3];
+if (!(type in TYPES)) {
+
+}
+
+let minRule = process.argv[4];
+let maxRule = process.argv[5];
 
 let [minB, minS] = parseRule(minRule);
 let [maxB, maxS] = parseRule(maxRule);
 let changeB = (new Set(maxB)).difference(new Set(minB));
 let changeS = (new Set(maxS)).difference(new Set(minS));
 
-let base = (createPattern(minRule) as MAPPattern).loadRLE(process.argv[5]).shrinkToFit();
+let base = (createPattern(minRule) as MAPPattern).loadRLE(process.argv[6]).shrinkToFit();
 
-let limit = parseInt(process.argv[6]);
+let limit = parseInt(process.argv[7]);
 if (Number.isNaN(limit)) {
     throw new Error(`Invalid limit: ${limit}`);
 }
 
+let extraArgs: {[key: string]: string | undefined} = {};
+for (let arg of process.argv.slice(8)) {
+    let [key, value] = arg.split('=');
+    if (value === undefined) {
+        throw new Error(`Invalid key=value argument: '${arg}'`);
+    }
+    extraArgs[key] = value;
+}
+
 let records: {[key: string]: number} = {};
 
-let count = 0;
-let start = performance.now() / 1000;
-let lastUpdate = start;
 
-while (true) {
+function run(): void {
     let p = base.copy();
     p.trs = base.trs.slice();
     for (let tr of changeB) {
@@ -124,6 +140,14 @@ while (true) {
         pops.push(pop);
         hashes.push(hash);
     }
+}
+
+let count = 0;
+let start = performance.now() / 1000;
+let lastUpdate = start;
+
+while (true) {
+    run();
     count++;
     let now = performance.now() / 1000;
     if (now - lastUpdate > 10) {
