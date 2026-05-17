@@ -62,6 +62,9 @@ while (true) {
     for (let i = 0; i < limit; i++) {
         p.runGeneration();
         p.shrinkToFit();
+        if (p.height !== base.height || p.width !== base.width) {
+            break;
+        }
         let pop = p.population;
         let hash = p.hash32();
         if (pop === 0) {
