@@ -184,7 +184,7 @@ const ENDPOINTS: {[key: string]: (req: IncomingMessage, params: URLSearchParams 
         let dx = parseInt(dxP);
         let dy = parseInt(dyP);
         let period = parseInt(periodP);
-        if (!(type in TYPES) || Number.isNaN(dx) || Number.isNaN(dy) || Number.isNaN(period) || (adjustables !== undefined && !(adjustables === 'yes' || adjustables === 'no' || adjustables === 'only'))) {
+        if (!TYPES.includes(type as Type) || Number.isNaN(dx) || Number.isNaN(dy) || Number.isNaN(period) || (adjustables !== undefined && !(adjustables === 'yes' || adjustables === 'no' || adjustables === 'only'))) {
             out.writeHead(400, 'Invalid Parameters');
             out.end();
             console.log(`400 Invalid Parameters (${getLineNumber(new Error())})`); 
