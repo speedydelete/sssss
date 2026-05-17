@@ -394,22 +394,7 @@ export function isValidInType(type: Type, ship: Ship): boolean {
     } else if (type === 'intnos') {
         out = p instanceof MAPPattern && p.rule.symmetry === 'D8' && p.rule.str.endsWith('/S');
     } else if (type === 'int1dt') {
-        if (p instanceof MAPPattern && p.rule.symmetry === 'D8') {
-            out = true;
-            let found = false;
-            for (let tr in TRANSITIONS) {
-                if (!p.trs[TRANSITIONS[tr][0]]) {
-                    if (found) {
-                        out = false;
-                        break;
-                    }
-                    found = true;
-                }
-            }
-            if (!found) {
-                out = false;
-            }
-        }
+        return has1DT(ship.rule);
     } else {
         throw new Error(`Invalid ship type: '${type}'`);
     }
@@ -473,8 +458,11 @@ async function _addShipsToFiles(type: Type, ships: Ship[], limit: number | undef
         ships = normalizeShips(type, ships.filter(ship => ship.rule.endsWith('/S')), false, limit)[0];
     } else if (type === 'int1dt') {
         ships = normalizeShips(type, ships.filter(ship => ship.canBeIn1DT), false, limit)[0];
+        console.log(type, ships);
     }
+    console.log(type, ships);
     ships = ships.filter(x => x).filter(ship => isValidInType(type, ship));
+    console.log(type, ships);
     if (ships.length === 0) {
         return;
     }
@@ -541,9 +529,9 @@ export async function addShipsToFiles(type: Type, ships: Ship[], limit?: number,
     }
     let start = performance.now();
     ships = ships.filter(x => x);
-    for (let ship of ships) {
-        validateType(type, ship);
-    }
+    // for (let ship of ships) {
+    //     validateType(type, ship);
+    // }
     let ships2: Ship[];
     let invalidShips: string[];
     let invalidPeriods: string[];
