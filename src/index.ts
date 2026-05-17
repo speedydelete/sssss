@@ -1,13 +1,15 @@
 
 import {normalize} from 'node:path';
 import * as fs from 'node:fs/promises';
-import {Pattern, TRANSITIONS, VALID_TRANSITIONS, unparseTransitions, arrayToTransitions, MAPPattern, MAPB0Pattern, MAPGenPattern, MAPGenB0Pattern, findType, findMinmax, createPattern, parse, parseSpeed, speedToString} from '../lifeweb/lib/index.js';
+import {Pattern, TRANSITIONS, VALID_TRANSITIONS, unparseTransitions, arrayToTransitions, MAPPattern, MAPB0Pattern, MAPGenPattern, findType, findMinmax, createPattern, parse, parseSpeed, speedToString} from '../lifeweb/lib/index.js';
 import {createAdjustable} from './adjustable/index.js';
 
 
+export type Type = 'int' | 'intb0' | 'ot' | 'otb0' | 'intgen' | 'otgen' | 'intb1e' | 'intnos' | 'int1dt';
+
 export const TYPES = ['int', 'intb0', 'ot', 'otb0', 'intgen', 'otgen', 'intb1e', 'intnos', 'int1dt'];
 
-export const TYPE_NAMES: {[key: string]: string} = {
+export const TYPE_NAMES: {[K in Type]: string} = {
     'int': 'INT',
     'intb0': 'INT B0',
     'ot': 'OT',
@@ -19,6 +21,19 @@ export const TYPE_NAMES: {[key: string]: string} = {
     'int1dt': 'INT 1 Death Transition',
 };
 
+export const SUPERTYPES: {[K in Type]?: Type} = {
+    'ot': 'int',
+    'otb0': 'intb0',
+    'otgen': 'intgen',
+    'intb1e': 'int',
+    'intnos': 'int',
+    'int1dt': 'int',
+};
+
+export const SUBTYPES: {[K in Type]?: Type[]} = {
+    'int': ['ot', 'intb1e', 'intnos', 'int1dt'],
+};
+
 
 export interface Ship {
     pop: number;
@@ -28,6 +43,8 @@ export interface Ship {
     period: number;
     rle: string;
     comment?: string;
+    canBeInOT?: boolean;
+    canBeIn1DT?: boolean;
 }
 
 export function parseData(data: string): Ship[] {
@@ -104,8 +121,64 @@ export function removeDuplicateShips(ships: Ship[]): Ship[] {
     return out;
 }
 
-export function normalizeShips<T extends boolean | undefined = undefined>(type: string, ships: Ship[], throwInvalid?: T, globalLimit?: number): T extends false ? [Ship[], string[], string[]] : Ship[] {
-    let isOT = type.startsWith('ot');
+function includesOT(min: string, max: string): boolean {
+    let minP = createPattern(min) as MAPPattern | MAPB0Pattern | MAPGenPattern;
+    let minTrs = minP instanceof MAPB0Pattern ? minP.evenTrs.map(x => 1 -  x) : minP.trs;
+    let maxP = createPattern(max) as MAPPattern | MAPB0Pattern | MAPGenPattern;
+    let maxTrs = maxP instanceof MAPB0Pattern ? maxP.evenTrs.map(x => 1 -  x) : maxP.trs;
+    for (let s of [false, true]) {
+        for (let number of [0, 1, 2, 3, 4, 5, 6, 7, 8]) {
+            let minCount = 0;
+            let maxCount = 0;
+            let total = 0;
+            for (let letter of VALID_TRANSITIONS[number]) {
+                for (let tr of TRANSITIONS[number + letter]) {
+                    if (s) {
+                        tr |= (1 << 4);
+                    }
+                    if (minTrs[tr]) {
+                        minCount++;
+                    }
+                    if (maxTrs[tr]) {
+                        maxCount++;
+                    }
+                    total++;
+                }
+            }
+            if (!(minCount === 0 || minCount === total || maxCount === 0 || maxCount === total)) {
+                return false;
+            }
+        }
+    }
+    return true;
+}
+
+function has1DT(rule: string): boolean {
+    let p = createPattern(rule) as MAPPattern | MAPB0Pattern | MAPGenPattern;
+    let trs = p instanceof MAPB0Pattern ? p.evenTrs.map(x => 1 - x) : p.trs;
+    let found = false;
+    for (let value of Object.values(TRANSITIONS)) {
+        let count = 0;
+        for (let tr of value) {
+            if (trs[tr | (1 << 4)]) {
+                count++;
+            }
+        }
+        if (count === 0) {
+            if (found) {
+                return false;
+            }
+            found = true;
+        } else if (count === value.length) {
+            continue;
+        } else {
+            return false;
+        }
+    }
+    return true;
+}
+
+export function normalizeShips<T extends boolean | undefined = undefined>(shipType: Type, ships: Ship[], throwInvalid?: T, globalLimit?: number): T extends false ? [Ship[], string[], string[]] : Ship[] {
     let out: Ship[] = [];
     let invalidShips: string[] = [];
     let invalidPeriods: string[] = [];
@@ -204,20 +277,40 @@ export function normalizeShips<T extends boolean | undefined = undefined>(type: 
                 }
             }
         }
-        ship.rule = findMinmax(p, limit, undefined, undefined, isOT)[0];
-        if (p instanceof MAPB0Pattern || p instanceof MAPGenB0Pattern) {
+        let [min, max] = findMinmax(p, limit, undefined, undefined, shipType.startsWith('ot'));
+        ship.rule = min;
+        ship.canBeInOT = includesOT(min, max);
+        ship.canBeIn1DT = has1DT(max);
+        if ((shipType.startsWith('ot') && !ship.canBeInOT) || (shipType === 'intb1e' && !ship.rule.startsWith('B1e')) || (shipType === 'intnos' && !ship.rule.endsWith('/S')) || (shipType === 'int1dt' && !ship.canBeIn1DT)) {
+            if (throwInvalid) {
+                throw new Error(`Invalid ship detected: ${shipsToString([ship]).slice(0, -1)}`);
+            } else {
+                console.log(`Invalid ship detected: ${shipsToString([ship]).slice(0, -1)}`);
+                if (ship.dx === 0 && ship.dy === 0) {
+                    invalidPeriods.push(speed);
+                } else {
+                    invalidShips.push(speed);
+                }
+                continue;
+            }
+        }
+        if (shipType === 'int1dt') {
+            let minParts = min.split('/');
+            let maxParts = max.split('/');
+            if (p instanceof MAPGenPattern) {
+                ship.rule = `${maxParts[0]}/${minParts[1]}/${minParts[2]}`;
+            } else {
+                ship.rule = `${minParts[0]}/${maxParts[1]}`;
+            }
+        }
+        if (p instanceof MAPB0Pattern) {
             let minPop = type.phases[0].population;
             let minPhase = type.phases[0];
             let evenRule = ship.rule;
             let [bTrs, sTrs] = arrayToTransitions(p.evenTrs.reverse(), TRANSITIONS);
             let bStr = unparseTransitions(bTrs, VALID_TRANSITIONS, false);
             let sStr = unparseTransitions(sTrs, VALID_TRANSITIONS, false);
-            let oddRule: string;
-            if (p instanceof MAPB0Pattern) {
-                oddRule = `B${bStr}/S${sStr}`;
-            } else {
-                oddRule = `${sStr}/${bStr}/${p.rule.states}`;
-            }
+            let oddRule = `B${bStr}/S${sStr}`;
             for (let i = 0; i < type.phases.length; i++) {
                 let phase = type.phases[i];
                 if (phase.population < minPop) {
@@ -230,7 +323,7 @@ export function normalizeShips<T extends boolean | undefined = undefined>(type: 
             ship.rle = minPhase.toRLE().split('\n').slice(1).join('');
             if (ship.rule === oddRule) {
                 p = parse(`x = 0, y = 0, rule = ${ship.rule}\n${ship.rle}`);
-                ship.rule = findMinmax(p, limit, undefined, undefined, isOT)[0];
+                ship.rule = findMinmax(p, limit, undefined, undefined)[0];
             }
         } else {
             let minPop = type.phases[0].population;
@@ -261,7 +354,7 @@ export function normalizeShips<T extends boolean | undefined = undefined>(type: 
 }
 
 
-export function patternToShip(type: string, p: Pattern, limit: number = 32768): Ship[] {
+export function patternToShip(type: Type, p: Pattern, limit: number = 32768): Ship[] {
     let data = findType(p, limit);
     p.run(data.stabilizedAt);
     if (!data.disp) {
@@ -281,46 +374,50 @@ export function patternToShip(type: string, p: Pattern, limit: number = 32768): 
 }
 
 
-export function validateType(type: string, ship: Ship): void {
-    let correct: unknown;
+export function isValidInType(type: Type, ship: Ship): boolean {
     let p = createPattern(ship.rule);
+    let out: unknown;
     if (type === 'int') {
-        correct = p instanceof MAPPattern && p.rule.symmetry === 'D8' && !p.rule.str.startsWith('B1e');
+        out = p instanceof MAPPattern && p.rule.symmetry === 'D8';
     } else if (type === 'intb0') {
-        correct = p instanceof MAPB0Pattern && p.rule.symmetry === 'D8';
+        out = p instanceof MAPB0Pattern && p.rule.symmetry === 'D8';
     } else if (type === 'ot') {
-        correct = p instanceof MAPPattern && p.rule.symmetry === 'D8' && p.rule.str.match(/^B[1-8]*\/S[0-8]*$/);
+        out = p instanceof MAPPattern && p.rule.symmetry === 'D8' && p.rule.str.match(/^B[1-8]*\/S[0-8]*$/);
     } else if (type === 'otb0') {
-        correct = p instanceof MAPB0Pattern && p.rule.symmetry === 'D8' && p.rule.str.match(/^B0[1-8]*\/S[0-7]*$/);
+        out = p instanceof MAPB0Pattern && p.rule.symmetry === 'D8' && p.rule.str.match(/^B0[1-8]*\/S[0-7]*$/);
     } else if (type === 'intgen') {
-        correct = p instanceof MAPGenPattern && p.rule.symmetry === 'D8';
+        out = p instanceof MAPGenPattern && p.rule.symmetry === 'D8';
     } else if (type === 'otgen') {
-        correct = p instanceof MAPGenPattern && p.rule.symmetry === 'D8' && p.rule.str.match(/^[0-8]*\/[1-8]*\/\d+$/);
+        out = p instanceof MAPGenPattern && p.rule.symmetry === 'D8' && p.rule.str.match(/^[0-8]*\/[1-8]*\/\d+$/);
     } else if (type === 'intb1e') {
-        correct = p instanceof MAPPattern && p.rule.symmetry === 'D8' && p.rule.str.startsWith('B1e');
+        out = p instanceof MAPPattern && p.rule.symmetry === 'D8' && p.rule.str.startsWith('B1e');
     } else if (type === 'intnos') {
-        correct = p instanceof MAPPattern && p.rule.symmetry === 'D8' && p.rule.str.endsWith('/S');
+        out = p instanceof MAPPattern && p.rule.symmetry === 'D8' && p.rule.str.endsWith('/S');
     } else if (type === 'int1dt') {
         if (p instanceof MAPPattern && p.rule.symmetry === 'D8') {
-            correct = true;
+            out = true;
             let found = false;
             for (let tr in TRANSITIONS) {
                 if (!p.trs[TRANSITIONS[tr][0]]) {
                     if (found) {
-                        correct = false;
+                        out = false;
                         break;
                     }
                     found = true;
                 }
             }
             if (!found) {
-                correct = false;
+                out = false;
             }
         }
     } else {
         throw new Error(`Invalid ship type: '${type}'`);
     }
-    if (!correct) {
+    return Boolean(out);
+}
+
+export function validateType(type: Type, ship: Ship): void {
+    if (!isValidInType(type, ship)) {
         throw new Error(`Invalid rule for ${TYPE_NAMES[type]}: ${ship.rule}`);
     }
 }
@@ -349,7 +446,99 @@ function classifyShips(ships: Ship[]): [Ship[], Ship[], Ship[], Ship[]] {
 
 let dataPath = normalize(`${import.meta.dirname}/../data`);
 
-export async function addShipsToFiles(type: string, ships: Ship[], limit?: number, includeComments: boolean = true, verify: boolean = true): Promise<[string, {newShips: [string, number][], improvedShips: [string, number, number][], newPeriods: [string, number][], improvedPeriods: [string, number, number][]}]> {
+export type ChangeData = {[K in Type]?: {
+    newSpeeds: [string, number][];
+    improvedSpeeds: [string, number, number][];
+    unchangedSpeeds: string[];
+    newPeriods: [string, number][];
+    improvedPeriods: [string, number, number][];
+    unchangedPeriods: string[];
+}};
+
+async function _addShipsToFiles(type: Type, ships: Ship[], limit: number | undefined, includeComments: boolean, _changes: ChangeData): Promise<void> {
+    if (!(type in _changes)) {
+        _changes[type] = {
+            newSpeeds: [],
+            improvedSpeeds: [],
+            unchangedSpeeds: [],
+            newPeriods: [],
+            improvedPeriods: [],
+            unchangedPeriods: [],
+        }
+    }
+    let changes = _changes[type] as Exclude<ChangeData[Type], undefined>;
+    if (type === 'ot' || type === 'otb0') {
+        ships = normalizeShips(type, ships.filter(ship => ship.canBeInOT), false, limit)[0];
+    } else if (type === 'intnos') {
+        ships = normalizeShips(type, ships.filter(ship => ship.rule.endsWith('/S')), false, limit)[0];
+    } else if (type === 'int1dt') {
+        ships = normalizeShips(type, ships.filter(ship => ship.canBeIn1DT), false, limit)[0];
+    }
+    ships = ships.filter(x => x).filter(ship => isValidInType(type, ship));
+    if (ships.length === 0) {
+        return;
+    }
+    let [oscillators, orthogonals, diagonals, obliques] = classifyShips(ships);
+    for (let [part, name] of [[oscillators, 'oscillator'], [orthogonals, 'orthogonal'], [diagonals, 'diagonal'], [obliques, 'oblique']] as const) {
+        if (part.length === 0) {
+            continue;
+        }
+        if (part.length > 2048) {
+            console.log('Adding ' + name + 's');
+        }
+        let data = parseData((await fs.readFile(`${dataPath}/${type}/${name}.sss`)).toString());
+        let found: Ship[] = [];
+        for (let ship of data) {
+            for (let newShip of part) {
+                if (found.includes(newShip)) {
+                    continue;
+                }
+                if (newShip.period === ship.period && newShip.dx === ship.dx && newShip.dy === ship.dy) {
+                    let speed = speedToString(ship.dx, ship.dy, ship.period);
+                    if (newShip.pop < ship.pop) {
+                        if (ship.dx === 0 && ship.dy === 0) {
+                            changes.improvedPeriods.push([speed, newShip.pop, ship.pop]);
+                        } else {
+                            changes.improvedSpeeds.push([speed, newShip.pop, ship.pop]);
+                        }
+                        ship.pop = newShip.pop;
+                        ship.rule = newShip.rule;
+                        ship.rle = newShip.rle;
+                    } else {
+                        if (ship.dx === 0 && ship.dy === 0) {
+                            changes.unchangedPeriods.push(speed);
+                        } else {
+                            changes.unchangedSpeeds.push(speed);
+                        }
+                    }
+                    found.push(newShip);
+                    break;
+                }
+            }
+            if (found.length === ships.length) {
+                break;
+            }
+        }
+        for (let ship of part) {
+            if (!found.includes(ship)) {
+                data.push(ship);
+                let speed = speedToString(ship.dx, ship.dy, ship.period);
+                if (ship.dx === 0 && ship.dy === 0) {
+                    changes.newPeriods.push([speed, ship.pop]);
+                } else {
+                    changes.newSpeeds.push([speed, ship.pop]);
+                }
+            }
+        }
+        data = removeDuplicateShips(data);
+        await fs.writeFile(`${dataPath}/${type}/${name}.sss`, shipsToString(data, includeComments));
+    }
+}
+
+export async function addShipsToFiles(type: Type, ships: Ship[], limit?: number, includeComments: boolean = true, verify: boolean = true): Promise<[string, ChangeData]> {
+    if (type in SUPERTYPES && SUPERTYPES[type]) {
+        return addShipsToFiles(SUPERTYPES[type], ships, limit, includeComments, verify);
+    }
     let start = performance.now();
     ships = ships.filter(x => x);
     for (let ship of ships) {
@@ -369,66 +558,12 @@ export async function addShipsToFiles(type: string, ships: Ship[], limit?: numbe
     for (let ship of ships2) {
         validateType(type, ship);
     }
-    let [oscillators, orthogonals, diagonals, obliques] = classifyShips(ships2);
-    let newShips: [string, number][] = [];
-    let improvedShips: [string, number, number][] = [];
-    let unchangedShips: string[] = [];
-    let newPeriods: [string, number][] = [];
-    let improvedPeriods: [string, number, number][] = [];
-    let unchangedPeriods: string[] = [];
-    for (let [part, name] of [[oscillators, 'oscillator'], [orthogonals, 'orthogonal'], [diagonals, 'diagonal'], [obliques, 'oblique']] as const) {
-        if (part.length === 0) {
-            continue;
+    let changes: ChangeData = {};
+    await _addShipsToFiles(type, ships2, limit, includeComments, changes);
+    if (type in SUBTYPES && SUBTYPES[type]) {
+        for (let subtype of SUBTYPES[type]) {
+            await _addShipsToFiles(subtype, ships2, limit, includeComments, changes);
         }
-        if (part.length > 2048) {
-            console.log('Adding ' + name + 's');
-        }
-        let data = parseData((await fs.readFile(`${dataPath}/${type}/${name}.sss`)).toString());
-        let found: Ship[] = [];
-        for (let ship of data) {
-            for (let newShip of part) {
-                if (found.includes(newShip)) {
-                    continue;
-                }
-                if (newShip.period === ship.period && newShip.dx === ship.dx && newShip.dy === ship.dy) {
-                    let speed = speedToString(ship.dx, ship.dy, ship.period);
-                    if (newShip.pop < ship.pop) {
-                        if (ship.dx === 0 && ship.dy === 0) {
-                            improvedPeriods.push([speed, newShip.pop, ship.pop]);
-                        } else {
-                            improvedShips.push([speed, newShip.pop, ship.pop]);
-                        }
-                        ship.pop = newShip.pop;
-                        ship.rule = newShip.rule;
-                        ship.rle = newShip.rle;
-                    } else {
-                        if (ship.dx === 0 && ship.dy === 0) {
-                            unchangedPeriods.push(speed);
-                        } else {
-                            unchangedShips.push(speed);
-                        }
-                    }
-                    found.push(newShip);
-                    break;
-                }
-            }
-            if (found.length === ships.length) {
-                break;
-            }
-        }
-        for (let ship of part) {
-            if (!found.includes(ship)) {
-                data.push(ship);
-                let speed = speedToString(ship.dx, ship.dy, ship.period);
-                if (ship.dx === 0 && ship.dy === 0) {
-                    newPeriods.push([speed, ship.pop]);
-                } else {
-                    newShips.push([speed, ship.pop]);
-                }
-            }
-        }
-        data = removeDuplicateShips(data);
-        await fs.writeFile(`${dataPath}/${type}/${name}.sss`, shipsToString(data, includeComments));
     }
     let out = '';
     if (invalidShips.length > 0) {
@@ -437,32 +572,37 @@ export async function addShipsToFiles(type: string, ships: Ship[], limit?: numbe
     if (invalidPeriods.length > 0) {
         out += `${invalidShips.length} invalid period${invalidPeriods.length === 1 ? '' : 's'}: ${invalidShips.join(', ')}\n`;
     }
-    if (newShips.length > 0) {
-        out += `${newShips.length} new ship${newShips.length === 1 ? '' : 's'}: ${newShips.map(x => x[0]).join(', ')}\n`;
-    }
-    if (improvedShips.length > 0) {
-        out += `${improvedShips.length} improved ship${improvedShips.length === 1 ? '' : 's'}: ${improvedShips.map(x => x[0]).join(', ')}\n`;
-    }
-    if (unchangedShips.length > 0) {
-        out += `${unchangedShips.length} unchanged ship${unchangedShips.length === 1 ? '' : 's'}: ${unchangedShips.join(', ')}\n`;
-    }
-    if (newPeriods.length > 0) {
-        out += `${newPeriods.length} new period${newPeriods.length === 1 ? '' : 's'}: ${newPeriods.map(x => x[0]).join(', ')}\n`;
-    }
-    if (improvedPeriods.length > 0) {
-        out += `${improvedPeriods.length} improved period${improvedPeriods.length === 1 ? '' : 's'}: ${improvedPeriods.map(x => x[0]).join(', ')}\n`;
-    }
-    if (unchangedPeriods.length > 0) {
-        out += `${unchangedPeriods.length} unchanged period${unchangedPeriods.length === 1 ? '' : 's'}: ${unchangedPeriods.join(', ')}\n`;
-    }
-    if (invalidShips.length === 0 && invalidPeriods.length === 0 && newShips.length === 0 && improvedShips.length === 0 && unchangedShips.length === 0 && newPeriods.length === 0 && improvedPeriods.length === 0 && unchangedPeriods.length === 0) {
-        out = 'No changes made\n';
+    for (let [key, value] of Object.entries(changes)) {
+        let {newSpeeds, improvedSpeeds, unchangedSpeeds, newPeriods, improvedPeriods, unchangedPeriods} = value;
+        if (newSpeeds.length === 0 && improvedSpeeds.length === 0 && unchangedSpeeds.length === 0 && newPeriods.length === 0 && improvedPeriods.length === 0 && unchangedPeriods.length === 0) {
+            out += `No changes made in ${TYPE_NAMES[key as Type]}\n`;
+            continue;
+        }
+        out += `Changes made in ${TYPE_NAMES[key as Type]}:\n`;
+        if (newSpeeds.length > 0) {
+            out += `${newSpeeds.length} new ship${newSpeeds.length === 1 ? '' : 's'}: ${newSpeeds.map(x => x[0]).join(', ')}\n`;
+        }
+        if (improvedSpeeds.length > 0) {
+            out += `${improvedSpeeds.length} improved ship${improvedSpeeds.length === 1 ? '' : 's'}: ${improvedSpeeds.map(x => x[0]).join(', ')}\n`;
+        }
+        if (unchangedSpeeds.length > 0) {
+            out += `${unchangedSpeeds.length} unchanged ship${unchangedSpeeds.length === 1 ? '' : 's'}: ${unchangedSpeeds.join(', ')}\n`;
+        }
+        if (newPeriods.length > 0) {
+            out += `${newPeriods.length} new period${newPeriods.length === 1 ? '' : 's'}: ${newPeriods.map(x => x[0]).join(', ')}\n`;
+        }
+        if (improvedPeriods.length > 0) {
+            out += `${improvedPeriods.length} improved period${improvedPeriods.length === 1 ? '' : 's'}: ${improvedPeriods.map(x => x[0]).join(', ')}\n`;
+        }
+        if (unchangedPeriods.length > 0) {
+            out += `${unchangedPeriods.length} unchanged period${unchangedPeriods.length === 1 ? '' : 's'}: ${unchangedPeriods.join(', ')}\n`;
+        }
     }
     out += `Update took ${((performance.now() - start) / 1000).toFixed(3)} seconds\n`;
-    return [out, {newShips, improvedShips, newPeriods, improvedPeriods}];
+    return [out, changes];
 }
 
-export async function mergeShips(type: string, ships: Ship[], limit?: number): ReturnType<typeof addShipsToFiles> {
+export async function mergeShips(type: Type, ships: Ship[], limit?: number): ReturnType<typeof addShipsToFiles> {
     for (let ship of ships) {
         validateType(type, ship);
     }

@@ -1,13 +1,13 @@
 
 import {parentPort} from "node:worker_threads";
-import {Ship, addShipsToFiles} from './index.js';
+import {Type, Ship, addShipsToFiles} from './index.js';
 
 
 if (!parentPort) {
     throw new Error('No parent port');
 }
 
-parentPort.on('message', async ({id, type, ships, limit, includeComments}: {id: number, type: string, ships: Ship[], limit?: number, includeComments?: boolean}) => {
+parentPort.on('message', async ({id, type, ships, limit, includeComments}: {id: number, type: Type, ships: Ship[], limit?: number, includeComments?: boolean}) => {
     if (!parentPort) {
         throw new Error('No parent port');
     }

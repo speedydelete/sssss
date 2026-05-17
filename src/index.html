@@ -447,40 +447,50 @@ function removeDuplicateShips(ships) {
     return out;
 }
 
-function normalizeShips(type, ships, globalLimit) {
-    let isOT = type.startsWith('ot');
+function normalizeShips(shipType, ships, throwInvalid, globalLimit) {
     let out = [];
     let invalidShips = [];
     let invalidPeriods = [];
+    let lastUpdate = performance.now();
     for (let i = 0; i < ships.length; i++) {
         let ship = ships[i];
+        let speed = speedToString(ship.dx, ship.dy, ship.period);
         let p = parse(`x = 0, y = 0, rule = ${ship.rule}\n${ship.rle}`);
         if (p.isEmpty()) {
-            alert(`Invalid ship detected: ${shipsToString([ship]).slice(0, -1)}`);
-            let str = speedToString(ship);
-            if (str.startsWith('p')) {
-                invalidPeriods.push(str);
+            if (throwInvalid) {
+                throw new Error(`Invalid ship detected: ${shipsToString([ship]).slice(0, -1)}`);
             } else {
-                invalidShips.push(str);
+                console.log(`Invalid ship detected: ${shipsToString([ship]).slice(0, -1)}`);
+                let str = speedToString(ship.dx, ship.dy, ship.period);
+                if (str.startsWith('p')) {
+                    invalidPeriods.push(str);
+                } else {
+                    invalidShips.push(str);
+                }
+                continue;
             }
         }
-        let limit = Math.ceil(ship.period / p.rulePeriod) * p.rulePeriod + 1;
+        let limit = Math.ceil(ship.period / p.rule.period) * p.rule.period + 1;
         if (globalLimit !== undefined) {
             limit = Math.min(limit, globalLimit);
         }
         let type = findType(p, limit, true, false);
         p.run(type.stabilizedAt);
         if (!type.disp || p.population === 0) {
-            alert(`Invalid ship detected: ${shipsToString([ship]).slice(0, -1)}`);
-            if (ship.dx === 0 && ship.dy === 0) {
-                invalidPeriods.push(speedToString(ship));
+            if (throwInvalid) {
+                throw new Error(`Invalid ship detected: ${shipsToString([ship]).slice(0, -1)}`);
             } else {
-                invalidShips.push(speedToString(ship));
+                console.log(`Invalid ship detected: ${shipsToString([ship]).slice(0, -1)}`);
+                if (ship.dx === 0 && ship.dy === 0) {
+                    invalidPeriods.push(speed);
+                } else {
+                    invalidShips.push(speed);
+                }
+                continue;
             }
-            continue;
         }
         if (ship.dx !== type.disp[0] || ship.dy !== type.disp[1] || ship.period !== type.period) {
-            alert(`Warning: Replacing ${speedToString(ship)} with ${speedToString({dx: type.disp[0], dy: type.disp[1], period: type.period})}`);
+            console.log(`Warning: Replacing ${speed} with ${speedToString(type.disp[0], type.disp[1], type.period)}`);
         }
         ship.dx = type.disp[0];
         ship.dy = type.disp[1];
@@ -492,13 +502,17 @@ function normalizeShips(type, ships, globalLimit) {
                 ship.dy = 0;
                 type = findType(p, limit, false);
                 if (type.period !== ship.period || !type.disp || ship.dx !== type.disp[0] || ship.dy !== type.disp[1]) {
-                    alert(`Invalid ship detected: ${shipsToString([ship]).slice(0, -1)}`);
-                    if (ship.dx === 0 && ship.dy === 0) {
-                        invalidPeriods.push(speedToString(ship));
+                    if (throwInvalid) {
+                        throw new Error(`Invalid ship detected: ${shipsToString([ship]).slice(0, -1)}`);
                     } else {
-                        invalidShips.push(speedToString(ship));
+                        console.log(`Invalid ship detected: ${shipsToString([ship]).slice(0, -1)}`);
+                        if (ship.dx === 0 && ship.dy === 0) {
+                            invalidPeriods.push(speed);
+                        } else {
+                            invalidShips.push(speed);
+                        }
+                        continue;
                     }
-                    continue;
                 }
             }
             if (ship.dx < 0 || ship.dy < 0 || Math.abs(ship.dx) < Math.abs(ship.dy)) {
@@ -518,30 +532,54 @@ function normalizeShips(type, ships, globalLimit) {
                 }
                 type = findType(p, limit, false);
                 if (type.period !== ship.period || !type.disp || ship.dx !== type.disp[0] || ship.dy !== type.disp[1]) {
-                    alert(`Invalid ship detected: ${shipsToString([ship]).slice(0, -1)}`);
-                    if (ship.dx === 0 && ship.dy === 0) {
-                        invalidPeriods.push(speedToString(ship));
+                    if (throwInvalid) {
+                        throw new Error(`Invalid ship detected: ${shipsToString([ship]).slice(0, -1)}`);
                     } else {
-                        invalidShips.push(speedToString(ship));
+                        console.log(`Invalid ship detected: ${shipsToString([ship]).slice(0, -1)}`);
+                        if (ship.dx === 0 && ship.dy === 0) {
+                            invalidPeriods.push(speed);
+                        } else {
+                            invalidShips.push(speed);
+                        }
+                        continue;
                     }
-                    continue;
                 }
             }
         }
-        ship.rule = findMinmax(p, limit, undefined, undefined, isOT)[0];
-        if (p instanceof MAPB0Pattern || p instanceof MAPGenB0Pattern) {
+        let [min, max] = findMinmax(p, limit, undefined, undefined, shipType.startsWith('ot'));
+        ship.rule = min;
+        ship.canBeInOT = includesOT(min, max);
+        ship.canBeIn1DT = has1DT(max);
+        if ((shipType.startsWith('ot') && !ship.canBeInOT) || (shipType === 'intb1e' && !ship.rule.startsWith('B1e')) || (shipType === 'intnos' && !ship.rule.endsWith('/S')) || (shipType === 'int1dt' && !ship.canBeIn1DT)) {
+            if (throwInvalid) {
+                throw new Error(`Invalid ship detected: ${shipsToString([ship]).slice(0, -1)}`);
+            } else {
+                console.log(`Invalid ship detected: ${shipsToString([ship]).slice(0, -1)}`);
+                if (ship.dx === 0 && ship.dy === 0) {
+                    invalidPeriods.push(speed);
+                } else {
+                    invalidShips.push(speed);
+                }
+                continue;
+            }
+        }
+        if (shipType === 'int1dt') {
+            let minParts = min.split('/');
+            let maxParts = max.split('/');
+            if (p instanceof MAPGenPattern) {
+                ship.rule = `${maxParts[0]}/${minParts[1]}/${minParts[2]}`;
+            } else {
+                ship.rule = `${minParts[0]}/${maxParts[1]}`;
+            }
+        }
+        if (p instanceof MAPB0Pattern) {
             let minPop = type.phases[0].population;
             let minPhase = type.phases[0];
             let evenRule = ship.rule;
             let [bTrs, sTrs] = arrayToTransitions(p.evenTrs.reverse(), TRANSITIONS);
             let bStr = unparseTransitions(bTrs, VALID_TRANSITIONS, false);
             let sStr = unparseTransitions(sTrs, VALID_TRANSITIONS, false);
-            let oddRule;
-            if (p instanceof MAPB0Pattern) {
-                oddRule = `B${bStr}/S${sStr}`;
-            } else {
-                oddRule = `${sStr}/${bStr}/${p.states}`;
-            }
+            let oddRule = `B${bStr}/S${sStr}`;
             for (let i = 0; i < type.phases.length; i++) {
                 let phase = type.phases[i];
                 if (phase.population < minPop) {
@@ -554,7 +592,7 @@ function normalizeShips(type, ships, globalLimit) {
             ship.rle = minPhase.toRLE().split('\n').slice(1).join('');
             if (ship.rule === oddRule) {
                 p = parse(`x = 0, y = 0, rule = ${ship.rule}\n${ship.rle}`);
-                ship.rule = findMinmax(p, limit, undefined, undefined, isOT)[0];
+                ship.rule = findMinmax(p, limit, undefined, undefined)[0];
             }
         } else {
             let minPop = type.phases[0].population;
@@ -569,52 +607,68 @@ function normalizeShips(type, ships, globalLimit) {
             ship.pop = minPop;
             ship.rle = minPhase.toRLE().split('\n').slice(1).join('');
         }
+        if (ship.pop === 0) {
+            continue;
+        }
         out.push(ship);
-        if (i % 100 === 0 && i > 0) {
-            console.log(`${i}/${ships.length} ships normalized`);
+        let now = performance.now();
+        if (now - lastUpdate > 10000 && i !== ships.length - 1) {
+            console.log(`${i + 1}/${ships.length} ships normalized`);
+            lastUpdate = now;
         }
     }
     out = removeDuplicateShips(out);
-    return [out, invalidShips, invalidPeriods];
+    return throwInvalid === false ? [out, invalidShips, invalidPeriods] : out;
 }
 
 
-function validateType(type, ship) {
-    let correct = false;
+export function isValidInType(type, ship) {
     let p = createPattern(ship.rule);
+    let out;
     if (type === 'int') {
-        if (p instanceof MAPPattern && p.ruleSymmetry === 'D8') {
-            correct = true;
-        }
+        out = p instanceof MAPPattern && p.rule.symmetry === 'D8';
     } else if (type === 'intb0') {
-        if (p instanceof MAPB0Pattern && p.ruleSymmetry === 'D8') {
-            correct = true;
-        }
+        out = p instanceof MAPB0Pattern && p.rule.symmetry === 'D8';
     } else if (type === 'ot') {
-        if (p instanceof MAPPattern && p.ruleStr.match(/^B[1-8]*\/S[0-8]*$/)) {
-            correct = true;
-        }
+        out = p instanceof MAPPattern && p.rule.symmetry === 'D8' && p.rule.str.match(/^B[1-8]*\/S[0-8]*$/);
     } else if (type === 'otb0') {
-        if (p instanceof MAPB0Pattern && p.ruleStr.match(/^B0[1-8]*\/S[0-8]*$/)) {
-            correct = true;
-        }
+        out = p instanceof MAPB0Pattern && p.rule.symmetry === 'D8' && p.rule.str.match(/^B0[1-8]*\/S[0-7]*$/);
     } else if (type === 'intgen') {
-        if (p instanceof MAPGenPattern && p.ruleSymmetry === 'D8') {
-            correct = true;
-        }
+        out = p instanceof MAPGenPattern && p.rule.symmetry === 'D8';
     } else if (type === 'otgen') {
-        if (p instanceof MAPGenPattern && p.ruleStr.match(/^[0-8]*\/[1-8]*\/\d+$/)) {
-            correct = true;
+        out = p instanceof MAPGenPattern && p.rule.symmetry === 'D8' && p.rule.str.match(/^[0-8]*\/[1-8]*\/\d+$/);
+    } else if (type === 'intb1e') {
+        out = p instanceof MAPPattern && p.rule.symmetry === 'D8' && p.rule.str.startsWith('B1e');
+    } else if (type === 'intnos') {
+        out = p instanceof MAPPattern && p.rule.symmetry === 'D8' && p.rule.str.endsWith('/S');
+    } else if (type === 'int1dt') {
+        if (p instanceof MAPPattern && p.rule.symmetry === 'D8') {
+            out = true;
+            let found = false;
+            for (let tr in TRANSITIONS) {
+                if (!p.trs[TRANSITIONS[tr][0]]) {
+                    if (found) {
+                        out = false;
+                        break;
+                    }
+                    found = true;
+                }
+            }
+            if (!found) {
+                out = false;
+            }
         }
     } else {
-        alert(`Invalid ship type: '${type}'`);
+        throw new Error(`Invalid ship type: '${type}'`);
     }
-    if (!correct) {
-        alert(`Invalid rule for ${TYPE_NAMES[type]}: ${ship.rule}`);
-    }
-    return correct;
+    return Boolean(out);
 }
 
+function validateType(type, ship) {
+    if (!isValidInType(type, ship)) {
+        throw new Error(`Invalid rule for ${TYPE_NAMES[type]}: ${ship.rule}`);
+    }
+}
 
 let typeSelect = document.getElementById('type');
 let countsOutput = document.getElementById('counts');
@@ -679,7 +733,7 @@ submitButton.addEventListener('click', async () => {
         alert(`No ships provided or all ships are invalid!`);
         return;
     }
-    let [ships, invalidShips] = normalizeShips(typeSelect.value, rawShips, 65536);
+    let [ships, invalidShips] = normalizeShips(typeSelect.value, rawShips, false, 65536);
     if (ships.length === 0) {
         alert(`No ships provided or all ships are invalid!`);
         return;

@@ -2,12 +2,16 @@
 import * as fs from 'node:fs/promises';
 import crypto from 'node:crypto';
 import {parse} from '../lifeweb/lib/index.js';
-import {Ship, parseData, patternToShip, addShipsToFiles, mergeShips, findSpeedRLE} from './index.js';
+import {Type, TYPES, Ship, parseData, patternToShip, addShipsToFiles, mergeShips, findSpeedRLE} from './index.js';
 
 
 let cmd = process.argv[2];
-let type = process.argv[3];
+let type = process.argv[3] as Type;
 let arg = process.argv.slice(4).join(' ');
+
+if (!TYPES.includes(type)) {
+    throw new Error(`Invalid type: '${type}'`);
+}
 
 let out: string;
 
