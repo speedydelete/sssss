@@ -349,7 +349,7 @@ function parseData(data) {
                     } else {
                         out.push({
                             pop: 0,
-                            rule: p.ruleStr,
+                            rule: p.rule.str,
                             dx: type.disp[0],
                             dy: type.disp[1],
                             period: type.period,
@@ -374,7 +374,7 @@ function parseData(data) {
             } else {
                 out.push({
                     pop: 0,
-                    rule: p.ruleStr,
+                    rule: p.rule.str,
                     dx: type.disp[0],
                     dy: type.disp[1],
                     period: type.period,
@@ -445,6 +445,63 @@ function removeDuplicateShips(ships) {
         prev = ship;
     }
     return out;
+}
+
+function includesOT(min, max) {
+    let minP = createPattern(min);
+    let minTrs = minP instanceof MAPB0Pattern ? minP.evenTrs.map(x => 1 -  x) : minP.trs;
+    let maxP = createPattern(max);
+    let maxTrs = maxP instanceof MAPB0Pattern ? maxP.evenTrs.map(x => 1 -  x) : maxP.trs;
+    for (let s of [false, true]) {
+        for (let number of [0, 1, 2, 3, 4, 5, 6, 7, 8]) {
+            let minCount = 0;
+            let maxCount = 0;
+            let total = 0;
+            for (let letter of VALID_TRANSITIONS[number]) {
+                for (let tr of TRANSITIONS[number + letter]) {
+                    if (s) {
+                        tr |= (1 << 4);
+                    }
+                    if (minTrs[tr]) {
+                        minCount++;
+                    }
+                    if (maxTrs[tr]) {
+                        maxCount++;
+                    }
+                    total++;
+                }
+            }
+            if (!(minCount === 0 || minCount === total || maxCount === 0 || maxCount === total)) {
+                return false;
+            }
+        }
+    }
+    return true;
+}
+
+function has1DT(rule) {
+    let p = createPattern(rule);
+    let trs = p instanceof MAPB0Pattern ? p.evenTrs.map(x => 1 - x) : p.trs;
+    let found = false;
+    for (let value of Object.values(TRANSITIONS)) {
+        let count = 0;
+        for (let tr of value) {
+            if (trs[tr | (1 << 4)]) {
+                count++;
+            }
+        }
+        if (count === 0) {
+            if (found) {
+                return false;
+            }
+            found = true;
+        } else if (count === value.length) {
+            continue;
+        } else {
+            return false;
+        }
+    }
+    return true;
 }
 
 function normalizeShips(shipType, ships, throwInvalid, globalLimit) {

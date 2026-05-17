@@ -5,7 +5,7 @@ import {execSync} from 'node:child_process';
 import {Worker} from 'node:worker_threads';
 import {IncomingMessage, ServerResponse, createServer} from 'node:http';
 import {speedToString} from '../lifeweb/lib/index.js';
-import {Type, TYPES, Ship, parseData, findShipRLE, shipIsOptimal} from './index.js';
+import {Type, TYPES, Ship, parseData, addShipsToFiles, findShipRLE, shipIsOptimal} from './index.js';
 
 
 let basePath = normalize(`${import.meta.dirname}/..`);
@@ -41,7 +41,7 @@ for (let type of await fs.readdir(`${basePath}/data`)) {
 }
 
 
-type WorkerData = [string, {newShips: [string, number][], improvedShips: [string, number, number][], newPeriods: [string, number][], improvedPeriods: [string, number, number][]}];
+type WorkerData = ReturnType<typeof addShipsToFiles> extends Promise<infer T> ? T : never;
 
 type WorkerResult = {id: number, ok: true, data: WorkerData} | {id: number, ok: false, data: string};
 
@@ -117,7 +117,7 @@ async function addShipsToFilesWorker(type: string, ships: Ship[], limit?: number
         let id = nextID++;
         let timeout = setTimeout(() => {
             jobs.delete(id);
-            resolve(['Timed out', {newShips: [], improvedShips: [], newPeriods: [], improvedPeriods: []}]);
+            resolve(['Timed out', {}]);
             restartWorker();
         }, 30000);
         jobs.set(id, {resolve, reject, timeout});
@@ -263,10 +263,12 @@ const ENDPOINTS: {[key: string]: (req: IncomingMessage, params: URLSearchParams 
                     return;
                 }
                 let [text, speeds] = (await addShipsToFilesWorker(type, ships, 65536, false));
-                newShips.push(...speeds.newShips.map(x => [type, x[0], x[1]] as [string, string, number]));
-                improvedShips.push(...speeds.improvedShips.map(x => [type, x[0], x[1], x[2]] as [string, string, number, number]));
-                newPeriods.push(...speeds.newPeriods.map(x => [type, x[0], x[1]] as [string, string, number]));
-                improvedPeriods.push(...speeds.improvedPeriods.map(x => [type, x[0], x[1], x[2]] as [string, string, number, number]));
+                for (let [type, value] of Object.entries(speeds)) {
+                    newShips.push(...value.newSpeeds.map(x => [type, x[0], x[1]] as [string, string, number]));
+                    improvedShips.push(...value.improvedSpeeds.map(x => [type, x[0], x[1], x[2]] as [string, string, number, number]));
+                    newPeriods.push(...value.newPeriods.map(x => [type, x[0], x[1]] as [string, string, number]));
+                    improvedPeriods.push(...value.improvedPeriods.map(x => [type, x[0], x[1], x[2]] as [string, string, number, number]));
+                }
                 out.writeHead(200);
                 out.write(text);
                 out.end();
