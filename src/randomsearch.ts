@@ -29,7 +29,7 @@ if (process.argv.length < 8) {
 }
 
 let type = process.argv[3];
-if (!(type in TYPES)) {
+if (!TYPES.includes(type)) {
     throw new Error(`Invalid type: '${type}'`)
 }
 
