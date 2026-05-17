@@ -500,7 +500,7 @@ async function updatePeriodMaps(): Promise<void> {
                 entries[key] = [ship.pop, proven];
             }
         }
-        for (let period = 1; period < 512; period++) {
+        for (let period = 1; period < 128; period++) {
             let map = new Uint32Array(Math.round((period + 1) * (period / 2)));
             let i = 0;
             for (let dx = 0; dx <= period; dx++) {
