@@ -368,9 +368,6 @@ export function patternToShip(type: Type, p: Pattern, limit: number = 32768): Sh
     if (!data.disp) {
         throw new Error(`Pattern is not a ship or its period is greater than ${limit} generations`);
     }
-    if (data.disp[0] === 0 && data.disp[1] === 0) {
-        throw new Error('Pattern does not move');
-    }
     return normalizeShips(type, [{
         pop: p.population,
         rule: p.rule.str,
@@ -468,11 +465,8 @@ async function _addShipsToFiles(type: Type, ships: Ship[], limit: number | undef
         ships = normalizeShips(type, ships.filter(ship => ship.canBeInB1e), false, limit)[0];
     } else if (type === 'int1dt') {
         ships = normalizeShips(type, ships.filter(ship => ship.canBeIn1DT), false, limit)[0];
-        console.log(type, ships);
     }
-    console.log(type, ships);
     ships = ships.filter(x => x).filter(ship => isValidInType(type, ship));
-    console.log(type, ships);
     if (ships.length === 0) {
         return;
     }
@@ -557,10 +551,10 @@ export async function addShipsToFiles(type: Type, ships: Ship[], limit?: number,
         validateType(type, ship);
     }
     let changes: ChangeData = {};
-    await _addShipsToFiles(type, ships2, limit, includeComments, changes);
+    await _addShipsToFiles(type, structuredClone(ships2), limit, includeComments, changes);
     if (type in SUBTYPES && SUBTYPES[type]) {
         for (let subtype of SUBTYPES[type]) {
-            await _addShipsToFiles(subtype, ships2, limit, includeComments, changes);
+            await _addShipsToFiles(subtype, structuredClone(ships2), limit, includeComments, changes);
         }
     }
     let out = '';

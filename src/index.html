@@ -608,7 +608,7 @@ function normalizeShips(shipType, ships, throwInvalid, globalLimit) {
         ship.canBeInOT = includesOT(min, max);
         ship.canBeInB1e = p.rule.str.startsWith('B1') && !p.rule.str.startsWith('B1c');
         ship.canBeIn1DT = has1DT(max);
-        if ((shipType.startsWith('ot') && !ship.canBeInOT) || (shipType === 'intb1e' && !ship.rule.startsWith('B1e')) || (shipType === 'intnos' && !ship.rule.endsWith('/S')) || (shipType === 'int1dt' && !ship.canBeIn1DT)) {
+        if ((shipType.startsWith('ot') && !ship.canBeInOT) || (shipType === 'intb1e' && !ship.canBeInB1e) || (shipType === 'intnos' && !ship.rule.endsWith('/S')) || (shipType === 'int1dt' && !ship.canBeIn1DT)) {
             if (throwInvalid) {
                 throw new Error(`Invalid ship detected: ${shipsToString([ship]).slice(0, -1)}`);
             } else {
@@ -631,7 +631,7 @@ function normalizeShips(shipType, ships, throwInvalid, globalLimit) {
             }
         } else if (shipType === 'intb1e') {
             if (!ship.rule.startsWith('B1')) {
-                ship.rule = 'B1e' + ship.rule.slice(2);
+                ship.rule = 'B1e' + ship.rule.slice(1);
             } else if (ship.rule.startsWith('B1c')) {
                 ship.rule = 'B1' + ship.rule.slice(3);
             }
