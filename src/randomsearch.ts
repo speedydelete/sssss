@@ -2,7 +2,7 @@
 import {normalize} from 'node:path';
 import * as fs from 'node:fs/promises';
 import {TRANSITIONS, VALID_TRANSITIONS, parseTransitions, unparseTransitions, arrayToTransitions, MAPPattern, createPattern} from '../lifeweb/lib/index.js';
-import {TYPES, parseData} from './index.js';
+import {Type, TYPES, parseData} from './index.js';
 
 
 function parseRule(rule: string): [string[], string[]] {
@@ -29,7 +29,7 @@ if (process.argv.length < 8) {
 }
 
 let type = process.argv[3];
-if (!TYPES.includes(type)) {
+if (!TYPES.includes(type as Type)) {
     throw new Error(`Invalid type: '${type}'`)
 }
 
