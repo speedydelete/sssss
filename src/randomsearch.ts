@@ -58,14 +58,14 @@ for (let arg of process.argv.slice(8)) {
 }
 
 let records: {[key: string]: number} = {};
-// console.log('# Loading records');
-// for (let file of ['orthogonal', 'diagonal', 'oblique', 'oscillator']) {
-//     let data = (await fs.readFile(normalize(`${import.meta.dirname}/../data/${type}/${file}.sss`))).toString();
-//     for (let ship of parseData(data)) {
-//         records[`${ship.dx} ${ship.dy} ${ship.period}`] = ship.pop;
-//     }
-// }
-// console.log('# Records loaded');
+console.log('# Loading records');
+for (let file of ['orthogonal', 'diagonal', 'oblique', 'oscillator']) {
+    let data = (await fs.readFile(normalize(`${import.meta.dirname}/../data/${type}/${file}.sss`))).toString();
+    for (let ship of parseData(data)) {
+        records[`${ship.dx} ${ship.dy} ${ship.period}`] = ship.pop;
+    }
+}
+console.log('# Records loaded');
 
 
 function run(): void {
@@ -108,7 +108,14 @@ function run(): void {
                         actualFound = true;
                         let [dx, dy] = disp;
                         let period = i - j + 1;
-                        let key = `${dx} ${dy} ${period}`;
+                        let dx2 = Math.abs(dx);
+                        let dy2 = Math.abs(dy);
+                        if (dy2 > dx2) {
+                            let temp = dx2;
+                            dx2 = dy2;
+                            dy2 = temp;
+                        }
+                        let key = `${dy2} ${dx2} ${period}`;
                         let pop = Math.min(...pops.slice(j));
                         if (key in records) {
                             if (pop < records[key]) {
