@@ -439,10 +439,8 @@ let dataPath = normalize(`${import.meta.dirname}/../data`);
 export type ChangeData = {[K in Type]?: {
     newSpeeds: [string, number][];
     improvedSpeeds: [string, number, number][];
-    unchangedSpeeds: string[];
     newPeriods: [string, number][];
     improvedPeriods: [string, number, number][];
-    unchangedPeriods: string[];
 }};
 
 async function _addShipsToFiles(type: Type, ships: Ship[], limit: number | undefined, includeComments: boolean, _changes: ChangeData): Promise<void> {
@@ -450,10 +448,8 @@ async function _addShipsToFiles(type: Type, ships: Ship[], limit: number | undef
         _changes[type] = {
             newSpeeds: [],
             improvedSpeeds: [],
-            unchangedSpeeds: [],
             newPeriods: [],
             improvedPeriods: [],
-            unchangedPeriods: [],
         }
     }
     let changes = _changes[type] as Exclude<ChangeData[Type], undefined>;
@@ -496,12 +492,6 @@ async function _addShipsToFiles(type: Type, ships: Ship[], limit: number | undef
                         ship.pop = newShip.pop;
                         ship.rule = newShip.rule;
                         ship.rle = newShip.rle;
-                    } else {
-                        if (ship.dx === 0 && ship.dy === 0) {
-                            changes.unchangedPeriods.push(speed);
-                        } else {
-                            changes.unchangedSpeeds.push(speed);
-                        }
                     }
                     found.push(newShip);
                     break;
@@ -565,8 +555,8 @@ export async function addShipsToFiles(type: Type, ships: Ship[], limit?: number,
         out += `${invalidShips.length} invalid period${invalidPeriods.length === 1 ? '' : 's'}: ${invalidShips.join(', ')}\n`;
     }
     for (let [key, value] of Object.entries(changes)) {
-        let {newSpeeds, improvedSpeeds, unchangedSpeeds, newPeriods, improvedPeriods, unchangedPeriods} = value;
-        if (newSpeeds.length === 0 && improvedSpeeds.length === 0 && unchangedSpeeds.length === 0 && newPeriods.length === 0 && improvedPeriods.length === 0 && unchangedPeriods.length === 0) {
+        let {newSpeeds, improvedSpeeds, newPeriods, improvedPeriods} = value;
+        if (newSpeeds.length === 0 && improvedSpeeds.length === 0 && newPeriods.length === 0 && improvedPeriods.length === 0) {
             out += `No changes made in ${TYPE_NAMES[key as Type]}\n`;
             continue;
         }
@@ -577,17 +567,11 @@ export async function addShipsToFiles(type: Type, ships: Ship[], limit?: number,
         if (improvedSpeeds.length > 0) {
             out += `    ${improvedSpeeds.length} improved ship${improvedSpeeds.length === 1 ? '' : 's'}: ${improvedSpeeds.map(x => x[0]).join(', ')}\n`;
         }
-        if (unchangedSpeeds.length > 0) {
-            out += `    ${unchangedSpeeds.length} unchanged ship${unchangedSpeeds.length === 1 ? '' : 's'}: ${unchangedSpeeds.join(', ')}\n`;
-        }
         if (newPeriods.length > 0) {
             out += `    ${newPeriods.length} new period${newPeriods.length === 1 ? '' : 's'}: ${newPeriods.map(x => x[0]).join(', ')}\n`;
         }
         if (improvedPeriods.length > 0) {
             out += `    ${improvedPeriods.length} improved period${improvedPeriods.length === 1 ? '' : 's'}: ${improvedPeriods.map(x => x[0]).join(', ')}\n`;
-        }
-        if (unchangedPeriods.length > 0) {
-            out += `    ${unchangedPeriods.length} unchanged period${unchangedPeriods.length === 1 ? '' : 's'}: ${unchangedPeriods.join(', ')}\n`;
         }
     }
     out += `Update took ${((performance.now() - start) / 1000).toFixed(3)} seconds\n`;
