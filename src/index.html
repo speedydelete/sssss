@@ -202,6 +202,9 @@ option {
                         <option value="otb0">OT B0</option>
                         <option value="intgen">INT Generations</option>
                         <option value="otgen">OT Generations</option>
+                        <option value="intb1e">INT B1e</option>
+                        <option value="intnos">INT Statorless</option>
+                        <option value="int1dt">INT 1 Death Transition</option>
                     </select>
                 </div>
                 <a href="https://conwaylife.com/forums/viewtopic.php?f=11&t=2892">More information</a>
@@ -312,7 +315,7 @@ function speedToString({dx, dy, period}) {
 }
 
 
-const TYPES = ['int', 'intb0', 'ot', 'otb0', 'intgen', 'intgenb0', 'otgen', 'otgenb0'];
+const TYPES = ['int', 'intb0', 'ot', 'otb0', 'intgen', 'otgen', 'intb1e', 'intnos', 'int1dt'];
 
 const TYPE_NAMES = {
     'int': 'INT',
@@ -320,9 +323,10 @@ const TYPE_NAMES = {
     'ot': 'OT',
     'otb0': 'OT B0',
     'intgen': 'INT Generations',
-    'intgenb0': 'INT Generations B0',
     'otgen': 'OT Generations',
-    'otgenb0': 'OT Generations B0',
+    'intb1e': 'INT B1e',
+    'intnos': 'INT Statorless',
+    'int1dt': 'INT 1 Death Transition',
 };
 
 function parseData(data) {

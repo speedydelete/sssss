@@ -4,12 +4,15 @@ import * as fs from 'node:fs/promises';
 import {execSync} from 'node:child_process';
 import {Worker} from 'node:worker_threads';
 import {IncomingMessage, ServerResponse, createServer} from 'node:http';
-import {Ship, parseData, findShipRLE} from './index.js';
 import {speedToString} from '../lifeweb/lib/index.js';
+import {TYPES, Ship, parseData, findShipRLE} from './index.js';
 
 
 let basePath = normalize(`${import.meta.dirname}/..`);
 
+function getLineNumber(error: Error): string  | undefined{
+    return (error.stack as string).split('\n')[1].split(':').at(-2);
+}
 
 // let adminKeys = JSON.parse((await fs.readFile(`${basePath}/admin_keys.json`)).toString()) as {[key: string]: string};
 
@@ -132,8 +135,11 @@ let lastGetTime = new Map<string, number>();
 let lastAddTime = new Map<string, number>();
 let lastGetCountsTime = new Map<string, number>();
 let lastGetNewShipsTIme = new Map<string, number>();
+let lastGetPeriodMapTime = new Map<string, number>();
 
 let maxJobsExceeded = false;
+
+let periodMaps: {[key: string]: Uint32Array[]} = {};
 
 
 const ENDPOINTS: {[key: string]: (req: IncomingMessage, params: URLSearchParams | null, out: ServerResponse<IncomingMessage>, ip: string, time: number) => void | Promise<void>} = {
@@ -144,7 +150,7 @@ const ENDPOINTS: {[key: string]: (req: IncomingMessage, params: URLSearchParams 
             if (time - value < 1) {
                 out.writeHead(429);
                 out.end();
-                console.log(`${ip} exceeded rate limit on get after ${(time - value).toFixed(3)} seconds`);
+                console.log(`429 Too Many Requests (${(time - value).toFixed(3)} seconds, ${getLineNumber(new Error())})`); 
                 return;
             } else {
                 lastGetTime.set(ip, time);
@@ -152,10 +158,16 @@ const ENDPOINTS: {[key: string]: (req: IncomingMessage, params: URLSearchParams 
         } else {
             lastGetTime.set(ip, time);
         }
-        if (!params) {
-            out.writeHead(400, 'Expected type, dx, dy, and period parameters');
+        if (req.method !== 'GET') {
+            out.writeHead(405);
             out.end();
-            console.log(`${ip} attempted to get (no query string)`);
+            console.log(`405 Method Not Allowed (${getLineNumber(new Error())})`); 
+            return;
+        }
+        if (!params) {
+            out.writeHead(400, 'Expected "type", "dx", "dy", And "period" Parameters');
+            out.end();
+            console.log(`400 Expected "type", "dx", "dy", And "period" Parameters (no query string, ${getLineNumber(new Error())})`); 
             return;
         }
         let type = params.get('type');
@@ -164,9 +176,9 @@ const ENDPOINTS: {[key: string]: (req: IncomingMessage, params: URLSearchParams 
         let periodP = params.get('period');
         let adjustables = params.get('adjustables');
         if (!type || !dxP || !dyP || !periodP) {
-            out.writeHead(400, 'Expected type, dx, dy, and period parameters');
+            out.writeHead(400, 'Expected "type", "dx", "dy", And "period" Parameters');
             out.end();
-            console.log(`${ip} attempted to get in type ${type} (invalid parameters)`);
+            console.log(`400 Expected "type", "dx", "dy", And "period" Parameters (${getLineNumber(new Error())})`); 
             return;
         }
         let dx = parseInt(dxP);
@@ -175,39 +187,22 @@ const ENDPOINTS: {[key: string]: (req: IncomingMessage, params: URLSearchParams 
         if (Number.isNaN(dx) || Number.isNaN(dy) || Number.isNaN(period) || (adjustables !== undefined && !(adjustables === 'yes' || adjustables === 'no' || adjustables === 'only'))) {
             out.writeHead(400, 'Invalid Parameters');
             out.end();
-            console.log(`${ip} attempted to get in type ${type} (invalid parameters)`);
+            console.log(`400 Invalid Parameters (${getLineNumber(new Error())})`); 
             return;
         }
         out.writeHead(200);
         out.write(await findShipRLE(type, dx, dy, period, adjustables));
         out.end();
-        console.log(`${ip} got ${speedToString(dx, dy, period)} in type ${type}`);
+        console.log(`200 OK (${speedToString(dx, dy, period)} in type ${type})`);
     },
 
     add(req: IncomingMessage, params: URLSearchParams | null, out: ServerResponse<IncomingMessage>, ip: string, time: number): void {
-        if (maxJobsExceeded) {
-            if (jobs.size === 0) {
-                maxJobsExceeded = false;
-            } else {
-                out.writeHead(500, 'Too Busy');
-                out.end();
-                console.log(`${ip} attempted to add when cleaning up after too many jobs (currently ${jobs.size} active jobs0!`);
-                return;
-            }
-        }
-        if (jobs.size > 4) {
-            maxJobsExceeded = true;
-            out.writeHead(500, 'Too Busy');
-            out.end();
-            console.log(`${ip} attempted to add when there are already ${jobs.size} active jobs!`);
-            return;
-        }
         let value = lastAddTime.get(ip);
         if (value !== undefined) {
             if (time - value < 5) {
                 out.writeHead(429);
                 out.end();
-                console.log(`${ip} exceeded rate limit on add after ${(time - value).toFixed(3)} seconds`);
+                console.log(`429 Too Many Requests (${(time - value).toFixed(3)} seconds, ${getLineNumber(new Error())})`); 
                 return;
             } else {
                 lastAddTime.set(ip, time);
@@ -218,23 +213,40 @@ const ENDPOINTS: {[key: string]: (req: IncomingMessage, params: URLSearchParams 
         } else {
             lastAddTime.set(ip, time);
         }
-        if (req.method !== 'POST') {
-            out.writeHead(404);
+        if (maxJobsExceeded) {
+            if (jobs.size === 0) {
+                maxJobsExceeded = false;
+            } else {
+                out.writeHead(500, 'Too Busy');
+                out.end();
+                console.log(`500 Too Busy (attempted to add when cleaning up after too many jobs (currently ${jobs.size} active jobs), ${getLineNumber(new Error())})`); 
+                return;
+            }
+        }
+        if (jobs.size > 4) {
+            maxJobsExceeded = true;
+            out.writeHead(500, 'Too Busy');
             out.end();
-            console.log(`${ip} attempted to add (wrong method)`);
+            console.log(`500 Too Busy (attempted to add when there are already ${jobs.size} active jobs, ${getLineNumber(new Error())})`);
+            return;
+        }
+        if (req.method !== 'POST') {
+            out.writeHead(405);
+            out.end();
+            console.log(`405 Method Not Allowed (${getLineNumber(new Error())})`); 
             return;
         }
         if (!params) {
-            out.writeHead(400, 'Expected type parameter');
+            out.writeHead(400, 'Expected Type Parameter');
             out.end();
-            console.log(`${ip} attempted to add (no query string)`);
+            console.log(`400 Expected Type Parameter (no query string, ${getLineNumber(new Error())})`); 
             return;
         }
         let type = params.get('type');
         if (!type) {
-            out.writeHead(400, 'Expected type parameter');
+            out.writeHead(400, 'Expected Type Parameter');
             out.end();
-            console.log(`${ip} attempted to add (no type parameter)`);
+            console.log(`400 Expected Type Parameter (no type parameter, ${getLineNumber(new Error())})`); 
             return;
         }
         let data = '';
@@ -245,9 +257,9 @@ const ENDPOINTS: {[key: string]: (req: IncomingMessage, params: URLSearchParams 
             try {
                 let ships = parseData(data);
                 if (ships.length > 2048) {
-                    out.writeHead(400, 'Max 2048 ships');
+                    out.writeHead(400, 'Max 2048 Ships');
                     out.end();
-                    console.log(`${ip} attempted to add ${ships.length} ships to type ${type} (more than 2048)`);
+                    console.log(`400 Max 2048 Ships (sent ${ships.length} ships, ${getLineNumber(new Error())})`); 
                     return;
                 }
                 let [text, speeds] = (await addShipsToFilesWorker(type, ships, 65536, false));
@@ -259,7 +271,7 @@ const ENDPOINTS: {[key: string]: (req: IncomingMessage, params: URLSearchParams 
                 out.write(text);
                 out.end();
                 updateCountFor(type);
-                console.log(`${ip} added ${ships.length} ships to type ${type}: ${text}`);
+                console.log(`200 OK (added ${ships.length} ships to type ${type})`); 
             } catch (error) {
                 console.error(error);
                 out.writeHead(500);
@@ -272,9 +284,9 @@ const ENDPOINTS: {[key: string]: (req: IncomingMessage, params: URLSearchParams 
         let value = lastGetCountsTime.get(ip);
         if (value !== undefined) {
             if (time - value < 0.3) {
-                console.log(`${ip} exceeded rate limit on getcounts after ${(time - value).toFixed(3)} seconds`);
                 out.writeHead(429);
                 out.end();
+                console.log(`429 Too Many Requests (${(time - value).toFixed(3)} seconds, ${getLineNumber(new Error())})`); 
                 return;
             } else {
                 lastGetCountsTime.set(ip, time);
@@ -282,30 +294,36 @@ const ENDPOINTS: {[key: string]: (req: IncomingMessage, params: URLSearchParams 
         } else {
             lastGetCountsTime.set(ip, time);
         }
-        if (!params) {
-            out.writeHead(400, 'Expected type parameter');
+        if (req.method !== 'GET') {
+            out.writeHead(405);
             out.end();
-            console.log(`${ip} attempted to getcounts (no query string)`);
+            console.log(`405 Method Not Allowed (${getLineNumber(new Error())})`); 
+            return;
+        }
+        if (!params) {
+            out.writeHead(400, 'Expected Type Parameter');
+            out.end();
+            console.log(`400 Expected Type Parameter (no query string, ${getLineNumber(new Error())})`); 
             return;
         }
         let type = params.get('type');
         if (!type) {
-            out.writeHead(400, 'Expected type parameter');
+            out.writeHead(400, 'Expected Type Parameter');
             out.end();
-            console.log(`${ip} attempted to getcounts (no type parameter)`);
+            console.log(`400 Expected Type Parameter (no type parameter, ${getLineNumber(new Error())})`); 
             return;
         }
         out.writeHead(200);
         out.write(counts[type]);
         out.end();
-        console.log(`${ip} got counts in type ${type}`);
+        console.log(`200 OK (type ${type})`);
     },
 
     getnewships(req: IncomingMessage, params: URLSearchParams | null, out: ServerResponse<IncomingMessage>, ip: string, time: number): void {
         let value = lastGetNewShipsTIme.get(ip);
         if (value !== undefined) {
             if (time - value < 50) {
-                console.log(`${ip} exceeded rate limit on getcounts after ${(time - value).toFixed(3)} seconds`);
+                console.log(`429 Too Many Requests (${(time - value).toFixed(3)} seconds, ${getLineNumber(new Error())})`); 
                 out.writeHead(429);
                 out.end();
                 return;
@@ -315,20 +333,80 @@ const ENDPOINTS: {[key: string]: (req: IncomingMessage, params: URLSearchParams 
         } else {
             lastGetNewShipsTIme.set(ip, time);
         }
+        if (req.method !== 'GET') {
+            out.writeHead(405);
+            out.end();
+            console.log(`405 Method Not Allowed (${getLineNumber(new Error())})`); 
+            return;
+        }
         if (ip !== '192.9.227.225') {
-            console.log(`${ip} attempted to getnewships (wrong ip)`);
             out.writeHead(403);
             out.end();
+            console.log(`403 Forbidden (${getLineNumber(new Error())})`);
             return;
         }
         out.writeHead(200);
         out.write(JSON.stringify({newShips, improvedShips, newPeriods, improvedPeriods}));
         out.end();
+        console.log(`200 OK`);
         newShips = [];
         improvedShips = [];
         newPeriods = [];
         improvedPeriods = [];
-        console.log(`${ip} got new ships`);
+    },
+
+    getperiodmap(req: IncomingMessage, params: URLSearchParams | null, out: ServerResponse<IncomingMessage>, ip: string, time: number): void {
+        let value = lastGetPeriodMapTime.get(ip);
+        if (value !== undefined) {
+            if (time - value < 0.5) {
+                console.log(`429 Too Many Requests (${(time - value).toFixed(3)} seconds, ${getLineNumber(new Error())})`); 
+                out.writeHead(429);
+                out.end();
+                return;
+            } else {
+                lastGetPeriodMapTime.set(ip, time);
+            }
+        } else {
+            lastGetPeriodMapTime.set(ip, time);
+        }
+        if (req.method !== 'POST') {
+            out.writeHead(405);
+            out.end();
+            console.log(`405 Method Not Allowed (${getLineNumber(new Error())})`); 
+            return;
+        }
+        if (!params) {
+            out.writeHead(400, 'Expected "type" And "period" Parameters');
+            out.end();
+            console.log(`400 Expected "type" And "period" Parameters (no query string, ${getLineNumber(new Error())})`); 
+            return;
+        }
+        let type = params.get('type');
+        let periodP = params.get('period');
+        if (!type || !periodP) {
+            out.writeHead(400, 'Expected "type" And "period" Parameters');
+            out.end();
+            console.log(`400 Expected "type" And "period" Parameters (parameters aren't present, ${getLineNumber(new Error())})`); 
+            return;
+        }
+        let period = parseInt(periodP);
+        if (Number.isNaN(period)) {
+            out.writeHead(400, 'Invalid Parameters');
+            out.end();
+            console.log(`400 Invalid Parameters (period is invalid, ${getLineNumber(new Error())})`); 
+            return;
+        }
+        out.writeHead(200);
+        let maps = periodMaps[type];
+        if (!maps || !(period in maps)) {
+            out.writeHead(400, 'Invalid Parameters');
+            out.end();
+            console.log(`400 Invalid Parameters (period map not present, ${getLineNumber(new Error())})`); 
+            return;
+        }
+        // out.write(periodMaps[type]);
+        out.end();
+        console.log(`200 OK (type ${type})`);
     },
 
 };
@@ -336,13 +414,14 @@ const ENDPOINTS: {[key: string]: (req: IncomingMessage, params: URLSearchParams 
 
 let server = createServer(async (req, out) => {
     try {
-        // let ip = req.headers['x-forwarded-for'] as string;
-        let ip = '127.0.0.1';
+        let ip = req.headers['x-forwarded-for'] as string;
+        // let ip = '127.0.0.1';
         if (!ip) {
             out.writeHead(400, 'No IP address; cannot determine rate limits');
             out.end();
             return;
         }
+        console.log(`${ip} ${req.method} ${req.url} HTTP/${req.httpVersion} ${req.headers['referer'] ?? '[No referer]'} ${req.headers['user-agent'] ?? '[No user agent]'}`);
         let index = ip.indexOf(',');
         if (index !== -1) {
             ip = ip.slice(0, index);
@@ -350,6 +429,7 @@ let server = createServer(async (req, out) => {
         let time = performance.now() / 1000;
         if (!req.url) {
             out.writeHead(400);
+            console.log(`400 Bad Request`);
             out.end();
             return;
         }
@@ -366,9 +446,9 @@ let server = createServer(async (req, out) => {
         if (endpoint in ENDPOINTS) {
             await ENDPOINTS[endpoint](req, params, out, ip, time);
         } else {
-            console.log(`${ip} attempted to ${req.method} endpoint ${endpoint}`);
             out.writeHead(404);
             out.end();
+            console.log(`404 Not Found (endpoint does not exist, ${getLineNumber(new Error())})`); 
         }
     } catch (error) {
         console.error(error);
@@ -388,11 +468,60 @@ function updateDataZip() {
 }
 
 updateDataZip();
-setInterval(updateDataZip, 3600000);
+setInterval(() => updateDataZip, 3600 * 1000);
 
 function backupDataZip() {
     execSync(`mkdir -p ${basePath}/backup && cp ${basePath}/data.zip ${basePath}/backup/data_${Math.floor(Date.now() / 1000)}.zip`, {stdio: 'inherit'});
 }
 
 backupDataZip();
-setInterval(() => backupDataZip, 345600000);
+setInterval(() => backupDataZip, 86400 * 4 * 1000);
+
+
+async function updatePeriodMaps(): Promise<void> {
+    console.log(`Updating period maps`);
+    for (let type of TYPES) {
+        let maps: Uint32Array[] = [];
+        let entries: {[key: string]: [number, boolean]} = {};
+        for (let category of ['orthogonal', 'diagonal', 'oblique', 'oscillator']) {
+            let file = (await fs.readFile(`${basePath}/data/${type}/${category}.sss`)).toString();
+            for (let ship of parseData(file)) {
+                let key = ship.dx + ' ' + ship.dy + ' ' + ship.period;
+                let proven = false;
+                if (ship.comment && ship.comment.toLowerCase().includes('proven optimal')) {
+                    proven = true;
+                } else if (ship.pop === 3 && (ship.dx !== 0 || ship.dy !== 0)) {
+                    proven = true;
+                } else if (!type.includes('b0') && ship.pop === 2 && ship.dx === 0 && ship.dy === 0) {
+                    proven = true;
+                } else if ((type.includes('b0') || ship.period === 1) && ship.pop === 1 && ship.dx === 0 && ship.dy === 0) {
+                    proven = true;
+                }
+                entries[key] = [ship.pop, proven];
+            }
+        }
+        for (let period = 1; period < 512; period++) {
+            let map = new Uint32Array(Math.round((period + 1) * (period / 2)));
+            let i = 0;
+            for (let dx = 0; dx <= period; dx++) {
+                for (let dy = 0; dy <= dx; dy++) {
+                    let key = dx + ' ' + dy + ' ' + period;
+                    let value = entries[key];
+                    if (!value) {
+                        map[i] = 0;
+                    } else if (value[1]) {
+                        map[i] = (1 << 31) | value[0];
+                    } else {
+                        map[i] = value[0];
+                    }
+                    i++;
+                }
+            }
+        }
+        periodMaps[type] = maps;
+    }
+    console.log(`Period maps update complete`);
+}
+
+updatePeriodMaps();
+setInterval(() => updatePeriodMaps, 300 * 1000);

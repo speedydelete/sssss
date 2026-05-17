@@ -5,7 +5,7 @@ import {Pattern, TRANSITIONS, VALID_TRANSITIONS, unparseTransitions, arrayToTran
 import {createAdjustable} from './adjustable/index.js';
 
 
-export const TYPES = ['int', 'intb0', 'ot', 'otb0', 'intgen', 'intgenb0', 'otgen', 'otgenb0'];
+export const TYPES = ['int', 'intb0', 'ot', 'otb0', 'intgen', 'otgen', 'intb1e', 'intnos', 'int1dt'];
 
 export const TYPE_NAMES: {[key: string]: string} = {
     'int': 'INT',
@@ -13,9 +13,10 @@ export const TYPE_NAMES: {[key: string]: string} = {
     'ot': 'OT',
     'otb0': 'OT B0',
     'intgen': 'INT Generations',
-    'intgenb0': 'INT Generations B0',
     'otgen': 'OT Generations',
-    'otgenb0': 'OT Generations B0',
+    'intb1e': 'INT B1e',
+    'intnos': 'INT Statorless',
+    'int1dt': 'INT 1 Death Transition',
 };
 
 
@@ -249,8 +250,8 @@ export function normalizeShips<T extends boolean | undefined = undefined>(type: 
         }
         out.push(ship);
         let now = performance.now();
-        if (now - lastUpdate > 10000) {
-            console.log(`${i}/${ships.length} ships normalized`);
+        if (now - lastUpdate > 10000 && i !== ships.length - 1) {
+            console.log(`${i + 1}/${ships.length} ships normalized`);
             lastUpdate = now;
         }
     }
@@ -281,31 +282,40 @@ export function patternToShip(type: string, p: Pattern, limit: number = 32768): 
 
 
 export function validateType(type: string, ship: Ship): void {
-    let correct = false;
+    let correct: unknown;
     let p = createPattern(ship.rule);
     if (type === 'int') {
+        correct = p instanceof MAPPattern && p.rule.symmetry === 'D8' && !p.rule.str.startsWith('B1e');
+    } else if (type === 'intb0') {
+        correct = p instanceof MAPB0Pattern && p.rule.symmetry === 'D8';
+    } else if (type === 'ot') {
+        correct = p instanceof MAPPattern && p.rule.symmetry === 'D8' && p.rule.str.match(/^B[1-8]*\/S[0-8]*$/);
+    } else if (type === 'otb0') {
+        correct = p instanceof MAPB0Pattern && p.rule.symmetry === 'D8' && p.rule.str.match(/^B0[1-8]*\/S[0-7]*$/);
+    } else if (type === 'intgen') {
+        correct = p instanceof MAPGenPattern && p.rule.symmetry === 'D8';
+    } else if (type === 'otgen') {
+        correct = p instanceof MAPGenPattern && p.rule.symmetry === 'D8' && p.rule.str.match(/^[0-8]*\/[1-8]*\/\d+$/);
+    } else if (type === 'intb1e') {
+        correct = p instanceof MAPPattern && p.rule.symmetry === 'D8' && p.rule.str.startsWith('B1e');
+    } else if (type === 'intnos') {
+        correct = p instanceof MAPPattern && p.rule.symmetry === 'D8' && p.rule.str.endsWith('/S');
+    } else if (type === 'int1dt') {
         if (p instanceof MAPPattern && p.rule.symmetry === 'D8') {
             correct = true;
-        }
-    } else if (type === 'intb0') {
-        if (p instanceof MAPB0Pattern && p.rule.symmetry === 'D8') {
-            correct = true;
-        }
-    } else if (type === 'ot') {
-        if (p instanceof MAPPattern && p.rule.str.match(/^B[1-8]*\/S[0-8]*$/)) {
-            correct = true;
-        }
-    } else if (type === 'otb0') {
-        if (p instanceof MAPB0Pattern && p.rule.str.match(/^B0[1-8]*\/S[0-7]*$/)) {
-            correct = true;
-        }
-    } else if (type === 'intgen') {
-        if (p instanceof MAPGenPattern && p.rule.symmetry === 'D8') {
-            correct = true;
-        }
-    } else if (type === 'otgen') {
-        if (p instanceof MAPGenPattern && p.rule.str.match(/^[1-8]*\/[1-8]*\/\d+$/)) {
-            correct = true;
+            let found = false;
+            for (let tr in TRANSITIONS) {
+                if (!p.trs[TRANSITIONS[tr][0]]) {
+                    if (found) {
+                        correct = false;
+                        break;
+                    }
+                    found = true;
+                }
+            }
+            if (!found) {
+                correct = false;
+            }
         }
     } else {
         throw new Error(`Invalid ship type: '${type}'`);
