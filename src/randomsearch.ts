@@ -95,7 +95,7 @@ while (true) {
                             records[key] = pop;
                         }
                         let [b, s] = arrayToTransitions(p.trs, TRANSITIONS);
-                        console.log(`${pop}, ${unparseRule(b, s)}, ${dx}, ${dy}, ${period}, ${p.toRLE(false)}`);
+                        console.log(`${pop}, ${unparseRule(b, s)}, ${dx}, ${dy}, ${period}, ${p.toRLE(false).replaceAll('\n', '')}`);
                         break;
                     }
                 }
