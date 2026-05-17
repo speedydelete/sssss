@@ -797,7 +797,8 @@ submitButton.addEventListener('click', async () => {
     }
     ships = ships.filter(x => x);
     for (let ship of ships) {
-        if (!validateType(typeSelect.value, ship)) {
+        if (!isValidInType(typeSelect.value, ship)) {
+            alert(`Invalid ship: ${shipsToString([ship])}`);
             return;
         }
     }

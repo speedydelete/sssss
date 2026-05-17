@@ -580,22 +580,22 @@ export async function addShipsToFiles(type: Type, ships: Ship[], limit?: number,
         }
         out += `Changes made in ${TYPE_NAMES[key as Type]}:\n`;
         if (newSpeeds.length > 0) {
-            out += `${newSpeeds.length} new ship${newSpeeds.length === 1 ? '' : 's'}: ${newSpeeds.map(x => x[0]).join(', ')}\n`;
+            out += `    ${newSpeeds.length} new ship${newSpeeds.length === 1 ? '' : 's'}: ${newSpeeds.map(x => x[0]).join(', ')}\n`;
         }
         if (improvedSpeeds.length > 0) {
-            out += `${improvedSpeeds.length} improved ship${improvedSpeeds.length === 1 ? '' : 's'}: ${improvedSpeeds.map(x => x[0]).join(', ')}\n`;
+            out += `    ${improvedSpeeds.length} improved ship${improvedSpeeds.length === 1 ? '' : 's'}: ${improvedSpeeds.map(x => x[0]).join(', ')}\n`;
         }
         if (unchangedSpeeds.length > 0) {
-            out += `${unchangedSpeeds.length} unchanged ship${unchangedSpeeds.length === 1 ? '' : 's'}: ${unchangedSpeeds.join(', ')}\n`;
+            out += `    ${unchangedSpeeds.length} unchanged ship${unchangedSpeeds.length === 1 ? '' : 's'}: ${unchangedSpeeds.join(', ')}\n`;
         }
         if (newPeriods.length > 0) {
-            out += `${newPeriods.length} new period${newPeriods.length === 1 ? '' : 's'}: ${newPeriods.map(x => x[0]).join(', ')}\n`;
+            out += `    ${newPeriods.length} new period${newPeriods.length === 1 ? '' : 's'}: ${newPeriods.map(x => x[0]).join(', ')}\n`;
         }
         if (improvedPeriods.length > 0) {
-            out += `${improvedPeriods.length} improved period${improvedPeriods.length === 1 ? '' : 's'}: ${improvedPeriods.map(x => x[0]).join(', ')}\n`;
+            out += `    ${improvedPeriods.length} improved period${improvedPeriods.length === 1 ? '' : 's'}: ${improvedPeriods.map(x => x[0]).join(', ')}\n`;
         }
         if (unchangedPeriods.length > 0) {
-            out += `${unchangedPeriods.length} unchanged period${unchangedPeriods.length === 1 ? '' : 's'}: ${unchangedPeriods.join(', ')}\n`;
+            out += `    ${unchangedPeriods.length} unchanged period${unchangedPeriods.length === 1 ? '' : 's'}: ${unchangedPeriods.join(', ')}\n`;
         }
     }
     out += `Update took ${((performance.now() - start) / 1000).toFixed(3)} seconds\n`;
