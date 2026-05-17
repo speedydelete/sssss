@@ -44,6 +44,7 @@ export interface Ship {
     rle: string;
     comment?: string;
     canBeInOT?: boolean;
+    canBeInB1e?: boolean;
     canBeIn1DT?: boolean;
 }
 
@@ -280,6 +281,7 @@ export function normalizeShips<T extends boolean | undefined = undefined>(shipTy
         let [min, max] = findMinmax(p, limit, undefined, undefined, shipType.startsWith('ot'));
         ship.rule = min;
         ship.canBeInOT = includesOT(min, max);
+        ship.canBeInB1e = p.rule.str.startsWith('B1') && !p.rule.str.startsWith('B1c');
         ship.canBeIn1DT = has1DT(max);
         if ((shipType.startsWith('ot') && !ship.canBeInOT) || (shipType === 'intb1e' && !ship.rule.startsWith('B1e')) || (shipType === 'intnos' && !ship.rule.endsWith('/S')) || (shipType === 'int1dt' && !ship.canBeIn1DT)) {
             if (throwInvalid) {
@@ -301,6 +303,12 @@ export function normalizeShips<T extends boolean | undefined = undefined>(shipTy
                 ship.rule = `${maxParts[0]}/${minParts[1]}/${minParts[2]}`;
             } else {
                 ship.rule = `${minParts[0]}/${maxParts[1]}`;
+            }
+        } else if (shipType === 'intb1e') {
+            if (!ship.rule.startsWith('B1')) {
+                ship.rule = 'B1e' + ship.rule.slice(2);
+            } else if (ship.rule.startsWith('B1c')) {
+                ship.rule = 'B1' + ship.rule.slice(3);
             }
         }
         if (p instanceof MAPB0Pattern) {
@@ -456,6 +464,8 @@ async function _addShipsToFiles(type: Type, ships: Ship[], limit: number | undef
         ships = normalizeShips(type, ships.filter(ship => ship.canBeInOT), false, limit)[0];
     } else if (type === 'intnos') {
         ships = normalizeShips(type, ships.filter(ship => ship.rule.endsWith('/S')), false, limit)[0];
+    } else if (type === 'intb1e') {
+        ships = normalizeShips(type, ships.filter(ship => ship.canBeInB1e), false, limit)[0];
     } else if (type === 'int1dt') {
         ships = normalizeShips(type, ships.filter(ship => ship.canBeIn1DT), false, limit)[0];
         console.log(type, ships);

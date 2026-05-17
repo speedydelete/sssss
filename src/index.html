@@ -606,6 +606,7 @@ function normalizeShips(shipType, ships, throwInvalid, globalLimit) {
         let [min, max] = findMinmax(p, limit, undefined, undefined, shipType.startsWith('ot'));
         ship.rule = min;
         ship.canBeInOT = includesOT(min, max);
+        ship.canBeInB1e = p.rule.str.startsWith('B1') && !p.rule.str.startsWith('B1c');
         ship.canBeIn1DT = has1DT(max);
         if ((shipType.startsWith('ot') && !ship.canBeInOT) || (shipType === 'intb1e' && !ship.rule.startsWith('B1e')) || (shipType === 'intnos' && !ship.rule.endsWith('/S')) || (shipType === 'int1dt' && !ship.canBeIn1DT)) {
             if (throwInvalid) {
@@ -627,6 +628,12 @@ function normalizeShips(shipType, ships, throwInvalid, globalLimit) {
                 ship.rule = `${maxParts[0]}/${minParts[1]}/${minParts[2]}`;
             } else {
                 ship.rule = `${minParts[0]}/${maxParts[1]}`;
+            }
+        } else if (shipType === 'intb1e') {
+            if (!ship.rule.startsWith('B1')) {
+                ship.rule = 'B1e' + ship.rule.slice(2);
+            } else if (ship.rule.startsWith('B1c')) {
+                ship.rule = 'B1' + ship.rule.slice(3);
             }
         }
         if (p instanceof MAPB0Pattern) {
