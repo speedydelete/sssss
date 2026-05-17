@@ -1,5 +1,7 @@
 
-import {TRANSITIONS, VALID_TRANSITIONS, parseTransitions, unparseTransitions, arrayToTransitions, MAPPattern, createPattern, Pattern} from '../lifeweb/lib/index.js';
+import {normalize} from 'node:path';
+import * as fs from 'node:fs/promises';
+import {TRANSITIONS, VALID_TRANSITIONS, parseTransitions, unparseTransitions, arrayToTransitions, MAPPattern, createPattern} from '../lifeweb/lib/index.js';
 import {TYPES, parseData} from './index.js';
 
 
@@ -28,7 +30,7 @@ if (process.argv.length < 8) {
 
 let type = process.argv[3];
 if (!(type in TYPES)) {
-
+    throw new Error(`Invalid type: '${type}'`)
 }
 
 let minRule = process.argv[4];
@@ -56,11 +58,18 @@ for (let arg of process.argv.slice(8)) {
 }
 
 let records: {[key: string]: number} = {};
+console.log('# Loading records');
+for (let file of ['orthogonal', 'diagonal', 'oblique', 'oscillator']) {
+    let data = (await fs.readFile(normalize(`${import.meta.dirname}/../data/${type}/${file}.sss`))).toString();
+    for (let ship of parseData(data)) {
+        records[`${ship.dx} ${ship.dy} ${ship.period}`] = ship.pop;
+    }
+}
+console.log('# Records loaded');
 
 
 function run(): void {
-    let p = base.copy();
-    p.trs = base.trs.slice();
+    let p = new MAPPattern(0, 0, base.data, base.rule, base.trs.slice());
     for (let tr of changeB) {
         if (Math.random() > 0.5) {
             for (let i of TRANSITIONS[tr]) {
