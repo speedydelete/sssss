@@ -91,7 +91,7 @@ function run(): void {
     for (let i = 0; i < limit; i++) {
         p.runGeneration();
         p.shrinkToFit();
-        if (p.height !== base.height || p.width !== base.width) {
+        if (p.height !== base.height || p.width !== base.width || p.xOffset !== 0 || p.yOffset !== 0) {
             break;
         }
         let pop = p.population;
