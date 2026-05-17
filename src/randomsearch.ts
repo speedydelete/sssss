@@ -58,18 +58,18 @@ for (let arg of process.argv.slice(8)) {
 }
 
 let records: {[key: string]: number} = {};
-console.log('# Loading records');
-for (let file of ['orthogonal', 'diagonal', 'oblique', 'oscillator']) {
-    let data = (await fs.readFile(normalize(`${import.meta.dirname}/../data/${type}/${file}.sss`))).toString();
-    for (let ship of parseData(data)) {
-        records[`${ship.dx} ${ship.dy} ${ship.period}`] = ship.pop;
-    }
-}
-console.log('# Records loaded');
+// console.log('# Loading records');
+// for (let file of ['orthogonal', 'diagonal', 'oblique', 'oscillator']) {
+//     let data = (await fs.readFile(normalize(`${import.meta.dirname}/../data/${type}/${file}.sss`))).toString();
+//     for (let ship of parseData(data)) {
+//         records[`${ship.dx} ${ship.dy} ${ship.period}`] = ship.pop;
+//     }
+// }
+// console.log('# Records loaded');
 
 
 function run(): void {
-    let p = new MAPPattern(0, 0, base.data, base.rule, base.trs.slice());
+    let p = new MAPPattern(base.height, base.width, base.data, base.rule, base.trs.slice());
     for (let tr of changeB) {
         if (Math.random() > 0.5) {
             for (let i of TRANSITIONS[tr]) {
