@@ -7,7 +7,7 @@ import {createAdjustable} from './adjustable/index.js';
 
 export type Type = 'int' | 'intb0' | 'ot' | 'otb0' | 'intgen' | 'otgen' | 'intb1e' | 'intnos' | 'int1dt';
 
-export const TYPES = ['int', 'intb0', 'ot', 'otb0', 'intgen', 'otgen', 'intb1e', 'intnos', 'int1dt'];
+export const TYPES = ['int', 'intb0', 'ot', 'otb0', 'intgen', 'otgen', 'intb1e', 'intnos', 'int1dt'] as Type[];
 
 export const TYPE_NAMES: {[K in Type]: string} = {
     'int': 'INT',
@@ -635,7 +635,7 @@ export async function mergeShips(type: Type, ships: Ship[], limit?: number): Ret
 }
 
 
-export async function findShip(type: string, dx: number, dy: number, period: number, adjustables: 'yes' | 'no' | 'only' = 'yes'): Promise<[Ship, boolean] | null> {
+export async function findShip(type: Type, dx: number, dy: number, period: number, adjustables: 'yes' | 'no' | 'only' = 'yes'): Promise<[Ship, boolean] | null> {
     let adjustable: Ship | null = null;
     if (adjustables === 'yes' || adjustables === 'only') {
         let out = createAdjustable(type, dx, dy, period);
@@ -697,7 +697,7 @@ export async function findShip(type: string, dx: number, dy: number, period: num
     }
 }
 
-export async function findShipRLE(type: string, dx: number, dy: number, period: number, adjustables: 'yes' | 'no' | 'only' = 'yes'): Promise<string> {
+export async function findShipRLE(type: Type, dx: number, dy: number, period: number, adjustables: 'yes' | 'no' | 'only' = 'yes'): Promise<string> {
     let data = await findShip(type, dx, dy, period, adjustables);
     if (!data) {
         return `No such ship found in database!\n`;
@@ -714,7 +714,23 @@ export async function findShipRLE(type: string, dx: number, dy: number, period: 
     }
 }
 
-export async function findSpeedRLE(type: string, speed: string, adjustables: 'yes' | 'no' | 'only' = 'yes'): Promise<string> {
+export async function findSpeedRLE(type: Type, speed: string, adjustables: 'yes' | 'no' | 'only' = 'yes'): Promise<string> {
     let {dx, dy, period} = parseSpeed(speed);
     return await findShipRLE(type, dx, dy, period, adjustables);
+}
+
+
+export function shipIsOptimal(type: Type, ship: Ship): boolean {
+    if (ship.comment && ship.comment.toLowerCase().includes('proven optimal')) {
+        return true;
+    } else if (ship.pop === 3 && (ship.dx !== 0 || ship.dy !== 0)) {
+        return true;
+    } else if (!type.includes('b0') && ship.pop === 2 && ship.dx === 0 && ship.dy === 0) {
+        return true;
+    } else if ((type.includes('b0') || ship.period === 1) && ship.pop === 1 && ship.dx === 0 && ship.dy === 0) {
+        return true;
+    } else if (type.startsWith('int') && !type.includes('b0') && ship.pop === 4 && ship.dx + ship.dy === ship.period) {
+        return true;
+    }
+    return false;
 }

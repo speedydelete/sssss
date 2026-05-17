@@ -5,7 +5,7 @@ import {execSync} from 'node:child_process';
 import {Worker} from 'node:worker_threads';
 import {IncomingMessage, ServerResponse, createServer} from 'node:http';
 import {speedToString} from '../lifeweb/lib/index.js';
-import {TYPES, Ship, parseData, findShipRLE} from './index.js';
+import {Type, TYPES, Ship, parseData, findShipRLE, shipIsOptimal} from './index.js';
 
 
 let basePath = normalize(`${import.meta.dirname}/..`);
@@ -184,14 +184,14 @@ const ENDPOINTS: {[key: string]: (req: IncomingMessage, params: URLSearchParams 
         let dx = parseInt(dxP);
         let dy = parseInt(dyP);
         let period = parseInt(periodP);
-        if (Number.isNaN(dx) || Number.isNaN(dy) || Number.isNaN(period) || (adjustables !== undefined && !(adjustables === 'yes' || adjustables === 'no' || adjustables === 'only'))) {
+        if (!(type in TYPES) || Number.isNaN(dx) || Number.isNaN(dy) || Number.isNaN(period) || (adjustables !== undefined && !(adjustables === 'yes' || adjustables === 'no' || adjustables === 'only'))) {
             out.writeHead(400, 'Invalid Parameters');
             out.end();
             console.log(`400 Invalid Parameters (${getLineNumber(new Error())})`); 
             return;
         }
         out.writeHead(200);
-        out.write(await findShipRLE(type, dx, dy, period, adjustables));
+        out.write(await findShipRLE(type as Type, dx, dy, period, adjustables));
         out.end();
         console.log(`200 OK (${speedToString(dx, dy, period)} in type ${type})`);
     },
@@ -482,22 +482,16 @@ async function updatePeriodMaps(): Promise<void> {
     console.log(`Updating period maps`);
     for (let type of TYPES) {
         let maps: Uint32Array[] = [];
-        let entries: {[key: string]: [number, boolean]} = {};
+        let entries: {[key: string]: number} = {};
         for (let category of ['orthogonal', 'diagonal', 'oblique', 'oscillator']) {
             let file = (await fs.readFile(`${basePath}/data/${type}/${category}.sss`)).toString();
             for (let ship of parseData(file)) {
                 let key = ship.dx + ' ' + ship.dy + ' ' + ship.period;
-                let proven = false;
-                if (ship.comment && ship.comment.toLowerCase().includes('proven optimal')) {
-                    proven = true;
-                } else if (ship.pop === 3 && (ship.dx !== 0 || ship.dy !== 0)) {
-                    proven = true;
-                } else if (!type.includes('b0') && ship.pop === 2 && ship.dx === 0 && ship.dy === 0) {
-                    proven = true;
-                } else if ((type.includes('b0') || ship.period === 1) && ship.pop === 1 && ship.dx === 0 && ship.dy === 0) {
-                    proven = true;
+                let value = ship.pop;
+                if (shipIsOptimal(type, ship)) {
+                    value |= (1 << 31);
                 }
-                entries[key] = [ship.pop, proven];
+                entries[key] = value;
             }
         }
         for (let period = 1; period < 128; period++) {
@@ -506,14 +500,7 @@ async function updatePeriodMaps(): Promise<void> {
             for (let dx = 0; dx <= period; dx++) {
                 for (let dy = 0; dy <= dx; dy++) {
                     let key = dx + ' ' + dy + ' ' + period;
-                    let value = entries[key];
-                    if (!value) {
-                        map[i] = 0;
-                    } else if (value[1]) {
-                        map[i] = (1 << 31) | value[0];
-                    } else {
-                        map[i] = value[0];
-                    }
+                    map[i++] = entries[key] ?? 0;
                     i++;
                 }
             }
