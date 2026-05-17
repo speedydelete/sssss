@@ -369,7 +369,7 @@ const ENDPOINTS: {[key: string]: (req: IncomingMessage, params: URLSearchParams 
         } else {
             lastGetPeriodMapTime.set(ip, time);
         }
-        if (req.method !== 'POST') {
+        if (req.method !== 'GET') {
             out.writeHead(405);
             out.end();
             console.log(`405 Method Not Allowed (${getLineNumber(new Error())})`); 
