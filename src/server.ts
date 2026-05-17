@@ -126,8 +126,8 @@ async function addShipsToFilesWorker(type: string, ships: Ship[], limit?: number
 }
 
 
-let newShips: [string, string, number][] = [];
-let improvedShips: [string, string, number, number][] = [];
+let newSpeeds: [string, string, number][] = [];
+let improvedSpeeds: [string, string, number, number][] = [];
 let newPeriods: [string, string, number][] = [];
 let improvedPeriods: [string, string, number, number][] = [];
 
@@ -264,8 +264,8 @@ const ENDPOINTS: {[key: string]: (req: IncomingMessage, params: URLSearchParams 
                 }
                 let [text, speeds] = (await addShipsToFilesWorker(type, ships, 65536, false));
                 for (let [type, value] of Object.entries(speeds)) {
-                    newShips.push(...value.newSpeeds.map(x => [type, x[0], x[1]] as [string, string, number]));
-                    improvedShips.push(...value.improvedSpeeds.map(x => [type, x[0], x[1], x[2]] as [string, string, number, number]));
+                    newSpeeds.push(...value.newSpeeds.map(x => [type, x[0], x[1]] as [string, string, number]));
+                    improvedSpeeds.push(...value.improvedSpeeds.map(x => [type, x[0], x[1], x[2]] as [string, string, number, number]));
                     newPeriods.push(...value.newPeriods.map(x => [type, x[0], x[1]] as [string, string, number]));
                     improvedPeriods.push(...value.improvedPeriods.map(x => [type, x[0], x[1], x[2]] as [string, string, number, number]));
                 }
@@ -348,11 +348,11 @@ const ENDPOINTS: {[key: string]: (req: IncomingMessage, params: URLSearchParams 
             return;
         }
         out.writeHead(200);
-        out.write(JSON.stringify({newShips, improvedShips, newPeriods, improvedPeriods}));
+        out.write(JSON.stringify({newSpeeds, improvedSpeeds, newPeriods, improvedPeriods}));
         out.end();
         console.log(`200 OK`);
-        newShips = [];
-        improvedShips = [];
+        newSpeeds = [];
+        improvedSpeeds = [];
         newPeriods = [];
         improvedPeriods = [];
     },
