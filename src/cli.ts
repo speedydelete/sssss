@@ -8,6 +8,9 @@ import {Type, TYPES, Ship, parseData, patternToShip, addShipsToFiles, mergeShips
 if (process.argv[2] === 'randomsearch') {
     await import('./randomsearch.js');
     process.exit(0);
+} else if (process.argv[2] === 'prove') {
+    await import('./prover.js');
+    process.exit(0);
 }
 
 let cmd = process.argv[2];
