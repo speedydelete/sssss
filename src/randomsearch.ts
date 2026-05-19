@@ -29,7 +29,7 @@ if (process.argv.length < 8) {
 }
 
 let type = process.argv[3];
-if (!TYPES.includes(type as Type)) {
+if (!(TYPES.includes(type as Type) || type === 'none')) {
     throw new Error(`Invalid type: '${type}'`)
 }
 
@@ -57,19 +57,65 @@ for (let arg of process.argv.slice(8)) {
     extraArgs[key] = value;
 }
 
+let match: RegExpMatchArray | null;
+
+let maxBB: [number, number] | undefined = undefined;
+if (extraArgs['maxbb']) {
+    if (!(match = extraArgs['maxbb'].match(/^(\d+),(\d+)$/))) {
+        throw new Error(`Invalid value for maxbb (expected width,height): '${extraArgs['maxbb']}`);
+    }
+    maxBB = [parseInt(match[0]), parseInt(match[1])];
+}
+
+let maxPop: number | undefined = undefined;
+if (extraArgs['maxpop']) {
+    if (!extraArgs['maxpop'].match(/^\d+$/)) {
+        throw new Error(`Invalid value for maxpop (expected natural number): '${extraArgs['maxpop']}`);
+    }
+    maxPop = parseInt(extraArgs['maxpop']);
+}
+
+let initialGens: number | undefined = undefined;
+if (extraArgs['initialgens']) {
+    if (!extraArgs['initialgens'].match(/^\d+$/)) {
+        throw new Error(`Invalid value for initialgens (expected natural number): '${extraArgs['initialgens']}`);
+    }
+    initialGens = parseInt(extraArgs['initialgens']);
+}
+
+
 let records: {[key: string]: number} = {};
+if (type !== 'none') {
 console.log('# Loading records');
-for (let file of ['orthogonal', 'diagonal', 'oblique', 'oscillator']) {
-    let data = (await fs.readFile(normalize(`${import.meta.dirname}/../data/${type}/${file}.sss`))).toString();
-    for (let ship of parseData(data)) {
-        records[`${ship.dx} ${ship.dy} ${ship.period}`] = ship.pop;
+    for (let file of ['orthogonal', 'diagonal', 'oblique', 'oscillator']) {
+        let data = (await fs.readFile(normalize(`${import.meta.dirname}/../data/${type}/${file}.sss`))).toString();
+        for (let ship of parseData(data)) {
+            records[`${ship.dx} ${ship.dy} ${ship.period}`] = ship.pop;
+        }
+    }
+    console.log('# Records loaded');
+}
+
+
+let maxbb = [];
+
+let startPhases: MAPPattern[] = [base.copy()];
+let startPops: number[] = [base.population];
+let startHashes: number[] = [base.hash32()];
+let actualBase = base;
+if (initialGens) {
+    actualBase = base.copy();
+    for (let i = 0; i < initialGens; i++) {
+        actualBase.runGeneration();
+        actualBase.shrinkToFit();
+        startPhases.push(actualBase.copy());
+        startPops.push(actualBase.population);
+        startHashes.push(actualBase.hash32());
     }
 }
-console.log('# Records loaded');
-
 
 function run(): void {
-    let p = new MAPPattern(base.height, base.width, base.data, base.rule, base.trs.slice());
+    let p = new MAPPattern(actualBase.height, actualBase.width, actualBase.data, actualBase.rule, actualBase.trs.slice());
     for (let tr of changeB) {
         if (Math.random() > 0.5) {
             for (let i of TRANSITIONS[tr]) {
@@ -84,17 +130,24 @@ function run(): void {
             }
         }
     }
-    let phases: MAPPattern[] = [p.copy()];
-    let pops: number[] = [p.population];
-    let hashes: number[] = [p.hash32()];
+    let phases = startPhases.slice();
+    let pops = startPops.slice();
+    let hashes = startHashes.slice();
     let actualFound = false;
     for (let i = 0; i < limit; i++) {
         p.runGeneration();
         p.shrinkToFit();
-        // if (p.height !== base.height || p.width !== base.width || p.xOffset !== 0 || p.yOffset !== 0) {
-        //     break;
-        // }
+        if (maxBB !== undefined) {
+            if (p.height >= maxBB[1] || p.width > maxBB[0]) {
+                break;
+            }
+        }
         let pop = p.population;
+        if (maxPop !== undefined) {
+            if (pop > maxPop) {
+                break;
+            }   
+        }
         let hash = p.hash32();
         if (pop === 0) {
             break;
