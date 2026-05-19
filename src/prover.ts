@@ -1,7 +1,7 @@
 
-import {MAPPattern, createPattern} from '../lifeweb/lib/index.js';
-
+import * as fs from 'node:fs/promises';
 import {execSync} from 'node:child_process';
+import {MAPPattern, createPattern} from '../lifeweb/lib/index.js';
 
 
 let base = createPattern('B3/S23') as MAPPattern;
@@ -109,7 +109,10 @@ for (let region of regions) {
     }
 }
 
-console.log(Array.from(toSearch).join(' '));
+
+await fs.appendFile(`${process.cwd()}/out.txt`, `# Searching ${period}/3.*.*: ${Array.from(toSearch).join(' ')}\n`);
+
+console.log(`Ships compiled, beginning search`);
 
 let count = 0;
 let start = performance.now() / 1000;
