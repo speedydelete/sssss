@@ -53,10 +53,7 @@ if (Number.isNaN(limit)) {
 let extraArgs: {[key: string]: string | undefined} = {};
 for (let arg of process.argv.slice(8)) {
     let [key, value] = arg.split('=');
-    if (value === undefined) {
-        throw new Error(`Invalid key=value argument: '${arg}'`);
-    }
-    extraArgs[key] = value;
+    extraArgs[key] = value ?? true;
 }
 
 let match: RegExpMatchArray | null;
@@ -84,6 +81,9 @@ if (extraArgs['initialgens']) {
     }
     initialGens = parseInt(extraArgs['initialgens']);
 }
+
+let bbCannotChange = Boolean(extraArgs['bbcannotchange']);
+
 
 
 let records: {[key: string]: number} = {};
@@ -140,6 +140,11 @@ function run(): void {
         p.shrinkToFit();
         if (maxBB !== undefined) {
             if (p.height >= maxBB[1] || p.width > maxBB[0]) {
+                break;
+            }
+        }
+        if (bbCannotChange) {
+            if (p.height !== actualBase.height || p.width !== actualBase.width) {
                 break;
             }
         }
