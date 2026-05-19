@@ -75,7 +75,7 @@ if (extraArgs['maxpop']) {
     maxPop = parseInt(extraArgs['maxpop']);
 }
 
-let initialGens: number | undefined = undefined;
+let initialGens = 0;
 if (extraArgs['initialgens']) {
     if (!extraArgs['initialgens'].match(/^\d+$/)) {
         throw new Error(`Invalid value for initialgens (expected natural number): '${extraArgs['initialgens']}`);
@@ -97,13 +97,11 @@ console.log('# Loading records');
 }
 
 
-let maxbb = [];
-
 let startPhases: MAPPattern[] = [base.copy()];
 let startPops: number[] = [base.population];
 let startHashes: number[] = [base.hash32()];
 let actualBase = base;
-if (initialGens) {
+if (initialGens > 0) {
     actualBase = base.copy();
     for (let i = 0; i < initialGens; i++) {
         actualBase.runGeneration();
@@ -116,6 +114,8 @@ if (initialGens) {
 
 function run(): void {
     let p = new MAPPattern(actualBase.height, actualBase.width, actualBase.data, actualBase.rule, actualBase.trs.slice());
+    p.xOffset = actualBase.xOffset;
+    p.yOffset = actualBase.yOffset;
     for (let tr of changeB) {
         if (Math.random() > 0.5) {
             for (let i of TRANSITIONS[tr]) {
@@ -134,7 +134,7 @@ function run(): void {
     let pops = startPops.slice();
     let hashes = startHashes.slice();
     let actualFound = false;
-    for (let i = 0; i < limit; i++) {
+    for (let i = initialGens; i < limit; i++) {
         p.runGeneration();
         p.shrinkToFit();
         if (maxBB !== undefined) {
