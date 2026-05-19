@@ -160,7 +160,7 @@ function run(): void {
                     if (disp) {
                         actualFound = true;
                         let [dx, dy] = disp;
-                        let period = i - j + 1;
+                        let period = i - j + 1 + initialGens;
                         let dx2 = Math.abs(dx);
                         let dy2 = Math.abs(dy);
                         if (dy2 > dx2) {

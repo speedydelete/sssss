@@ -190,9 +190,9 @@ export function normalizeShips<T extends boolean | undefined = undefined>(shipTy
         let p = parse(`x = 0, y = 0, rule = ${ship.rule}\n${ship.rle}`);
         if (p.isEmpty()) {
             if (throwInvalid) {
-                throw new Error(`Invalid ship detected: ${shipsToString([ship]).slice(0, -1)}`);
+                throw new Error(`Invalid ship detected (empty): ${shipsToString([ship]).slice(0, -1)}`);
             } else {
-                console.log(`Invalid ship detected: ${shipsToString([ship]).slice(0, -1)}`);
+                console.log(`Invalid ship detected (empty): ${shipsToString([ship]).slice(0, -1)}`);
                 let str = speedToString(ship.dx, ship.dy, ship.period);
                 if (str.startsWith('p')) {
                     invalidPeriods.push(str);
@@ -210,9 +210,9 @@ export function normalizeShips<T extends boolean | undefined = undefined>(shipTy
         p.run(type.stabilizedAt);
         if (!type.disp || p.population === 0) {
             if (throwInvalid) {
-                throw new Error(`Invalid ship detected: ${shipsToString([ship]).slice(0, -1)}`);
+                throw new Error(`Invalid ship detected (empty/not periodic): ${shipsToString([ship]).slice(0, -1)}`);
             } else {
-                console.log(`Invalid ship detected: ${shipsToString([ship]).slice(0, -1)}`);
+                console.log(`Invalid ship detected (empty/not periodic): ${shipsToString([ship]).slice(0, -1)}`);
                 if (ship.dx === 0 && ship.dy === 0) {
                     invalidPeriods.push(speed);
                 } else {
@@ -235,9 +235,9 @@ export function normalizeShips<T extends boolean | undefined = undefined>(shipTy
                 type = findType(p, limit, false);
                 if (type.period !== ship.period || !type.disp || ship.dx !== type.disp[0] || ship.dy !== type.disp[1]) {
                     if (throwInvalid) {
-                        throw new Error(`Invalid ship detected: ${shipsToString([ship]).slice(0, -1)}`);
+                        throw new Error(`Invalid ship detected (there is probably a bug, report this): ${shipsToString([ship]).slice(0, -1)}`);
                     } else {
-                        console.log(`Invalid ship detected: ${shipsToString([ship]).slice(0, -1)}`);
+                        console.log(`Invalid ship detected (there is probably a bug, report this): ${shipsToString([ship]).slice(0, -1)}`);
                         if (ship.dx === 0 && ship.dy === 0) {
                             invalidPeriods.push(speed);
                         } else {
@@ -265,9 +265,9 @@ export function normalizeShips<T extends boolean | undefined = undefined>(shipTy
                 type = findType(p, limit, false);
                 if (type.period !== ship.period || !type.disp || ship.dx !== type.disp[0] || ship.dy !== type.disp[1]) {
                     if (throwInvalid) {
-                        throw new Error(`Invalid ship detected: ${shipsToString([ship]).slice(0, -1)}`);
+                        throw new Error(`Invalid ship detected (there is probably a bug, report this): ${shipsToString([ship]).slice(0, -1)}`);
                     } else {
-                        console.log(`Invalid ship detected: ${shipsToString([ship]).slice(0, -1)}`);
+                        console.log(`Invalid ship detected (there is probably a bug, report this): ${shipsToString([ship]).slice(0, -1)}`);
                         if (ship.dx === 0 && ship.dy === 0) {
                             invalidPeriods.push(speed);
                         } else {
@@ -285,9 +285,9 @@ export function normalizeShips<T extends boolean | undefined = undefined>(shipTy
         ship.canBeIn1DT = has1DT(max);
         if ((shipType.startsWith('ot') && !ship.canBeInOT) || (shipType === 'intb1e' && !ship.rule.startsWith('B1e')) || (shipType === 'intnos' && !ship.rule.endsWith('/S')) || (shipType === 'int1dt' && !ship.canBeIn1DT)) {
             if (throwInvalid) {
-                throw new Error(`Invalid ship detected: ${shipsToString([ship]).slice(0, -1)}`);
+                throw new Error(`Invalid ship detected (does not match type): ${shipsToString([ship]).slice(0, -1)}`);
             } else {
-                console.log(`Invalid ship detected: ${shipsToString([ship]).slice(0, -1)}`);
+                console.log(`Invalid ship detected (does not match): ${shipsToString([ship]).slice(0, -1)}`);
                 if (ship.dx === 0 && ship.dy === 0) {
                     invalidPeriods.push(speed);
                 } else {
