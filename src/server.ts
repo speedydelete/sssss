@@ -5,7 +5,7 @@ import {execSync} from 'node:child_process';
 import {Worker} from 'node:worker_threads';
 import {IncomingMessage, ServerResponse, createServer} from 'node:http';
 import {speedToString} from '../lifeweb/lib/index.js';
-import {Type, TYPES, Ship, parseData, addShipsToFiles, findShipRLE, shipIsOptimal} from './index.js';
+import {Type, TYPES, Ship, parseShips, addShipsToFiles, findShipRLE, shipIsOptimal} from './index.js';
 
 
 let basePath = normalize(`${import.meta.dirname}/..`);
@@ -255,7 +255,7 @@ const ENDPOINTS: {[key: string]: (req: IncomingMessage, params: URLSearchParams 
         });
         req.on('end', async () => {
             try {
-                let ships = parseData(data);
+                let ships = parseShips(data);
                 if (ships.length > 2048) {
                     out.writeHead(400, 'Max 2048 Ships');
                     out.end();
@@ -315,7 +315,9 @@ const ENDPOINTS: {[key: string]: (req: IncomingMessage, params: URLSearchParams 
             console.log(`400 Expected Type Parameter (no type parameter, ${getLineNumber(new Error())})`); 
             return;
         }
-        out.writeHead(200);
+        // CHANGE BEFORE COMMIT
+        out.writeHead(200, undefined, {'access-control-allow-origin': '*'});
+        // out.writeHead(200);
         out.write(counts[type]);
         out.end();
         console.log(`200 OK (type ${type})`);
@@ -360,7 +362,7 @@ const ENDPOINTS: {[key: string]: (req: IncomingMessage, params: URLSearchParams 
     getperiodmap(req: IncomingMessage, params: URLSearchParams | null, out: ServerResponse<IncomingMessage>, ip: string, time: number): void {
         let value = lastGetPeriodMapTime.get(ip);
         if (value !== undefined) {
-            if (time - value < 0.5) {
+            if (time - value < 0.1) {
                 console.log(`429 Too Many Requests (${(time - value).toFixed(3)} seconds, ${getLineNumber(new Error())})`); 
                 out.writeHead(429);
                 out.end();
@@ -398,7 +400,6 @@ const ENDPOINTS: {[key: string]: (req: IncomingMessage, params: URLSearchParams 
             console.log(`400 Invalid Parameters (period is invalid, ${getLineNumber(new Error())})`); 
             return;
         }
-        out.writeHead(200);
         let maps = periodMaps[type];
         if (!maps || !(period in maps)) {
             out.writeHead(400, 'Invalid Parameters');
@@ -406,7 +407,11 @@ const ENDPOINTS: {[key: string]: (req: IncomingMessage, params: URLSearchParams 
             console.log(`400 Invalid Parameters (period map not present, ${getLineNumber(new Error())})`); 
             return;
         }
-        // out.write(periodMaps[type]);
+        let map = maps[period];
+        // CHANGE BEFORE COMMIT
+        out.writeHead(200, undefined, {'access-control-allow-origin': '*'});
+        // out.writeHead(200);
+        out.write(Buffer.from(map.buffer, 0, map.byteLength));
         out.end();
         console.log(`200 OK (type ${type})`);
     },
@@ -416,8 +421,9 @@ const ENDPOINTS: {[key: string]: (req: IncomingMessage, params: URLSearchParams 
 
 let server = createServer(async (req, out) => {
     try {
-        let ip = req.headers['x-forwarded-for'] as string;
-        // let ip = '127.0.0.1';
+        // CHANGE BEFORE COMMIT
+        // let ip = req.headers['x-forwarded-for'] as string;
+        let ip = '127.0.0.1';
         if (!ip) {
             out.writeHead(400, 'No IP address; cannot determine rate limits');
             out.end();
@@ -469,43 +475,48 @@ function updateDataZip() {
     execSync(`cp ${basePath}/data.zip /var/www/html/5s/data.zip`, {stdio: 'inherit'});
 }
 
-updateDataZip();
+// CHANGE BEFORE COMMIT
+// updateDataZip();
 setInterval(() => updateDataZip, 3600 * 1000);
 
 function backupDataZip() {
     execSync(`mkdir -p ${basePath}/backup && cp ${basePath}/data.zip ${basePath}/backup/data_${Math.floor(Date.now() / 1000)}.zip`, {stdio: 'inherit'});
 }
 
-backupDataZip();
+// CHANGE BEFORE COMMIT
+// backupDataZip();
 setInterval(() => backupDataZip, 86400 * 4 * 1000);
 
 
 async function updatePeriodMaps(): Promise<void> {
     console.log(`Updating period maps`);
     for (let type of TYPES) {
-        let maps: Uint32Array[] = [];
         let entries: {[key: string]: number} = {};
         for (let category of ['orthogonal', 'diagonal', 'oblique', 'oscillator']) {
             let file = (await fs.readFile(`${basePath}/data/${type}/${category}.sss`)).toString();
-            for (let ship of parseData(file)) {
+            for (let ship of parseShips(file)) {
                 let key = ship.dx + ' ' + ship.dy + ' ' + ship.period;
                 let value = ship.pop;
-                if (shipIsOptimal(type, ship)) {
+                if (ship.comment && ship.comment.toLowerCase().includes('proven optimal')) {
                     value |= (1 << 31);
                 }
                 entries[key] = value;
             }
         }
-        for (let period = 1; period < 128; period++) {
-            let map = new Uint32Array(Math.round((period + 1) * (period / 2)));
+        let maps: Uint32Array[] = [new Uint32Array(0)];
+        let b0 = type.includes('b0');
+        let inc = b0 ? 2 : 1;
+        for (let period = b0 ? 2 : 1; period < 128; period += inc) {
+            let limit = b0 ? Math.floor(period / 2 * 3 / 2) + 1 : period + 1;
+            let map = new Uint32Array(Math.round((limit + 1) * (limit / 2)));
             let i = 0;
-            for (let dx = 0; dx <= period; dx++) {
+            for (let dx = 0; dx < limit; dx++) {
                 for (let dy = 0; dy <= dx; dy++) {
                     let key = dx + ' ' + dy + ' ' + period;
                     map[i++] = entries[key] ?? 0;
-                    i++;
                 }
             }
+            maps.push(map);
         }
         periodMaps[type] = maps;
     }

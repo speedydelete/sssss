@@ -1,32 +1,31 @@
 
 import {Pattern, createPattern as _createPattern} from '../../lifeweb/lib/index.js';
 import {INT_ADJUSTABLES} from './int.js';
+import {INTB0_ADJUSTABLES} from './intb0.js';
+import {Type} from '../index.js';
 
 
 export interface AdjustableGenerator {
-    isValidSpeed(dx: number, dy: number, period: number): boolean;
-    minPopulation(dx: number, dy: number, period: number): number | null;
-    createShip(dx: number, dy: number, period: number): Pattern | null;
+    minPopulation(dx: number, dy: number, period: number): number | undefined;
+    createShip(dx: number, dy: number, period: number): Pattern | undefined;
 };
 
-const ADJUSTABLES: {[key: string]: AdjustableGenerator[]} = {
+const ADJUSTABLES: {[K in Type]?: AdjustableGenerator[]} = {
     'int': INT_ADJUSTABLES,
+    'intb0': INTB0_ADJUSTABLES,
 };
 
 
-export function createAdjustable(type: string, dx: number, dy: number, period: number): [Pattern, number] | null {
+export function createAdjustable(type: Type, dx: number, dy: number, period: number): [Pattern, number] | undefined {
     let generators = ADJUSTABLES[type];
     if (generators === undefined) {
-        return null;
+        return;
     }
     let minPop = Infinity;
-    let minShip: Pattern | null = null;
+    let minShip: Pattern | undefined = undefined;
     for (let generator of generators) {
-        if (!generator.isValidSpeed(dx, dy, period)) {
-            continue;
-        }
         let pop = generator.minPopulation(dx, dy, period);
-        if (pop === null) {
+        if (pop === undefined) {
             continue;
         }
         if (pop < minPop) {
@@ -37,5 +36,4 @@ export function createAdjustable(type: string, dx: number, dy: number, period: n
     if (minShip) {
         return [minShip, minPop];
     }
-    return null;
 }

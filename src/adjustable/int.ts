@@ -1,9 +1,9 @@
 
-import {Pattern, DataPattern, createPattern} from '../../lifeweb/lib/index.js';
+import {Pattern, MAPPattern, createPattern} from '../../lifeweb/lib/index.js';
 import {AdjustableGenerator} from './index.js';
 
 
-const QUAD_WICKSTRETCHER: AdjustableGenerator & {rules: {[key: number]: [number, {[key: number]: [rule: string, min: number, flip: boolean, offset: number]}][]}} = {
+const QUAD_WICKSTRETCHER: AdjustableGenerator & {rules: {[displacement: number]: [mod: number, {[modValue: number]: [rule: string, min: number, flip: boolean, offset: number]}][]}} = {
 
     rules: {
         0: [
@@ -109,32 +109,27 @@ const QUAD_WICKSTRETCHER: AdjustableGenerator & {rules: {[key: number]: [number,
         ]
     },
 
-    isValidSpeed(dx: number, dy: number, period: number): boolean {
+    minPopulation(dx: number, dy: number, period: number): number | undefined {
         if (!(dx in this.rules && dy === 0)) {
-            return false;
+            return;
         }
         for (let [mod, value] of this.rules[dx]) {
             let modPeriod = period % mod;
             if (modPeriod in value && period >= value[modPeriod][1]) {
-                return true;
+                return 3;
             }
         }
-        return false;
     },
 
-    minPopulation(dx: number, dy: number, period: number): number | null {
-        return this.isValidSpeed(dx, dy, period) ? 3 : null;
-    },
-
-    createShip(dx: number, dy: number, period: number): Pattern | null {
+    createShip(dx: number, dy: number, period: number): Pattern | undefined {
         if (!(dx in this.rules && dy === 0)) {
-            return null;
+            return;
         }
         for (let [mod, value] of this.rules[dx]) {
             let modPeriod = period % mod;
             if (modPeriod in value && period >= value[modPeriod][1]) {
                 let spec = value[modPeriod];
-                let p = createPattern(spec[0]) as DataPattern;
+                let p = createPattern(spec[0]) as MAPPattern;
                 if (spec[2]) {
                     let height = 3;
                     let width = spec[3] + (period - spec[1]) / 12 + 2;
@@ -155,7 +150,6 @@ const QUAD_WICKSTRETCHER: AdjustableGenerator & {rules: {[key: number]: [number,
                 return p;
             }
         }
-        return null;
     },
 
 };

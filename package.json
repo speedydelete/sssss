@@ -3,5 +3,9 @@
     "devDependencies": {
         "@types/node": "^24.10.1",
         "typescript": "^5.9.3"
+    },
+    "optionalDependencies": {
+        "@minify-html/node": "^0.18.1",
+        "esbuild": "^0.28.0"
     }
 }

@@ -1,8 +1,7 @@
 
 import * as fs from 'node:fs/promises';
-import crypto from 'node:crypto';
 import {parse} from '../lifeweb/lib/index.js';
-import {Type, TYPES, Ship, parseData, patternToShip, addShipsToFiles, mergeShips, findSpeedRLE} from './index.js';
+import {Type, TYPES, Ship, parseShips, patternToShip, addShipsToFiles, findSpeedRLE} from './index.js';
 
 
 if (process.argv[2] === 'randomsearch') {
@@ -35,10 +34,10 @@ if (cmd === 'get') {
         adjustables = 'only';
     }
     out = await findSpeedRLE(type, arg, adjustables);
-} else if (cmd === 'add') {
-    let data = parseData((await fs.readFile(arg)).toString());
-    out = (await addShipsToFiles(type, data))[0];
-} else if (cmd === 'add_rle') {
+} else if (cmd === 'add' || cmd === 'add_no_verify') {
+    let data = parseShips((await fs.readFile(arg)).toString());
+    out = (await addShipsToFiles(type, data, undefined, true, cmd === 'add'))[0];
+} else if (cmd === 'add_rle' || cmd === 'add_rle_no_verify') {
     let data: Ship[] = [];
     for (let rle of (await fs.readFile(arg)).toString().split('!')) {
         rle = rle.trim();
@@ -47,13 +46,7 @@ if (cmd === 'get') {
         }
         data.push(...patternToShip(type, parse(rle + '!'), 1048576));
     }
-    out = (await addShipsToFiles(type, data))[0];
-} else if (cmd === 'merge') {
-    let data = parseData((await fs.readFile(arg)).toString());
-    out = (await mergeShips(type, data))[0];
-} else if (cmd === 'get_admin_key') {
-    let key = process.argv.slice(3).join(' ');
-    out = crypto.createHash('sha3-256').update(key, 'utf-8').digest('hex');
+    out = (await addShipsToFiles(type, data, undefined, true, cmd === 'add_rle'))[0];
 } else {
     throw new Error(`Invalid subcommand: ${process.argv[2]}`);
 }
