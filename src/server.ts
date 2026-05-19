@@ -315,9 +315,8 @@ const ENDPOINTS: {[key: string]: (req: IncomingMessage, params: URLSearchParams 
             console.log(`400 Expected Type Parameter (no type parameter, ${getLineNumber(new Error())})`); 
             return;
         }
-        // CHANGE BEFORE COMMIT
-        out.writeHead(200, undefined, {'access-control-allow-origin': '*'});
-        // out.writeHead(200);
+        // out.writeHead(200, undefined, {'access-control-allow-origin': '*'});
+        out.writeHead(200);
         out.write(counts[type]);
         out.end();
         console.log(`200 OK (type ${type})`);
@@ -408,9 +407,8 @@ const ENDPOINTS: {[key: string]: (req: IncomingMessage, params: URLSearchParams 
             return;
         }
         let map = maps[period];
-        // CHANGE BEFORE COMMIT
-        out.writeHead(200, undefined, {'access-control-allow-origin': '*'});
-        // out.writeHead(200);
+        // out.writeHead(200, undefined, {'access-control-allow-origin': '*'});
+        out.writeHead(200);
         out.write(Buffer.from(map.buffer, 0, map.byteLength));
         out.end();
         console.log(`200 OK (type ${type})`);
@@ -421,9 +419,8 @@ const ENDPOINTS: {[key: string]: (req: IncomingMessage, params: URLSearchParams 
 
 let server = createServer(async (req, out) => {
     try {
-        // CHANGE BEFORE COMMIT
-        // let ip = req.headers['x-forwarded-for'] as string;
-        let ip = '127.0.0.1';
+        let ip = req.headers['x-forwarded-for'] as string;
+        // let ip = '127.0.0.1';
         if (!ip) {
             out.writeHead(400, 'No IP address; cannot determine rate limits');
             out.end();
@@ -475,16 +472,14 @@ function updateDataZip() {
     execSync(`cp ${basePath}/data.zip /var/www/html/5s/data.zip`, {stdio: 'inherit'});
 }
 
-// CHANGE BEFORE COMMIT
-// updateDataZip();
+updateDataZip();
 setInterval(() => updateDataZip, 3600 * 1000);
 
 function backupDataZip() {
     execSync(`mkdir -p ${basePath}/backup && cp ${basePath}/data.zip ${basePath}/backup/data_${Math.floor(Date.now() / 1000)}.zip`, {stdio: 'inherit'});
 }
 
-// CHANGE BEFORE COMMIT
-// backupDataZip();
+backupDataZip();
 setInterval(() => backupDataZip, 86400 * 4 * 1000);
 
 

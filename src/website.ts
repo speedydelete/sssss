@@ -2,9 +2,8 @@
 import {parseSpeed, speedToString} from '../lifeweb/lib/index.js';
 import {Type, parseShips, shipsToString, normalizeShips, isValidInType, speedIsPossible, getOptimalPop} from './base.js';
 
-// CHANGE BEFORE COMMIT
-const API_PATH = `http://localhost:3000`;
-// const API_PATH = `api`;
+// const API_PATH = `http://localhost:3000`;
+const API_PATH = `api`;
 
 function getElement<T extends keyof HTMLElementTagNameMap = keyof HTMLElementTagNameMap>(id: string, type?: T): HTMLElementTagNameMap[T] {
     let out = document.getElementById(id);
@@ -329,6 +328,3 @@ for (let type of ['input', 'textarea', 'select']) {
 }
 
 getCounts();
-
-// CHANGE BEFORE COMMIT
-fetchPeriodMap();
