@@ -115,8 +115,12 @@ let count = 0;
 let start = performance.now() / 1000;
 let lastUpdate = start;
 for (let code of toSearch) {
-    let rle = base.loadApgcode(code).shrinkToFit().toRLE(false);
-    execSync(`${process.argv[3]} -r 'B/S' 'B1e2345678/S012345678' -p '${rle}' -b 10000 10000 -g ${period} -a --5s ${process.cwd()}/out.txt -f ${process.cwd()}/out.txt`);
+    let p = base.loadApgcode(code).shrinkToFit();
+    let rle = p.toRLE(false);
+    execSync(`${process.argv[3]} -r 'B/S' 'B2345678/S012345678' -p '${rle}' -b 10000 10000 -g ${period} -a --5s ${process.cwd()}/out.txt -f ${process.cwd()}/out.txt`);
+    if (!hasLoneCells(p)) {
+        execSync(`${process.argv[3]} -r 'B1e/S' 'B1e2345678/S012345678' -p '${rle}' -b 10000 10000 -g ${period} -a --5s ${process.cwd()}/out.txt -f ${process.cwd()}/out.txt`);
+    }
     count++;
     let now = performance.now() / 1000;
     if (now - lastUpdate > 10) {
