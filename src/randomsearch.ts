@@ -42,6 +42,8 @@ let changeB = (new Set(maxB)).difference(new Set(minB));
 let changeS = (new Set(maxS)).difference(new Set(minS));
 
 let base = (createPattern(minRule) as MAPPattern).loadRLE(process.argv[6]).shrinkToFit();
+base.xOffset = 0;
+base.yOffset = 0;
 
 let limit = parseInt(process.argv[7]);
 if (Number.isNaN(limit)) {
@@ -113,9 +115,8 @@ if (initialGens > 0) {
 }
 
 function run(): void {
-    let p = new MAPPattern(actualBase.height, actualBase.width, actualBase.data, actualBase.rule, actualBase.trs.slice());
-    p.xOffset = actualBase.xOffset;
-    p.yOffset = actualBase.yOffset;
+    let p = actualBase.copy();
+    p.trs = actualBase.trs.slice();
     for (let tr of changeB) {
         if (Math.random() > 0.5) {
             for (let i of TRANSITIONS[tr]) {
@@ -143,15 +144,15 @@ function run(): void {
             }
         }
         let pop = p.population;
+        if (pop === 0) {
+            break;
+        }
         if (maxPop !== undefined) {
             if (pop > maxPop) {
                 break;
             }   
         }
         let hash = p.hash32();
-        if (pop === 0) {
-            break;
-        }
         if ((i + 1) % p.rule.period === 0) {
             for (let j = 0; j <= i; j += p.rule.period) {
                 if (hash === hashes[j] && pop === pops[j]) {
@@ -160,7 +161,7 @@ function run(): void {
                     if (disp) {
                         actualFound = true;
                         let [dx, dy] = disp;
-                        let period = i - j + 1 + initialGens;
+                        let period = i - j + 1;
                         let dx2 = Math.abs(dx);
                         let dy2 = Math.abs(dy);
                         if (dy2 > dx2) {
@@ -180,7 +181,7 @@ function run(): void {
                             records[key] = pop;
                         }
                         let [b, s] = arrayToTransitions(p.trs, TRANSITIONS);
-                        console.log(`${pop}, ${unparseRule(b, s)}, ${dx}, ${dy}, ${period}, ${p.toRLE(false).replaceAll('\n', '')}`);
+                        console.log(`${pop}, ${unparseRule(b, s)}, ${dx}, ${dy}, ${period}, ${q.toRLE(false).replaceAll('\n', '')}`);
                         break;
                     }
                 }
