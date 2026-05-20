@@ -365,7 +365,7 @@ function run(): void {
             p.rule = structuredClone(p.rule);
             p.rule.states = minStates + Math.floor(Math.random() * (maxStates - minStates));
             if (p.rule.states > 2 && !(p instanceof MAPGenPattern)) {
-                p = new MAPGenPattern(p.height, p.width ,p.data, p.rule, p.trs);
+                p = new MAPGenPattern(p.height, p.width, p.data, p.rule, p.trs);
             }
         }
     }
