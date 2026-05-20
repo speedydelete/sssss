@@ -194,7 +194,6 @@ async function fetchPeriodMap(): Promise<void> {
         mapCache = {};
     }
     let key = type + ' ' + newPeriod;
-    let periodMap: Uint32Array;
     if (key in mapCache) {
         periodMap = mapCache[key];
     } else {
