@@ -193,6 +193,7 @@ async function fetchPeriodMap(): Promise<void> {
     if (hour > prevHour) {
         mapCache = {};
     }
+    prevHour = hour;
     let key = type + ' ' + newPeriod;
     if (key in mapCache) {
         periodMap = mapCache[key];
