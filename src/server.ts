@@ -472,16 +472,9 @@ function updateDataZip() {
     execSync(`cp ${basePath}/data.zip /var/www/html/5s/data.zip`, {stdio: 'inherit'});
 }
 
-updateDataZip();
-setInterval(() => updateDataZip, 3600 * 1000);
-
 function backupDataZip() {
     execSync(`mkdir -p ${basePath}/backup && cp ${basePath}/data.zip ${basePath}/backup/data_${Math.floor(Date.now() / 1000)}.zip`, {stdio: 'inherit'});
 }
-
-backupDataZip();
-setInterval(() => backupDataZip, 86400 * 4 * 1000);
-
 
 async function updatePeriodMaps(): Promise<void> {
     console.log(`Updating period maps`);
@@ -518,5 +511,23 @@ async function updatePeriodMaps(): Promise<void> {
     console.log(`Period maps update complete`);
 }
 
+updateDataZip();
+backupDataZip();
 updatePeriodMaps();
-setInterval(() => updatePeriodMaps, 300 * 1000);
+
+let prevHour = Math.floor((Date.now() / 1000) / 3600);
+let prevFourDayCycle = Math.floor(prevHour / 96);
+
+setInterval(() => {
+    let hour = Math.floor((Date.now() / 1000) / 3600);
+    let fourDayCycle = Math.floor(hour / 96);
+    if (hour > prevHour) {
+        updateDataZip();
+        updatePeriodMaps();
+    }
+    if (fourDayCycle > prevFourDayCycle) {
+        backupDataZip();
+    }
+    prevHour = hour;
+    prevFourDayCycle = fourDayCycle;
+}, 60000);

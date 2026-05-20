@@ -44,19 +44,23 @@ async function getCounts() {
 typeSelect.addEventListener('change', getCounts);
 
 
+let periodMapsShown = false;
+
 let mainElt = getElement('main');
 let periodMapsElt = getElement('period-maps');
 let periodMapsButton = getElement('period-maps-button');
 
 periodMapsButton.addEventListener('click', () => {
-    if (periodMapsElt.style.display === 'none') {
-        mainElt.style.display = 'none';
-        periodMapsElt.style.display = 'flex';
-        periodMapsButton.textContent= 'Back';
-    } else {
+    if (periodMapsShown) {
+        periodMapsShown = false;
         mainElt.style.display = 'flex';
         periodMapsElt.style.display = 'none';
         periodMapsButton.textContent= 'Period maps';
+    } else {
+        periodMapsShown = true;
+        mainElt.style.display = 'none';
+        periodMapsElt.style.display = 'flex';
+        periodMapsButton.textContent= 'Back';
         fetchPeriodMap();
     }
 });
@@ -151,9 +155,14 @@ submitButton.addEventListener('click', async () => {
 });
 
 
+let mapCache: {[key: string]: Uint32Array} = {};
+let prevHour = 0
+
 let periodElt = getElement('period', 'input');
+let periodWrapperElt = getElement('period-wrapper');
+let mapHoverInfoElt = getElement('period-map-hover-info');
 let mapCanvas = getElement('period-map', 'canvas');
-let mapCtx = mapCanvas.getContext('2d') as CanvasRenderingContext2D; 
+let mapCtx = mapCanvas.getContext('2d') as CanvasRenderingContext2D;
 
 let period = 0;
 let periodMap: Uint32Array | undefined = undefined;
@@ -164,16 +173,30 @@ let mapCellSize = 0;
 async function fetchPeriodMap(): Promise<void> {
     let type = typeSelect.value;
     let newPeriod = parseInt(periodElt.value);
-    let resp = await fetch(`${API_PATH}/getperiodmap?type=${type}&period=${newPeriod}`);
-    if (!resp.ok) {
-        alert(`Server returned ${resp.status} ${resp.statusText} while fetching period map`);
-        return;
+    let hour = Math.floor((Date.now() / 1000) / 3600);
+    if (hour > prevHour) {
+        mapCache = {};
     }
-    periodMap = new Uint32Array(await resp.arrayBuffer());
+    let key = type + ' ' + newPeriod;
+    let periodMap: Uint32Array;
+    if (key in mapCache) {
+        periodMap = mapCache[key];
+    } else {
+        let resp = await fetch(`${API_PATH}/getperiodmap?type=${type}&period=${newPeriod}`);
+        if (!resp.ok) {
+            alert(`Server returned ${resp.status} ${resp.statusText} while fetching period map`);
+            return;
+        }
+        periodMap = new Uint32Array(await resp.arrayBuffer());
+    }
     period = newPeriod;
     let rect = periodMapsElt.getBoundingClientRect();
+    let rect2 = periodWrapperElt.getBoundingClientRect();
+    let rect3 = mapHoverInfoElt.getBoundingClientRect();
+    // subtract 40 for the gap property
+    let height = rect.height - rect2.height - rect3.height - 40;
     mapCellCount = period + 1;
-    mapSize = Math.min(mapCellCount * 32, rect.height - 100);
+    mapSize = Math.min(mapCellCount * 32, height);
     mapCellSize = Math.floor(mapSize / mapCellCount);
     mapSize = mapCellSize * mapCellCount;
     mapCanvas.width = mapSize;
@@ -199,8 +222,6 @@ mapCanvas.addEventListener('mouseleave', () => {
     mouseX = undefined;
     mouseY = undefined;
 });
-
-let mapHoverInfoElt = getElement('period-map-hover-info');
 
 function renderPeriodMap(): void {
     if (periodMapsElt.style.display === 'none' || periodMap === undefined) {
