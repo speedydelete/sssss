@@ -171,6 +171,9 @@ let mapSize = 0;
 let mapCellSize = 0;
 
 async function fetchPeriodMap(): Promise<void> {
+    if (!periodMapsShown) {
+        return;
+    }
     let type = typeSelect.value;
     let newPeriod = parseInt(periodElt.value);
     let hour = Math.floor((Date.now() / 1000) / 3600);
