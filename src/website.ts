@@ -176,6 +176,19 @@ async function fetchPeriodMap(): Promise<void> {
     }
     let type = typeSelect.value;
     let newPeriod = parseInt(periodElt.value);
+    if (type.includes('b0')) {
+        if (newPeriod % 2 !== 0) {
+            newPeriod--;
+        }
+        periodElt.min = '2';
+        periodElt.max = '126';
+        periodElt.step = '2';
+        periodElt.value = String(newPeriod);
+    } else {
+        periodElt.min = '1';
+        periodElt.max = '127';
+        periodElt.step = '1';
+    }
     let hour = Math.floor((Date.now() / 1000) / 3600);
     if (hour > prevHour) {
         mapCache = {};
