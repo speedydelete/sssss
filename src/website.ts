@@ -203,6 +203,7 @@ async function fetchPeriodMap(): Promise<void> {
             return;
         }
         periodMap = new Uint32Array(await resp.arrayBuffer());
+        mapCache[key] = periodMap;
     }
     period = newPeriod;
     let rect = periodMapsElt.getBoundingClientRect();
