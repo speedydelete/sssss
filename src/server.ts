@@ -502,7 +502,7 @@ async function updatePeriodMaps(): Promise<void> {
         let b0 = type.includes('b0');
         let inc = b0 ? 2 : 1;
         for (let period = b0 ? 2 : 1; period < 128; period += inc) {
-            let limit = b0 ? Math.floor(period / 2 * 3 / 2) + 1 : period + 1;
+            let limit = period + 1;
             let map = new Uint32Array(Math.round((limit + 1) * (limit / 2)));
             let i = 0;
             for (let dx = 0; dx < limit; dx++) {

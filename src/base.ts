@@ -119,6 +119,38 @@ export function removeDuplicateShips(ships: Ship[]): Ship[] {
     return out;
 }
 
+function includesOT(min: string, max: string): boolean {
+    let minP = createPattern(min) as MAPPattern | MAPB0Pattern | MAPGenPattern;
+    let minTrs = minP instanceof MAPB0Pattern ? minP.evenTrs.map(x => 1 -  x) : minP.trs;
+    let maxP = createPattern(max) as MAPPattern | MAPB0Pattern | MAPGenPattern;
+    let maxTrs = maxP instanceof MAPB0Pattern ? maxP.evenTrs.map(x => 1 -  x) : maxP.trs;
+    for (let s of [false, true]) {
+        for (let number of [0, 1, 2, 3, 4, 5, 6, 7, 8]) {
+            let minCount = 0;
+            let maxCount = 0;
+            let total = 0;
+            for (let letter of VALID_TRANSITIONS[number]) {
+                for (let tr of TRANSITIONS[number + letter]) {
+                    if (s) {
+                        tr |= (1 << 4);
+                    }
+                    if (minTrs[tr]) {
+                        minCount++;
+                    }
+                    if (maxTrs[tr]) {
+                        maxCount++;
+                    }
+                    total++;
+                }
+            }
+            if (!(minCount === 0 || minCount === total || maxCount === 0 || maxCount === total)) {
+                return false;
+            }
+        }
+    }
+    return true;
+}
+
 function has1DT(rule: string): boolean {
     let p = createPattern(rule) as MAPPattern | MAPB0Pattern | MAPGenPattern;
     let trs = p instanceof MAPB0Pattern ? p.evenTrs.map(x => 1 - x) : p.trs;
@@ -247,7 +279,7 @@ export function normalizeShips<T extends boolean | undefined = undefined>(shipTy
         }
         let [min, max] = findMinmax(p, ship.period, type, undefined, shipType.startsWith('ot'));
         ship.rule = min;
-        if (shipType === 'int' || shipType === 'intb0' || shipType === 'intgen') {
+        if ((shipType === 'int' || shipType === 'intb0' || shipType === 'intgen') && includesOT(min, max)) {
             ship.otRule = findMinmax(p, ship.period, type, undefined, true)[0];
         }
         if (shipType === 'int' && max.startsWith('B1') && !max.startsWith('B1c')) {

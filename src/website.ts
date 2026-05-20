@@ -169,17 +169,15 @@ async function fetchPeriodMap(): Promise<void> {
         alert(`Server returned ${resp.status} ${resp.statusText} while fetching period map`);
         return;
     }
-    let b0 = type.includes('b0');
     periodMap = new Uint32Array(await resp.arrayBuffer());
     period = newPeriod;
     let rect = periodMapsElt.getBoundingClientRect();
-    mapCellCount = b0 ? Math.floor(period / 2 * 3 / 2) + 1 : period + 1;
+    mapCellCount = period + 1;
     mapSize = Math.min(mapCellCount * 32, rect.height - 100);
     mapCellSize = Math.floor(mapSize / mapCellCount);
     mapSize = mapCellSize * mapCellCount;
     mapCanvas.width = mapSize;
     mapCanvas.height = mapSize;
-    console.log(periodMap);
 }
 
 periodElt.addEventListener('change', fetchPeriodMap);
