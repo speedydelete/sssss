@@ -5,7 +5,7 @@ import {execSync} from 'node:child_process';
 import {Worker} from 'node:worker_threads';
 import {IncomingMessage, ServerResponse, createServer} from 'node:http';
 import {speedToString} from '../lifeweb/lib/index.js';
-import {Type, TYPES, Ship, parseShips, addShipsToFiles, findShipRLE, shipIsOptimal} from './index.js';
+import {Type, TYPES, Ship, parseShips, addShipsToFiles, findShipRLE, speedIsPossible} from './index.js';
 
 
 let basePath = normalize(`${import.meta.dirname}/..`);
@@ -170,7 +170,7 @@ const ENDPOINTS: {[key: string]: (req: IncomingMessage, params: URLSearchParams 
             console.log(`400 Expected "type", "dx", "dy", And "period" Parameters (no query string, ${getLineNumber(new Error())})`); 
             return;
         }
-        let type = params.get('type');
+        let type = params.get('type') as Type;
         let dxP = params.get('dx');
         let dyP = params.get('dy');
         let periodP = params.get('period');
@@ -184,14 +184,20 @@ const ENDPOINTS: {[key: string]: (req: IncomingMessage, params: URLSearchParams 
         let dx = parseInt(dxP);
         let dy = parseInt(dyP);
         let period = parseInt(periodP);
-        if (!TYPES.includes(type as Type) || Number.isNaN(dx) || Number.isNaN(dy) || Number.isNaN(period) || (adjustables !== undefined && !(adjustables === 'yes' || adjustables === 'no' || adjustables === 'only'))) {
+        if (!TYPES.includes(type) || Number.isNaN(dx) || Number.isNaN(dy) || Number.isNaN(period) || (adjustables !== undefined && !(adjustables === 'yes' || adjustables === 'no' || adjustables === 'only'))) {
             out.writeHead(400, 'Invalid Parameters');
             out.end();
             console.log(`400 Invalid Parameters (${getLineNumber(new Error())})`); 
             return;
         }
+        let text: string;
+        if (!speedIsPossible(type, dx, dy, period)) {
+            text = 'Speed is impossible';
+        } else {
+            text = await findShipRLE(type, dx, dy, period, adjustables);
+        }
         out.writeHead(200);
-        out.write(await findShipRLE(type as Type, dx, dy, period, adjustables));
+        out.write(text);
         out.end();
         console.log(`200 OK (${speedToString(dx, dy, period)} in type ${type})`);
     },

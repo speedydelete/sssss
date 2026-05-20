@@ -4,7 +4,7 @@ import {Pattern, TRANSITIONS, VALID_TRANSITIONS, unparseTransitions, arrayToTran
 
 export type Type = 'int' | 'intb0' | 'ot' | 'otb0' | 'intgen' | 'otgen' | 'intb1e' | 'intnos' | 'int1dt';
 
-export const TYPES = ['int', 'intb0', 'ot', 'otb0', 'intgen', 'otgen', 'intb1e', 'intnos', 'int1dt'] as Type[];
+export const TYPES = ['int', 'intb0', 'ot', 'otb0', 'intgen', 'otgen', 'intb1e', 'intnos', 'int1dt'];
 
 export const TYPE_NAMES: {[K in Type]: string} = {
     'int': 'INT',
