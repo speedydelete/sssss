@@ -409,7 +409,9 @@ export function validateType(type: Type, ship: Ship): void {
 
 
 export function speedIsPossible(type: Type, dx: number, dy: number, period: number): boolean {
-    if (type.includes('b0') && period % 2 !== 0) {
+    if (type.includes('gen') && dx === 0 && dy === 0 && period === 2) {
+        return false;
+    } else if (type.includes('b0') && period % 2 !== 0) {
         return false;
     } else if (dx + dy <= period) {
         return true;
