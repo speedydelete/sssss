@@ -285,7 +285,7 @@ export function normalizeShips<T extends boolean | undefined = undefined>(shipTy
         if (shipType === 'int' && max.startsWith('B1') && !max.startsWith('B1c')) {
             let rule = min;
             if (!rule.startsWith('B1')) {
-                rule = 'B1e' + rule.slice(2);
+                rule = 'B1e' + rule.slice(1);
             } else if (rule.startsWith('B1c')) {
                 rule = 'B1' + rule.slice(3);
             }
