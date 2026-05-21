@@ -1,5 +1,5 @@
 
-import {Pattern, TRANSITIONS, VALID_TRANSITIONS, unparseTransitions, arrayToTransitions, MAPPattern, MAPB0Pattern, MAPGenPattern, findType, findMinmax, createPattern, parse, speedToString} from '../lifeweb/lib/index.js';
+import {Pattern, INT, unparseTransitions, arrayToTransitions, MAPPattern, MAPB0Pattern, MAPGenPattern, findType, findMinmax, createPattern, parse, speedToString} from '../lifeweb/lib/index.js';
 
 
 export type Type = 'int' | 'intb0' | 'ot' | 'otb0' | 'intgen' | 'otgen' | 'intb1e' | 'intnos' | 'int1dt';
@@ -129,8 +129,8 @@ function includesOT(min: string, max: string): boolean {
             let minCount = 0;
             let maxCount = 0;
             let total = 0;
-            for (let letter of VALID_TRANSITIONS[number]) {
-                for (let tr of TRANSITIONS[number + letter]) {
+            for (let letter of INT.validTrs[number]) {
+                for (let tr of INT.trs[number + letter]) {
                     if (s) {
                         tr |= (1 << 4);
                     }
@@ -155,7 +155,7 @@ function has1DT(rule: string): boolean {
     let p = createPattern(rule) as MAPPattern | MAPB0Pattern | MAPGenPattern;
     let trs = p instanceof MAPB0Pattern ? p.evenTrs.map(x => 1 - x) : p.trs;
     let found = false;
-    for (let value of Object.values(TRANSITIONS)) {
+    for (let value of Object.values(INT.trs)) {
         let count = 0;
         for (let tr of value) {
             if (trs[tr | (1 << 4)]) {
@@ -311,9 +311,9 @@ export function normalizeShips<T extends boolean | undefined = undefined>(shipTy
             let minPop = type.phases[0].population;
             let minPhase = type.phases[0];
             let evenRule = ship.rule;
-            let [bTrs, sTrs] = arrayToTransitions(p.evenTrs.reverse(), TRANSITIONS);
-            let bStr = unparseTransitions(bTrs, VALID_TRANSITIONS, false);
-            let sStr = unparseTransitions(sTrs, VALID_TRANSITIONS, false);
+            let [bTrs, sTrs] = arrayToTransitions(p.evenTrs.reverse(), INT);
+            let bStr = unparseTransitions(bTrs, INT);
+            let sStr = unparseTransitions(sTrs, INT);
             let oddRule = `B${bStr}/S${sStr}`;
             for (let i = 0; i < type.phases.length; i++) {
                 let phase = type.phases[i];

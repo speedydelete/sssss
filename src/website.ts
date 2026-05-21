@@ -1,6 +1,7 @@
 
-import {parseSpeed, speedToString} from '../lifeweb/lib/index.js';
-import {Type, parseShips, shipsToString, normalizeShips, isValidInType, speedIsPossible, getOptimalPop} from './base.js';
+import {findType, parseSpeed, speedToString, parse} from '../lifeweb/lib/index.js';
+import {Type, Ship, shipsToString, normalizeShips, isValidInType, speedIsPossible, getOptimalPop} from './base.js';
+
 
 // const API_PATH = `http://localhost:3000`;
 const API_PATH = `api`;
@@ -17,6 +18,80 @@ function getElement<T extends keyof HTMLElementTagNameMap = keyof HTMLElementTag
         }
     }
     return out as HTMLElementTagNameMap[T];
+}
+
+
+function parseShips(data: string): Ship[] {
+    let out = [];
+    if (data.match((/x\s*=\s*\d+\s*,?\s*y\s*=\s*\d+\s*,?\s*(?:rule\s*=\s*(.*))/))) {
+        let currentRLE = '';
+        let rleNumber = 0;
+        let isFirstLine = false;
+        for (let line of data.split('\n')) {
+            line = line.trim();
+            if (line === '' || line.startsWith('#')) {
+                continue;
+            }
+            if (line.startsWith('x')) {
+                if (currentRLE !== '') {
+                    let p = parse(currentRLE);
+                    let type = findType(p, 65536, false);
+                    if (!type.disp) {
+                        alert(`Pattern #${rleNumber} is not a spaceship or its period is higher than 65536!`);
+                    } else {
+                        out.push({
+                            pop: 0,
+                            rule: p.rule.str,
+                            dx: type.disp[0],
+                            dy: type.disp[1],
+                            period: type.period,
+                            rle: p.toRLE().split('\n').slice(1).join(''),
+                        });
+                    }
+                }
+                currentRLE = line + '\n';
+                rleNumber++;
+            } else if (isFirstLine) {
+                alert('First line must be a RLE header!');
+            } else {
+                currentRLE += line + '\n';
+            }
+        }
+        if (currentRLE !== '') {
+            let p = parse(currentRLE);
+            let type = findType(p, 65536);
+            p.run(type.stabilizedAt);
+            if (!type.disp) {
+                alert(`Pattern #${rleNumber} is not a spaceship or its period is higher than 65536!`);
+            } else {
+                out.push({
+                    pop: 0,
+                    rule: p.rule.str,
+                    dx: type.disp[0],
+                    dy: type.disp[1],
+                    period: type.period,
+                    rle: p.toRLE().split('\n').slice(1).join(''),
+                });
+            }
+        }
+    } else {
+        for (let line of data.split('\n')) {
+            line = line.trim();
+            if (line === '' || line.startsWith('#')) {
+                continue;
+            }
+            let info = line.split(', ');
+            out.push({
+                pop: parseInt(info[0]),
+                rule: info[1],
+                dx: parseInt(info[2]),
+                dy: parseInt(info[3]),
+                period: parseInt(info[4]),
+                rle: info[5],
+            });
+        }
+    }
+    return out;
 }
 
 

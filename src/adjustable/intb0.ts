@@ -1,5 +1,5 @@
 
-import {Pattern, MAPPattern, createPattern} from '../../lifeweb/lib/index.js';
+import {Pattern, createPattern} from '../../lifeweb/lib/index.js';
 import {AdjustableGenerator} from './index.js';
 
 

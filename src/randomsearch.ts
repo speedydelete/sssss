@@ -1,7 +1,7 @@
 
 import * as path from 'node:path';
 import * as fs from 'node:fs/promises';
-import {TRANSITIONS, VALID_TRANSITIONS, unparseTransitions, arrayToTransitions, MAPPattern, MAPB0Pattern, MAPGenPattern, createPattern} from '../lifeweb/lib/index.js';
+import {INT, unparseTransitions, arrayToTransitions, MAPPattern, MAPB0Pattern, MAPGenPattern, createPattern} from '../lifeweb/lib/index.js';
 import {Type, TYPES, parseShips} from './index.js';
 
 
@@ -17,11 +17,11 @@ function parseRule(rule: string): [string[], string[], number] {
     let b: string[];
     let s: string[];
     if (p instanceof MAPPattern) {
-        [b, s] = arrayToTransitions(p.trs, TRANSITIONS);
+        [b, s] = arrayToTransitions(p.trs, INT);
     } else if (p instanceof MAPB0Pattern) {
-        [b, s] = arrayToTransitions(p.evenTrs.map(x => 1 - x), TRANSITIONS);
+        [b, s] = arrayToTransitions(p.evenTrs.map(x => 1 - x), INT);
     } else if (p instanceof MAPGenPattern) {
-        [b, s] = arrayToTransitions(p.trs, TRANSITIONS);
+        [b, s] = arrayToTransitions(p.trs, INT);
     } else {
         throw new Error(`Rule is not in INT, INT B0, or INT Generations: '${rule}'`);
     }
@@ -32,12 +32,12 @@ function unparseRule(p: Pattern): string {
     let bTrs: string[];
     let sTrs: string[];
     if (p instanceof MAPB0Pattern) {
-        [bTrs, sTrs] = arrayToTransitions(p.evenTrs.map(x => 1 - x), TRANSITIONS);
+        [bTrs, sTrs] = arrayToTransitions(p.evenTrs.map(x => 1 - x), INT);
     } else {
-        [bTrs, sTrs] = arrayToTransitions(p.trs, TRANSITIONS);
+        [bTrs, sTrs] = arrayToTransitions(p.trs, INT);
     }
-    let b = unparseTransitions(bTrs, VALID_TRANSITIONS);
-    let s = unparseTransitions(sTrs, VALID_TRANSITIONS);
+    let b = unparseTransitions(bTrs, INT);
+    let s = unparseTransitions(sTrs, INT);
     if (p.rule.states === 2) {
         return `B${b}/S${s}`;
     } else {
@@ -331,7 +331,7 @@ function run(): void {
         p.oddTrs = p.oddTrs.slice();
         for (let tr of changeB) {
             if (Math.random() > 0.5) {
-                for (let i of TRANSITIONS[tr]) {
+                for (let i of INT.trs[tr]) {
                     p.evenTrs[i] = 0;
                     p.oddTrs[511 - i] = 1;
                 }
@@ -339,7 +339,7 @@ function run(): void {
         }
         for (let tr of changeS) {
             if (Math.random() > 0.5) {
-                for (let i of TRANSITIONS[tr]) {
+                for (let i of INT.trs[tr]) {
                     p.evenTrs[i | (1 << 4)] = 0;
                     p.oddTrs[511 - (i | (1 << 4))] = 0;
                 }
@@ -349,14 +349,14 @@ function run(): void {
         p.trs = p.trs.slice();
         for (let tr of changeB) {
             if (Math.random() > 0.5) {
-                for (let i of TRANSITIONS[tr]) {
+                for (let i of INT.trs[tr]) {
                     p.trs[i] = 1;
                 }
             }
         }
         for (let tr of changeS) {
             if (Math.random() > 0.5) {
-                for (let i of TRANSITIONS[tr]) {
+                for (let i of INT.trs[tr]) {
                     p.trs[i | (1 << 4)] = 1;
                 }
             }
