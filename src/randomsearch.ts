@@ -52,7 +52,7 @@ if (process.argv.length < 8) {
 
 let type = process.argv[3];
 if (!(TYPES.includes(type as Type) || type === 'none')) {
-    throw new Error(`Invalid type: '${type}'`)
+    throw new Error(`Invalid type: '${type}'`);
 }
 
 let minRule = process.argv[4];
@@ -101,7 +101,7 @@ if (extraArgs['maxbb']) {
 
 let maxPop = getNumber('maxpop');
 
-let bbCannotChange = Boolean(extraArgs['bbcannotchange']);
+let noBBChange = Boolean(extraArgs['nobbchange']);
 
 let checkLinear = getNumber('checklinear');
 
@@ -381,7 +381,7 @@ function run(): void {
                 break;
             }
         }
-        if (bbCannotChange) {
+        if (noBBChange) {
             if (p.height !== actualBase.height || p.width !== actualBase.width) {
                 break;
             }
@@ -411,12 +411,13 @@ function run(): void {
                             dx2 = dy2;
                             dy2 = temp;
                         }
-                        let key = `${dy2} ${dx2} ${period}`;
+                        let key = `${dx2} ${dy2} ${period}`;
                         let pop = Math.min(...pops.slice(j));
                         if (key in records) {
                             if (pop < records[key]) {
                                 records[key] = pop;
                             } else {
+                                actualFound = true;
                                 break;
                             }
                         } else {
