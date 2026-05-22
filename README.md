@@ -1,4 +1,5 @@
 
+
 # sssss
 
 Smallest Spaceships Supporting Specific Speeds
@@ -13,4 +14,47 @@ cd lifeweb
 ./install
 cd ..
 npx tsc
+```
+
+## "5s" Command Documentation
+
+```
+
+Usage: ./5s <subcommand> [args]
+
+The "type" argument is the rulespace, can be int, intb0, ot, otb0, intgen, otgen, intb1e, intnos, or int1dt.
+
+Subcommands:
+
+    ./5s get <speed> [adjustables] - Get the speed in the database, adjustables can be "yes", "no", or "only".
+    
+    ./5s add <type> <file> - Add the given file (in 5S format) to the given type's database.
+    ./5s add_no_verify <type> <file> - Like add, but does not verify the ships are correct.
+
+    ./5s add_rle <type> <file> - Add the given file (as a RLE) to the given type's database.
+    ./5s add_rle_no_verify <type> <file> - Like add_rle, but does not verify the ships are correct.
+
+    ./5s randomsearch - Run the randomsearch program, explained more below.
+
+
+The randomsearch program is a successor to matchpatt, it finds new speeds by running patterns in random rules. It supports INT, INT B0, and INT Generations.
+
+Usage: ./5s randomsearch <type> <minrule> <maxrule> <rle> <generations> [extra-args]
+
+The "type" argument can be "none" to disable record adding from the database.
+
+Extra arguments:
+
+    initialgens=number - Run the pattern for that many generations before searching.
+
+    maxbb=width,height - Patterns cannot exceed the given bounding box.
+
+    maxpop=number - Patterns cannot exceed the given population.
+
+    nobbchange - The bounding box of the pattern cannot change size while running.
+
+    checklinear=gens - Check for linear growth after that many generations.
+
+    noforceships - Disable forcing of rules to have spaceships.
+
 ```

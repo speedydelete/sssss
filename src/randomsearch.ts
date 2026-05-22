@@ -105,6 +105,13 @@ let noBBChange = Boolean(extraArgs['nobbchange']);
 
 let checkLinear = getNumber('checklinear');
 
+let noForceShips = Boolean(extraArgs['noforceships']);
+
+let autoSubmit = getNumber('autosubmit');
+let toSubmit: string[] = [];
+let currentlySubmitting = false;
+let lastSubmitTime = 0;
+
 
 let records: {[key: string]: number} = {};
 if (type !== 'none') {
@@ -361,6 +368,9 @@ function run(): void {
                 }
             }
         }
+        if (!noForceShips && !p.trs[0b100_000_000] && !p.trs[0b010_000_000] && !p.trs[0b110_000_000] && !((p.trs[0b101_000_000] || p.trs[0b111_000_000]) && (p.trs[0b010_100_000] || p.trs[0b110_100_000]))) {
+            return;
+        }
         if (maxStates > 2) {
             p.rule = structuredClone(p.rule);
             p.rule.states = minStates + Math.floor(Math.random() * (maxStates - minStates));
@@ -423,8 +433,35 @@ function run(): void {
                         } else {
                             records[key] = pop;
                         }
-                        console.log(`${pop}, ${unparseRule(p)}, ${dx}, ${dy}, ${period}, ${q.toRLE(false).replaceAll('\n', '')}`);
+                        let str = `${pop}, ${unparseRule(p)}, ${dx}, ${dy}, ${period}, ${q.toRLE(false).replaceAll('\n', '')}`;
+                        console.log(str);
                         actualFound = true;
+                        if (autoSubmit !== undefined) {
+                            toSubmit = toSubmit.filter(x => {
+                                let parts = x.split(', ');
+                                if (Number(parts[2]) === dx && Number(parts[3]) === dy && Number(parts[4]) === period) {
+                                    return false;
+                                } else {
+                                    return true;
+                                }
+                            });
+                            toSubmit.push(str);
+                            let now = performance.now() / 1000;
+                            if (currentlySubmitting || toSubmit.length < autoSubmit || now - lastSubmitTime < 6) {
+                                break;
+                            }
+                            lastSubmitTime = now;
+                            currentlySubmitting = true;
+                            fetch(`https://speedydelete.com/5s/api/add?type=${type}`, {method: 'POST', body: toSubmit.slice(0, autoSubmit).join('\n')}).then(async resp => {
+                                console.log(`# Submission complete: ${resp.status} ${resp.statusText}`);
+                                if (resp.ok) {
+                                    for (let line of await resp.text()) {
+                                        console.log(`# ${line}`);
+                                    }
+                                }
+                                currentlySubmitting = false;
+                            });
+                        }
                         break;
                     }
                 }
