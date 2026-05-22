@@ -110,7 +110,7 @@ let noForceShips = Boolean(extraArgs['noforceships']);
 let autoSubmit = getNumber('autosubmit');
 let toSubmit: string[] = [];
 let currentlySubmitting = false;
-let lastSubmitTime = 0;
+let lastSubmitTime = performance.now() / 1000;
 
 
 let records: {[key: string]: number} = {};
@@ -447,6 +447,7 @@ function run(): void {
                             });
                             toSubmit.push(str);
                             let now = performance.now() / 1000;
+                            console.log(currentlySubmitting, toSubmit.length, autoSubmit, now - lastSubmitTime);
                             if (currentlySubmitting || toSubmit.length < autoSubmit || now - lastSubmitTime < 6) {
                                 break;
                             }
@@ -455,12 +456,16 @@ function run(): void {
                             fetch(`https://speedydelete.com/5s/api/add?type=${type}`, {method: 'POST', body: toSubmit.slice(0, autoSubmit).join('\n')}).then(async resp => {
                                 console.log(`# Submission complete: ${resp.status} ${resp.statusText}`);
                                 if (resp.ok) {
-                                    for (let line of await resp.text()) {
+                                    for (let line of (await resp.text()).split('\n')) {
                                         console.log(`# ${line}`);
                                     }
                                 }
                                 currentlySubmitting = false;
+                            }).catch(error => {
+                                console.error(error);
                             });
+                            toSubmit = toSubmit.slice(autoSubmit);
+                            console.log(`# Submitting`);
                         }
                         break;
                     }
