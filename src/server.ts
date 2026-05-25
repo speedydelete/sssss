@@ -499,10 +499,13 @@ async function updatePeriodMaps(): Promise<void> {
         }
         let maps: Uint32Array[] = [new Uint32Array(0)];
         let b0 = type.includes('b0');
-        let inc = b0 ? 2 : 1;
-        for (let period = b0 ? 2 : 1; period < 128; period += inc) {
+        for (let period = 1; period < 128; period++) {
             let limit = period + 1;
             let map = new Uint32Array(Math.round((limit + 1) * (limit / 2)));
+            if (b0 && period % 2 === 1) {
+                maps.push(map);
+                continue;
+            }
             let i = 0;
             for (let dx = 0; dx < limit; dx++) {
                 for (let dy = 0; dy <= dx; dy++) {
