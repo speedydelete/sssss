@@ -49,7 +49,7 @@ async function _addShipsToFiles(type: Type, ships: Ship[], includeComments: bool
         }
     }
     let changes = _changes[type] as Exclude<ChangeData[Type], undefined>;
-    if (type === 'ot' || type === 'otb0') {
+    if (type === 'ot' || type === 'otb0' || type === 'otgen') {
         ships = ships.filter((x): x is Ship & {otRule: string} => x.otRule !== undefined).map(x => {
             x = structuredClone(x);
             x.rule = x.otRule;
