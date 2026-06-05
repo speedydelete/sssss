@@ -1,7 +1,7 @@
 
 import * as path from 'node:path';
 import * as fs from 'node:fs/promises';
-import {INT, unparseTransitions, arrayToTransitions, MAPPattern, MAPB0Pattern, MAPGenPattern, createPattern} from '../lifeweb/lib/index.js';
+import {INT, unparseTransitions, arrayToTransitions, MAPPattern, MAPB0Pattern, MAPGenPattern, findMinmax, createPattern} from '../lifeweb/lib/index.js';
 import {Type, TYPES, parseShips} from './index.js';
 
 
@@ -51,7 +51,7 @@ if (process.argv.length < 8) {
 }
 
 let type = process.argv[3];
-if (!(TYPES.includes(type as Type) || type === 'none')) {
+if (!(TYPES.includes(type as Type) || type === 'none' || type === 'report-all')) {
     throw new Error(`Invalid type: '${type}'`);
 }
 
@@ -92,20 +92,26 @@ function getNumber(key: string): number | undefined {
 let initialGens = getNumber('initialgens') ?? 0;
 
 let maxBB: [number, number] | undefined = undefined;
-if (extraArgs['maxbb']) {
-    if (!(match = extraArgs['maxbb'].match(/^(\d+),(\d+)$/))) {
-        throw new Error(`Invalid value for maxbb (expected width,height): '${extraArgs['maxbb']}`);
+if (extraArgs['max-bb']) {
+    if (!(match = extraArgs['max-bb'].match(/^(\d+)x(\d+)$/))) {
+        throw new Error(`Invalid value for maxbb (expected width,height): '${extraArgs['max-bb']}`);
     }
     maxBB = [parseInt(match[0]), parseInt(match[1])];
 }
 
-let maxPop = getNumber('maxpop');
+let maxPop = getNumber('max-pop');
 
-let noBBChange = Boolean(extraArgs['nobbchange']);
+let noBBChange = Boolean(extraArgs['no-bb-change']);
 
-let checkLinear = getNumber('checklinear');
+let checkLinear = getNumber('check-linear');
 
-let noForceShips = Boolean(extraArgs['noforceships']);
+let noForceShips = Boolean(extraArgs['no-force-ships']);
+
+let noOscs = Boolean(extraArgs['no-oscs']);
+let minPeriod = getNumber('min-period');
+let minOscPeriod = getNumber('min-osc-period');
+
+let noEvolve = Boolean(extraArgs['no-evolve']);
 
 let autoSubmit = getNumber('autosubmit');
 let toSubmit: string[] = [];
@@ -114,7 +120,7 @@ let lastSubmitTime = performance.now() / 1000;
 
 
 let records: {[key: string]: number} = {};
-if (type !== 'none') {
+if (type !== 'none' && type !== 'report-all') {
     console.log('# Loading records');
     for (let file of ['orthogonal', 'diagonal', 'oblique', 'oscillator']) {
         let data = (await fs.readFile(path.join(import.meta.dirname, '..', 'data', type, file + '.sss'))).toString();
@@ -331,6 +337,8 @@ if (initialGens > 0) {
     }
 }
 
+let prevLines = new Set<string>();
+
 function run(): void {
     let p = actualBase.copy();
     if (p instanceof MAPB0Pattern) {
@@ -382,8 +390,12 @@ function run(): void {
     let phases = startPhases.slice();
     let pops = startPops.slice();
     let hashes = startHashes.slice();
+    let startP = p.copy();
     let actualFound = false;
     for (let i = initialGens; i < limit; i++) {
+        // if (i % 10000 === 0) {
+        //     console.log(`${i} generations complete`);
+        // }
         p.runGeneration();
         p.shrinkToFit();
         if (maxBB !== undefined) {
@@ -412,8 +424,21 @@ function run(): void {
                     let q = phases[j];
                     let disp = p.isEqualWithTranslate(q);
                     if (disp) {
+                        actualFound = true;
+                        if (noEvolve && j > 0) {
+                            break;
+                        }
                         let [dx, dy] = disp;
+                        if (noOscs && dx === 0 && dy === 0) {
+                            break;
+                        }
                         let period = i - j + 1;
+                        if (typeof minPeriod === 'number' && period < minPeriod) {
+                            break;
+                        }
+                        if (typeof minOscPeriod === 'number' && dx === 0 && dy === 0 && period < minOscPeriod) {
+                            break;
+                        }
                         let dx2 = Math.abs(dx);
                         let dy2 = Math.abs(dy);
                         if (dy2 > dx2) {
@@ -427,15 +452,21 @@ function run(): void {
                             if (pop < records[key]) {
                                 records[key] = pop;
                             } else {
-                                actualFound = true;
-                                break;
+                                if (type !== 'report-all') {
+                                    break;
+                                }
                             }
                         } else {
                             records[key] = pop;
                         }
-                        let str = `${pop}, ${unparseRule(p)}, ${dx}, ${dy}, ${period}, ${q.toRLE(false).replaceAll('\n', '')}`;
+                        let minmax = findMinmax(startP, i, {pops, hashes, phases});
+                        let rulespaceSize = arrayToTransitions((createPattern(minmax[1]) as MAPPattern).trs, INT).flat().length - arrayToTransitions((createPattern(minmax[0]) as MAPPattern).trs, INT).flat().length;
+                        let str = `${pop}, ${minmax[0]}, ${dx}, ${dy}, ${period}, ${q.toRLE(false).replaceAll('\n', '')}, ${rulespaceSize}, ${unparseRule(p)}`;
+                        if (prevLines.has(str)) {
+                            break;
+                        }
+                        prevLines.add(str);
                         console.log(str);
-                        actualFound = true;
                         if (autoSubmit !== undefined) {
                             toSubmit = toSubmit.filter(x => {
                                 let parts = x.split(', ');

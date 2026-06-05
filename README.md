@@ -41,20 +41,20 @@ The randomsearch program is a successor to matchpatt, it finds new speeds by run
 
 Usage: ./5s randomsearch <type> <minrule> <maxrule> <rle> <generations> [extra-args]
 
-The "type" argument can be "none" to disable record adding from the database.
+The "type" argument can be "none" to disable record adding from the database, or "report-all" to not use record checking at all.
 
 Extra arguments:
 
-    initialgens=number - Run the pattern for that many generations before searching.
+    initial-gens=number - Run the pattern for that many generations before searching.
 
-    maxbb=width,height - Patterns cannot exceed the given bounding box.
+    max-bb=heightxwidth - Patterns cannot exceed the given bounding box.
 
-    maxpop=number - Patterns cannot exceed the given population.
+    max-pop=number - Patterns cannot exceed the given population.
 
-    nobbchange - The bounding box of the pattern cannot change size while running.
+    no-bb-change - The bounding box of the pattern cannot change size while running.
 
-    checklinear=gens - Check for linear growth after that many generations.
+    check-linear=gens - Check for linear growth after that many generations.
 
-    noforceships - Disable forcing of rules to have spaceships.
+    no-force-ships - Disable forcing of rules to have spaceships.
 
 ```
