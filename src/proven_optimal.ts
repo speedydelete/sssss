@@ -20,7 +20,7 @@ export const PROVEN_OPTIMAL: {[K in Type]: [number, number, number, number | boo
     ],
 
     'otb0': [
-
+        [2, 1, 2, false],
     ],
 
     'otgen': [

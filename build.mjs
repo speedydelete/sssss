@@ -11,7 +11,7 @@ function path(value) {
 }
 
 
-execSync(`${process.argv[0]} ${path('node_modules/bin/tsc')} -b`);
+execSync(`${process.argv[0]} ${path('node_modules/.bin/tsc')} -b`);
 
 let html = await fs.readFile('src/website.html');
 await fs.writeFile(path('website/index.html'), minify.minify(Buffer.from(html, 'utf-8'), {
