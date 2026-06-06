@@ -10,3 +10,4 @@
 admin_keys.json
 /website
 /*.log
+*.tsbuildinfo
