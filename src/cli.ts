@@ -18,6 +18,7 @@ if (process.argv[2] === 'randomsearch') {
     let args = `-r 'pB1-c2345678/S012345678' -c -b ${maxBB} ${maxBB} -s p${period} x${dx} y${dy} -p '<4'`;
     console.log(`./lls ${args}`);
     execSync(`${lls} ${args}`, {stdio: 'inherit'});
+    console.log(`./lls ${args}`);
     process.exit(0);
 }
 
