@@ -99,13 +99,7 @@ let typeSelect = getElement('type', 'select');
 let type: Type = 'int';
 typeSelect.addEventListener('change', () => {
     type = typeSelect.value as Type;
-    if (type in SUPERTYPES) {
-        let value = SUPERTYPES[type];
-        if (value !== undefined) {
-            type = value;
-        }
-    }
-})
+});
 
 let countsOutput = getElement('counts');
 

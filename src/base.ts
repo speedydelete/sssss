@@ -177,7 +177,7 @@ function has1DT(rule: string): boolean {
 }
 
 export function normalizeShips<T extends boolean | undefined = undefined>(shipType: Type, ships: Ship[], throwInvalid?: T, globalLimit?: number): T extends false ? [Ship[], string[], string[]] : Ship[] {
-    if (shipType in SUPERTYPES && SUPERTYPES[shipType]) {
+    if (shipType in SUPERTYPES && SUPERTYPES[shipType] !== undefined) {
         shipType = SUPERTYPES[shipType] as Type;
     }
     let out: Ship[] = [];
