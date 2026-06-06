@@ -1,5 +1,5 @@
 
-import {findType, parseSpeed, speedToString, parse} from '../lifeweb/lib/index.js';
+import {identifyPeriodic, parseSpeed, speedToString, parse} from '../lifeweb/lib/index.js';
 import {Type, Ship, shipsToString, normalizeShips, isValidInType, speedIsPossible, getOptimalPop, SUPERTYPES} from './base.js';
 
 
@@ -35,7 +35,7 @@ function parseShips(data: string): Ship[] {
             if (line.startsWith('x')) {
                 if (currentRLE !== '') {
                     let p = parse(currentRLE);
-                    let type = findType(p, 65536, false);
+                    let type = identifyPeriodic(p, 65536, false);
                     if (!type.disp) {
                         alert(`Pattern #${rleNumber} is not a spaceship or its period is higher than 65536!`);
                     } else {
@@ -59,7 +59,7 @@ function parseShips(data: string): Ship[] {
         }
         if (currentRLE !== '') {
             let p = parse(currentRLE);
-            let type = findType(p, 65536);
+            let type = identifyPeriodic(p, 65536);
             p.run(type.stabilizedAt);
             if (!type.disp) {
                 alert(`Pattern #${rleNumber} is not a spaceship or its period is higher than 65536!`);

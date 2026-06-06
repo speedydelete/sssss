@@ -1,5 +1,5 @@
 
-import {Pattern, INT, unparseTransitions, arrayToTransitions, MAPPattern, MAPB0Pattern, MAPGenPattern, findType, findMinmax, createPattern, parse, speedToString} from '../lifeweb/lib/index.js';
+import {Pattern, INT, unparseTransitions, arrayToTransitions, MAPPattern, MAPB0Pattern, MAPGenPattern, identifyPeriodic, findMinmax, createPattern, parse, speedToString} from '../lifeweb/lib/index.js';
 import {PROVEN_OPTIMAL} from './proven_optimal.js';
 
 
@@ -206,7 +206,7 @@ export function normalizeShips<T extends boolean | undefined = undefined>(shipTy
         if (globalLimit !== undefined) {
             limit = Math.min(limit, globalLimit);
         }
-        let type = findType(p, limit, true, false);
+        let type = identifyPeriodic(p, limit, true, false);
         p.run(type.stabilizedAt);
         if (!type.disp || p.population === 0) {
             if (throwInvalid) {
@@ -232,7 +232,7 @@ export function normalizeShips<T extends boolean | undefined = undefined>(shipTy
                 p.rotateRight();
                 ship.dx = -ship.dy;
                 ship.dy = 0;
-                type = findType(p, limit, false);
+                type = identifyPeriodic(p, limit, false);
                 if (type.period !== ship.period || !type.disp || ship.dx !== type.disp[0] || ship.dy !== type.disp[1]) {
                     if (throwInvalid) {
                         throw new Error(`Invalid ship detected (there is probably a bug, report this): ${shipsToString([ship]).slice(0, -1)}`);
@@ -262,7 +262,7 @@ export function normalizeShips<T extends boolean | undefined = undefined>(shipTy
                     ship.dy = temp;
                     p.rotateLeft().flipVertical();
                 }
-                type = findType(p, limit, false);
+                type = identifyPeriodic(p, limit, false);
                 if (type.period !== ship.period || !type.disp || ship.dx !== type.disp[0] || ship.dy !== type.disp[1]) {
                     if (throwInvalid) {
                         throw new Error(`Invalid ship detected (there is probably a bug, report this): ${shipsToString([ship]).slice(0, -1)}`);
@@ -359,7 +359,7 @@ export function normalizeShips<T extends boolean | undefined = undefined>(shipTy
 
 
 export function patternToShip(type: Type, p: Pattern, limit: number = 32768): Ship[] {
-    let data = findType(p, limit);
+    let data = identifyPeriodic(p, limit);
     p.run(data.stabilizedAt);
     if (!data.disp) {
         throw new Error(`Pattern is not a ship or its period is greater than ${limit} generations`);
