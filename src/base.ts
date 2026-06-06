@@ -428,7 +428,7 @@ export function speedIsPossible(type: Type, dx: number, dy: number, period: numb
     }
 }
 
-export function getOptimalPop(type: Type, dx: number, dy: number, period: number): number {
+function _getOptimalPop(type: Type, dx: number, dy: number, period: number): number {
     for (let value of PROVEN_OPTIMAL[type]) {
         if (value[0] === dx && value[1] === dy && value[2] === period && typeof value[3] === 'number') {
             return value[3];
@@ -440,6 +440,15 @@ export function getOptimalPop(type: Type, dx: number, dy: number, period: number
         return 4;
     } else {
         return 3;
+    }
+}
+
+export function getOptimalPop(type: Type, dx: number, dy: number, period: number): number {
+    let out = _getOptimalPop(type, dx, dy, period);
+    if (type in SUPERTYPES && SUPERTYPES[type] !== undefined) {
+        return Math.max(out, getOptimalPop(SUPERTYPES[type], dx, dy, period));
+    } else {
+        return out;
     }
 }
 
