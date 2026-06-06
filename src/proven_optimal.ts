@@ -4,6 +4,7 @@ import {Type} from './base.js';
 export const PROVEN_OPTIMAL: {[K in Type]: [number, number, number, number | boolean][]} = {
 
     'int': [
+        [2, 0, 3, 4], // 
         [4, 0, 5, 5], // https://conwaylife.com/forums/viewtopic.php?p=165127#p165127
     ],
 
