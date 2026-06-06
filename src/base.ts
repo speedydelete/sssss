@@ -1,5 +1,6 @@
 
 import {Pattern, INT, unparseTransitions, arrayToTransitions, MAPPattern, MAPB0Pattern, MAPGenPattern, findType, findMinmax, createPattern, parse, speedToString} from '../lifeweb/lib/index.js';
+import {PROVEN_OPTIMAL} from './proven_optimal.js';
 
 
 export type Type = 'int' | 'intb0' | 'ot' | 'otb0' | 'intgen' | 'otgen' | 'intb1e' | 'intnos' | 'int1dt';
@@ -409,13 +410,18 @@ export function validateType(type: Type, ship: Ship): void {
 
 
 export function speedIsPossible(type: Type, dx: number, dy: number, period: number): boolean {
+    for (let value of PROVEN_OPTIMAL[type]) {
+        if (value[0] === dx && value[1] === dy && value[2] === period && typeof value[3] === 'boolean') {
+            return value[3];
+        }
+    }
     if (type.includes('gen') && dx === 0 && dy === 0 && period === 2) {
         return false;
     } else if (type.includes('b0') && period % 2 !== 0) {
         return false;
     } else if (dx + dy <= period) {
         return true;
-    } else if (type.includes('b0') && dx + dy <= period * 3 / 2 && !(dx === 2 && dy === 1 && period === 2)) {
+    } else if (type.includes('b0') && dx + dy <= period * 3 / 2) {
         return true;
     } else {
         return false;
@@ -423,6 +429,11 @@ export function speedIsPossible(type: Type, dx: number, dy: number, period: numb
 }
 
 export function getOptimalPop(type: Type, dx: number, dy: number, period: number): number {
+    for (let value of PROVEN_OPTIMAL[type]) {
+        if (value[0] === dx && value[1] === dy && value[2] === period && typeof value[3] === 'number') {
+            return value[3];
+        }
+    }
     if (dx === 0 && dy === 0) {
         return type.includes('b0') ? 1 : 2;
     } else if (type.includes('int') && !type.includes('b0') && dy > 0 && dx + dy === period) {
@@ -433,7 +444,7 @@ export function getOptimalPop(type: Type, dx: number, dy: number, period: number
 }
 
 export function shipIsOptimal(type: Type, ship: Ship): boolean {
-    if (ship.comment && ship.comment.toLowerCase().includes('proven optimal')) {
+    if (ship.comment) {
         return true;
     } else {
         return getOptimalPop(type, ship.dx, ship.dy, ship.period) === ship.pop;
