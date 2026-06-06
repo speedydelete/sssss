@@ -3,7 +3,7 @@ import * as path from 'node:path';
 import * as fs from 'node:fs/promises';
 import {parseSpeed, speedToString} from '../lifeweb/lib/index.js';
 import {createAdjustable} from './adjustable/index.js';
-import {Type, TYPE_NAMES, SUPERTYPES, SUBTYPES, Ship, parseShips, shipsToString, removeDuplicateShips, normalizeShips, isValidInType, validateType} from './base.js';
+import {Type, TYPE_NAMES, SUPERTYPES, SUBTYPES, Ship, parseShips, shipsToString, removeDuplicateShips, normalizeShips, isValidInType, validateType, shipIsOptimal} from './base.js';
 
 export * from './base.js';
 
@@ -256,9 +256,12 @@ export async function findShipRLE(type: Type, dx: number, dy: number, period: nu
         return `No such ship found in database!\n`;
     }
     let [ship, isAdjustable] = data;
-    let prefix = `${dx === 0 && dy === 0 ? 'p' : `(${dx}, ${dy})c/`}${period}, population ${ship.pop}`;
+    let prefix = `${speedToString(dx, dy, period)}, population ${ship.pop}`;
     if (isAdjustable) {
-        prefix += ' (adjustable)';
+        prefix += ', adjustable';
+    }
+    if (shipIsOptimal(type, ship)) {
+        prefix += ', optimal';
     }
     if (ship.rle.startsWith('http')) {
         return `${prefix}${ship.comment ? ', ' + ship.comment : ''}\nThis ship may be downloaded at ${ship.rle}`;
