@@ -1,6 +1,6 @@
 
 import {findType, parseSpeed, speedToString, parse} from '../lifeweb/lib/index.js';
-import {Type, Ship, shipsToString, normalizeShips, isValidInType, speedIsPossible, getOptimalPop} from './base.js';
+import {Type, Ship, shipsToString, normalizeShips, isValidInType, speedIsPossible, getOptimalPop, SUPERTYPES} from './base.js';
 
 
 // const API_PATH = `http://localhost:3000`;
@@ -96,18 +96,28 @@ function parseShips(data: string): Ship[] {
 
 
 let typeSelect = getElement('type', 'select');
+let type: Type = 'int';
+typeSelect.addEventListener('change', () => {
+    type = typeSelect.value as Type;
+    if (type in SUPERTYPES) {
+        let value = SUPERTYPES[type];
+        if (value !== undefined) {
+            type = value;
+        }
+    }
+})
 
 let countsOutput = getElement('counts');
 
 async function getCounts() {
-    let resp = await fetch(`${API_PATH}/getcounts?type=${typeSelect.value}`);
+    let resp = await fetch(`${API_PATH}/getcounts?type=${type}`);
     if (resp.ok) {
         countsOutput.textContent = await resp.text();
     } else {
         countsOutput.textContent = '';
         if (resp.status === 429) {
             setTimeout(async () => {
-                let resp = await fetch(`${API_PATH}/getcounts?type=${typeSelect.value}`);
+                let resp = await fetch(`${API_PATH}/getcounts?type=${type}`);
                 if (resp.ok) {
                     countsOutput.textContent = await resp.text();
                 }
@@ -152,7 +162,7 @@ searchButton.addEventListener('click', async () => {
         return;
     }
     let {dx, dy, period} = data;
-    let resp = await fetch(`${API_PATH}/get?type=${typeSelect.value}&dx=${dx}&dy=${dy}&period=${period}&adjustables=${adjustablesSelect.value}`);
+    let resp = await fetch(`${API_PATH}/get?type=${type}&dx=${dx}&dy=${dy}&period=${period}&adjustables=${adjustablesSelect.value}`);
     if (resp.ok) {
         searchOutput.textContent = await resp.text();
     } else {
@@ -179,7 +189,6 @@ submitButton.addEventListener('click', async () => {
         isBackButton = false;
         return;
     }
-    let type = typeSelect.value as Type;
     let rawShips = parseShips(shipsInput.value);
     if (rawShips.length === 0) {
         alert(`No ships provided or all ships are invalid!`);
@@ -202,7 +211,7 @@ submitButton.addEventListener('click', async () => {
     shipsOutput.textContent = 'Adding ships...';
     submitButton.textContent = 'Back';
     isBackButton = true;
-    let resp = await fetch(`${API_PATH}/add?type=${typeSelect.value}`, {
+    let resp = await fetch(`${API_PATH}/add?type=${type}`, {
         method: 'POST',
         body: shipsToString(ships),
     });
@@ -249,7 +258,6 @@ async function fetchPeriodMap(): Promise<void> {
     if (!periodMapsShown) {
         return;
     }
-    let type = typeSelect.value;
     let newPeriod = parseInt(periodElt.value);
     if (type.includes('b0')) {
         if (newPeriod % 2 !== 0) {
@@ -320,7 +328,6 @@ function renderPeriodMap(): void {
         requestAnimationFrame(renderPeriodMap);
         return;   
     }
-    let type = typeSelect.value as Type;
     mapCtx.fillStyle = '#000000';
     mapCtx.fillRect(0, 0, mapSize, mapSize);
     let i = 0;

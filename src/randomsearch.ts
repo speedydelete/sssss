@@ -459,14 +459,17 @@ function run(): void {
                         } else {
                             records[key] = pop;
                         }
-                        let minmax = findMinmax(startP, i, {pops, hashes, phases});
-                        let rulespaceSize = arrayToTransitions((createPattern(minmax[1]) as MAPPattern).trs, INT).flat().length - arrayToTransitions((createPattern(minmax[0]) as MAPPattern).trs, INT).flat().length;
-                        let str = `${pop}, ${minmax[0]}, ${dx}, ${dy}, ${period}, ${q.toRLE(false).replaceAll('\n', '')}, ${rulespaceSize}, ${unparseRule(p)}`;
+                        // let minmax = findMinmax(startP, i);
+                        // let rulespaceSize = arrayToTransitions((createPattern(minmax[1]) as MAPPattern).trs, INT).flat().length - arrayToTransitions((createPattern(minmax[0]) as MAPPattern).trs, INT).flat().length;
+                        // if (rulespaceSize < 60) {
+                        //     break;
+                        // }
+                        let str = `${pop}, ${unparseRule(p)}, ${dx}, ${dy}, ${period}, ${q.toRLE(false).replaceAll('\n', '')}`;//, ${rulespaceSize}`;
                         if (prevLines.has(str)) {
                             break;
                         }
                         prevLines.add(str);
-                        console.log(str);
+                        console.log(str + ', ' + unparseRule(p));
                         if (autoSubmit !== undefined) {
                             toSubmit = toSubmit.filter(x => {
                                 let parts = x.split(', ');
