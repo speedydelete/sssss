@@ -436,7 +436,7 @@ export function getOptimalPop(type: Type, dx: number, dy: number, period: number
     }
     if (dx === 0 && dy === 0) {
         return type.includes('b0') ? 1 : 2;
-    } else if (type === 'int' || type === 'ot' && dy > 0 && dx + dy === period) {
+    } else if ((type === 'int' || type === 'ot' || type === 'intb1e' || type === 'intnos' || type === 'int1dt') && dy > 0 && dx + dy === period) {
         return 4;
     } else {
         return 3;
