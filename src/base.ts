@@ -428,6 +428,7 @@ export function speedIsPossible(type: Type, dx: number, dy: number, period: numb
     }
 }
 
+
 function _getOptimalPop(type: Type, dx: number, dy: number, period: number): number {
     for (let value of PROVEN_OPTIMAL[type]) {
         if (value[0] === dx && value[1] === dy && value[2] === period && typeof value[3] === 'number') {
@@ -436,8 +437,12 @@ function _getOptimalPop(type: Type, dx: number, dy: number, period: number): num
     }
     if (dx === 0 && dy === 0) {
         return type.includes('b0') ? 1 : 2;
-    } else if ((type === 'int' || type === 'ot' || type === 'intb1e' || type === 'intnos' || type === 'int1dt') && dy > 0 && dx + dy === period) {
+    } else if (type === 'int' && dy > 0 && dx + dy === period) {
+        // https://conwaylife.com/forums/viewtopic.php?p=164841#p164841
         return 4;
+    } else if (type === 'int' && dy === 0 && dx + 1 === period && period >= 5) {
+        // https://conwaylife.com/forums/viewtopic.php?p=165127#p165127
+        return 5;
     } else {
         return 3;
     }
