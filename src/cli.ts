@@ -14,7 +14,7 @@ if (process.argv[2] === 'randomsearch') {
 } else if (process.argv[2] === 'prove') {
     let lls = process.argv[3];
     let {dx, dy, period} = parseSpeed(process.argv.slice(4).join(' '));
-    let maxBB = period * 2 + 3;
+    let maxBB = period * 2 + 4;
     let args = `-r 'pB1-c2345678/S012345678' -c -b ${maxBB} ${maxBB} -s p${period} x${dx} y${dy} -p '<4'`;
     console.log(`./lls ${args}`);
     execSync(`${lls} ${args}`, {stdio: 'inherit'});
