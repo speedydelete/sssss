@@ -1,14 +1,23 @@
 
 import * as fs from 'node:fs/promises';
-import {parse} from '../lifeweb/lib/index.js';
+import {execSync} from 'node:child_process';
+import {parseSpeed, parse} from '../lifeweb/lib/index.js';
 import {Type, TYPES, Ship, parseShips, patternToShip, addShipsToFiles, findSpeedRLE} from './index.js';
 
 
 if (process.argv[2] === 'randomsearch') {
     await import('./randomsearch.js');
     process.exit(0);
-} else if (process.argv[2] === 'prove' || process.argv[2] === 'prove_enumerate' || process.argv[2] === 'prove_run') {
-    await import('./prover.js');
+// } else if (process.argv[2] === 'prove' || process.argv[2] === 'prove_enumerate' || process.argv[2] === 'prove_run') {
+//     await import('./prover.js');
+//     process.exit(0);
+} else if (process.argv[2] === 'prove') {
+    let lls = process.argv[3];
+    let {dx, dy, period} = parseSpeed(process.argv.slice(4).join(' '));
+    let maxBB = period * 2 + 3;
+    let args = `-r 'pB1-c2345678/S012345678' -c -b ${maxBB} ${maxBB} -s p${period} x${dx} y${dy} -p '<4'`;
+    console.log(`./lls ${args}`);
+    execSync(`${lls} ${args}`, {stdio: 'inherit'});
     process.exit(0);
 }
 
