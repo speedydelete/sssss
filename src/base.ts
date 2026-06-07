@@ -30,6 +30,8 @@ export const SUPERTYPES: {[K in Type]?: Type} = {
 
 export const SUBTYPES: {[K in Type]?: Type[]} = {
     'int': ['ot', 'intb1e', 'intnos', 'int1dt'],
+    'intb0': ['otb0'],
+    'intgen': ['otgen'],
 };
 
 
@@ -207,7 +209,7 @@ export function normalizeShips<T extends boolean | undefined = undefined>(shipTy
             limit = Math.min(limit, globalLimit);
         }
         let type = identifyPeriodic(p, limit, true, false);
-        p.run(type.stabilizedAt);
+        p.run(type.stabilizedAt).shrinkToFit();
         if (!type.disp || p.population === 0) {
             if (throwInvalid) {
                 throw new Error(`Invalid ship detected (empty/not periodic): ${shipsToString([ship]).slice(0, -1)}`);
