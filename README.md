@@ -27,7 +27,7 @@ The "type" argument is the rulespace, can be int, intb0, ot, otb0, intgen, otgen
 Subcommands:
 
     ./5s get <speed> [adjustables] - Get the speed in the database, adjustables can be "yes", "no", or "only".
-    
+
     ./5s add <type> <file> - Add the given file (in 5S format) to the given type's database.
     ./5s add_no_verify <type> <file> - Like add, but does not verify the ships are correct.
 

@@ -194,9 +194,10 @@ submitButton.addEventListener('click', async () => {
         return;
     }
     ships = ships.filter(x => x);
+    let rawType = typeSelect.value as Type;
     for (let ship of ships) {
-        if (!isValidInType(type, ship)) {
-            alert(`Invalid ship: ${shipsToString([ship])}`);
+        if (!isValidInType(rawType, ship)) {
+            alert(`Invalid ship for type ${rawType}: ${shipsToString([ship])}`);
             return;
         }
     }
@@ -320,7 +321,7 @@ mapCanvas.addEventListener('mouseleave', () => {
 function renderPeriodMap(): void {
     if (periodMapsElt.style.display === 'none' || periodMap === undefined) {
         requestAnimationFrame(renderPeriodMap);
-        return;   
+        return;
     }
     mapCtx.fillStyle = '#000000';
     mapCtx.fillRect(0, 0, mapSize, mapSize);
@@ -418,7 +419,7 @@ function renderPeriodMap(): void {
         }
     }
     if (mouseX === undefined && mouseY === undefined) {
-        mapHoverInfoElt.textContent = '';   
+        mapHoverInfoElt.textContent = '';
     }
     requestAnimationFrame(renderPeriodMap);
 }

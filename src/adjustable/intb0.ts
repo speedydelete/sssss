@@ -6,7 +6,7 @@ import {AdjustableGenerator} from './index.js';
 const TWO_CELL_OSCILLATOR: AdjustableGenerator & {rules: [mod: number, minN: number, minOffset: number, rule: string][]} = {
 
     rules: [
-        
+
     ],
 
     minPopulation(dx: number, dy: number, period: number): number | undefined {

@@ -150,7 +150,7 @@ const ENDPOINTS: {[key: string]: (req: IncomingMessage, params: URLSearchParams 
             if (time - value < 1) {
                 out.writeHead(429);
                 out.end();
-                console.log(`429 Too Many Requests (${(time - value).toFixed(3)} seconds, ${getLineNumber(new Error())})`); 
+                console.log(`429 Too Many Requests (${(time - value).toFixed(3)} seconds, ${getLineNumber(new Error())})`);
                 return;
             } else {
                 lastGetTime.set(ip, time);
@@ -161,13 +161,13 @@ const ENDPOINTS: {[key: string]: (req: IncomingMessage, params: URLSearchParams 
         if (req.method !== 'GET') {
             out.writeHead(405);
             out.end();
-            console.log(`405 Method Not Allowed (${getLineNumber(new Error())})`); 
+            console.log(`405 Method Not Allowed (${getLineNumber(new Error())})`);
             return;
         }
         if (!params) {
             out.writeHead(400, 'Expected "type", "dx", "dy", And "period" Parameters');
             out.end();
-            console.log(`400 Expected "type", "dx", "dy", And "period" Parameters (no query string, ${getLineNumber(new Error())})`); 
+            console.log(`400 Expected "type", "dx", "dy", And "period" Parameters (no query string, ${getLineNumber(new Error())})`);
             return;
         }
         let type = params.get('type') as Type;
@@ -178,7 +178,7 @@ const ENDPOINTS: {[key: string]: (req: IncomingMessage, params: URLSearchParams 
         if (!type || !dxP || !dyP || !periodP) {
             out.writeHead(400, 'Expected "type", "dx", "dy", And "period" Parameters');
             out.end();
-            console.log(`400 Expected "type", "dx", "dy", And "period" Parameters (${getLineNumber(new Error())})`); 
+            console.log(`400 Expected "type", "dx", "dy", And "period" Parameters (${getLineNumber(new Error())})`);
             return;
         }
         let dx = parseInt(dxP);
@@ -187,7 +187,7 @@ const ENDPOINTS: {[key: string]: (req: IncomingMessage, params: URLSearchParams 
         if (!TYPES.includes(type) || Number.isNaN(dx) || Number.isNaN(dy) || Number.isNaN(period) || (adjustables !== undefined && !(adjustables === 'yes' || adjustables === 'no' || adjustables === 'only'))) {
             out.writeHead(400, 'Invalid Parameters');
             out.end();
-            console.log(`400 Invalid Parameters (${getLineNumber(new Error())})`); 
+            console.log(`400 Invalid Parameters (${getLineNumber(new Error())})`);
             return;
         }
         let text: string;
@@ -208,7 +208,7 @@ const ENDPOINTS: {[key: string]: (req: IncomingMessage, params: URLSearchParams 
             if (time - value < 5) {
                 out.writeHead(429);
                 out.end();
-                console.log(`429 Too Many Requests (${(time - value).toFixed(3)} seconds, ${getLineNumber(new Error())})`); 
+                console.log(`429 Too Many Requests (${(time - value).toFixed(3)} seconds, ${getLineNumber(new Error())})`);
                 return;
             } else {
                 lastAddTime.set(ip, time);
@@ -225,7 +225,7 @@ const ENDPOINTS: {[key: string]: (req: IncomingMessage, params: URLSearchParams 
             } else {
                 out.writeHead(500, 'Too Busy');
                 out.end();
-                console.log(`500 Too Busy (attempted to add when cleaning up after too many jobs (currently ${jobs.size} active jobs), ${getLineNumber(new Error())})`); 
+                console.log(`500 Too Busy (attempted to add when cleaning up after too many jobs (currently ${jobs.size} active jobs), ${getLineNumber(new Error())})`);
                 return;
             }
         }
@@ -239,20 +239,20 @@ const ENDPOINTS: {[key: string]: (req: IncomingMessage, params: URLSearchParams 
         if (req.method !== 'POST') {
             out.writeHead(405);
             out.end();
-            console.log(`405 Method Not Allowed (${getLineNumber(new Error())})`); 
+            console.log(`405 Method Not Allowed (${getLineNumber(new Error())})`);
             return;
         }
         if (!params) {
             out.writeHead(400, 'Expected Type Parameter');
             out.end();
-            console.log(`400 Expected Type Parameter (no query string, ${getLineNumber(new Error())})`); 
+            console.log(`400 Expected Type Parameter (no query string, ${getLineNumber(new Error())})`);
             return;
         }
         let type = params.get('type');
         if (!type) {
             out.writeHead(400, 'Expected Type Parameter');
             out.end();
-            console.log(`400 Expected Type Parameter (no type parameter, ${getLineNumber(new Error())})`); 
+            console.log(`400 Expected Type Parameter (no type parameter, ${getLineNumber(new Error())})`);
             return;
         }
         let data = '';
@@ -265,7 +265,7 @@ const ENDPOINTS: {[key: string]: (req: IncomingMessage, params: URLSearchParams 
                 if (ships.length > 2048) {
                     out.writeHead(400, 'Max 2048 Ships');
                     out.end();
-                    console.log(`400 Max 2048 Ships (sent ${ships.length} ships, ${getLineNumber(new Error())})`); 
+                    console.log(`400 Max 2048 Ships (sent ${ships.length} ships, ${getLineNumber(new Error())})`);
                     return;
                 }
                 let [text, speeds] = (await addShipsToFilesWorker(type, ships, 65536, false));
@@ -279,7 +279,7 @@ const ENDPOINTS: {[key: string]: (req: IncomingMessage, params: URLSearchParams 
                 out.write(text);
                 out.end();
                 updateCountFor(type);
-                console.log(`200 OK (added ${ships.length} ships to type ${type})`); 
+                console.log(`200 OK (added ${ships.length} ships to type ${type})`);
             } catch (error) {
                 console.error(error);
                 out.writeHead(500);
@@ -294,7 +294,7 @@ const ENDPOINTS: {[key: string]: (req: IncomingMessage, params: URLSearchParams 
             if (time - value < 0.3) {
                 out.writeHead(429);
                 out.end();
-                console.log(`429 Too Many Requests (${(time - value).toFixed(3)} seconds, ${getLineNumber(new Error())})`); 
+                console.log(`429 Too Many Requests (${(time - value).toFixed(3)} seconds, ${getLineNumber(new Error())})`);
                 return;
             } else {
                 lastGetCountsTime.set(ip, time);
@@ -305,20 +305,20 @@ const ENDPOINTS: {[key: string]: (req: IncomingMessage, params: URLSearchParams 
         if (req.method !== 'GET') {
             out.writeHead(405);
             out.end();
-            console.log(`405 Method Not Allowed (${getLineNumber(new Error())})`); 
+            console.log(`405 Method Not Allowed (${getLineNumber(new Error())})`);
             return;
         }
         if (!params) {
             out.writeHead(400, 'Expected Type Parameter');
             out.end();
-            console.log(`400 Expected Type Parameter (no query string, ${getLineNumber(new Error())})`); 
+            console.log(`400 Expected Type Parameter (no query string, ${getLineNumber(new Error())})`);
             return;
         }
         let type = params.get('type');
         if (!type) {
             out.writeHead(400, 'Expected Type Parameter');
             out.end();
-            console.log(`400 Expected Type Parameter (no type parameter, ${getLineNumber(new Error())})`); 
+            console.log(`400 Expected Type Parameter (no type parameter, ${getLineNumber(new Error())})`);
             return;
         }
         // out.writeHead(200, undefined, {'access-control-allow-origin': '*'});
@@ -332,7 +332,7 @@ const ENDPOINTS: {[key: string]: (req: IncomingMessage, params: URLSearchParams 
         let value = lastGetNewShipsTIme.get(ip);
         if (value !== undefined) {
             if (time - value < 50) {
-                console.log(`429 Too Many Requests (${(time - value).toFixed(3)} seconds, ${getLineNumber(new Error())})`); 
+                console.log(`429 Too Many Requests (${(time - value).toFixed(3)} seconds, ${getLineNumber(new Error())})`);
                 out.writeHead(429);
                 out.end();
                 return;
@@ -345,7 +345,7 @@ const ENDPOINTS: {[key: string]: (req: IncomingMessage, params: URLSearchParams 
         if (req.method !== 'GET') {
             out.writeHead(405);
             out.end();
-            console.log(`405 Method Not Allowed (${getLineNumber(new Error())})`); 
+            console.log(`405 Method Not Allowed (${getLineNumber(new Error())})`);
             return;
         }
         if (ip !== '192.9.227.225') {
@@ -368,7 +368,7 @@ const ENDPOINTS: {[key: string]: (req: IncomingMessage, params: URLSearchParams 
         let value = lastGetPeriodMapTime.get(ip);
         if (value !== undefined) {
             if (time - value < 0.1) {
-                console.log(`429 Too Many Requests (${(time - value).toFixed(3)} seconds, ${getLineNumber(new Error())})`); 
+                console.log(`429 Too Many Requests (${(time - value).toFixed(3)} seconds, ${getLineNumber(new Error())})`);
                 out.writeHead(429);
                 out.end();
                 return;
@@ -381,13 +381,13 @@ const ENDPOINTS: {[key: string]: (req: IncomingMessage, params: URLSearchParams 
         if (req.method !== 'GET') {
             out.writeHead(405);
             out.end();
-            console.log(`405 Method Not Allowed (${getLineNumber(new Error())})`); 
+            console.log(`405 Method Not Allowed (${getLineNumber(new Error())})`);
             return;
         }
         if (!params) {
             out.writeHead(400, 'Expected "type" And "period" Parameters');
             out.end();
-            console.log(`400 Expected "type" And "period" Parameters (no query string, ${getLineNumber(new Error())})`); 
+            console.log(`400 Expected "type" And "period" Parameters (no query string, ${getLineNumber(new Error())})`);
             return;
         }
         let type = params.get('type');
@@ -395,21 +395,21 @@ const ENDPOINTS: {[key: string]: (req: IncomingMessage, params: URLSearchParams 
         if (!type || !periodP) {
             out.writeHead(400, 'Expected "type" And "period" Parameters');
             out.end();
-            console.log(`400 Expected "type" And "period" Parameters (parameters aren't present, ${getLineNumber(new Error())})`); 
+            console.log(`400 Expected "type" And "period" Parameters (parameters aren't present, ${getLineNumber(new Error())})`);
             return;
         }
         let period = parseInt(periodP);
         if (Number.isNaN(period)) {
             out.writeHead(400, 'Invalid Parameters');
             out.end();
-            console.log(`400 Invalid Parameters (period is invalid, ${getLineNumber(new Error())})`); 
+            console.log(`400 Invalid Parameters (period is invalid, ${getLineNumber(new Error())})`);
             return;
         }
         let maps = periodMaps[type];
         if (!maps || !(period in maps)) {
             out.writeHead(400, 'Invalid Parameters');
             out.end();
-            console.log(`400 Invalid Parameters (period map not present, ${getLineNumber(new Error())})`); 
+            console.log(`400 Invalid Parameters (period map not present, ${getLineNumber(new Error())})`);
             return;
         }
         let map = maps[period];
@@ -459,7 +459,7 @@ let server = createServer(async (req, out) => {
         } else {
             out.writeHead(404);
             out.end();
-            console.log(`404 Not Found (endpoint does not exist, ${getLineNumber(new Error())})`); 
+            console.log(`404 Not Found (endpoint does not exist, ${getLineNumber(new Error())})`);
         }
     } catch (error) {
         console.error(error);

@@ -280,7 +280,7 @@ function checkForSymmetryD2b(p: Pattern): boolean {
 //         // check for C4 symmetry
 //         if (height === width) {
 //             let C4 = true;
-//             // we already know that it has C2 symmetry, so we only need 
+//             // we already know that it has C2 symmetry, so we only need
 //         }
 //         if (height % 2 === 1) {
 //             if (width % 2 === 1) {
@@ -317,7 +317,7 @@ function checkForSymmetryD2b(p: Pattern): boolean {
 //         if (checkForSymmetryC4HasC2(p)) {
 //             return `${D2v ? 'D8' : 'C4'}_${p.height % 2 === 1 ? '1' : '4'}`;
 //         }
-//         // after this check 
+//         // after this check
 //     }
 // }
 
@@ -415,7 +415,7 @@ function run(): void {
         if (maxPop !== undefined) {
             if (pop > maxPop) {
                 break;
-            }   
+            }
         }
         let hash = p.hash32();
         if ((i + 1) % p.rule.period === 0) {

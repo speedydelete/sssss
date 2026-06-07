@@ -71,7 +71,7 @@ function findActiveRegions(cells: number, includeLessThan: boolean = false): str
         }
         if (!includeLessThan && p.population !== cells) {
             continue;
-        } 
+        }
         out.push(p.shrinkToFit().toCanonicalApgcode());
     }
     return out;

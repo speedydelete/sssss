@@ -53,7 +53,7 @@ async function _addShipsToFiles(type: Type, ships: Ship[], includeComments: bool
         ships = ships.filter((x): x is Ship & {otRule: string} => x.otRule !== undefined).map(x => {
             x = structuredClone(x);
             x.rule = x.otRule;
-            return x;   
+            return x;
         });
     } else if (type === 'intnos') {
         ships = ships.filter(x => x.rule.endsWith('/S'));
@@ -61,13 +61,13 @@ async function _addShipsToFiles(type: Type, ships: Ship[], includeComments: bool
         ships = ships.filter((x): x is Ship & {b1eRule: string} => x.b1eRule !== undefined).map(x => {
             x = structuredClone(x);
             x.rule = x.b1eRule;
-            return x;   
+            return x;
         });
     } else if (type === 'int1dt') {
         ships = ships.filter((x): x is Ship & {onedtRule: string} => x.onedtRule !== undefined).map(x => {
             x = structuredClone(x);
             x.rule = x.onedtRule;
-            return x;   
+            return x;
         });
     }
     ships = ships.filter(x => x).filter(ship => isValidInType(type, ship));
@@ -239,7 +239,7 @@ export async function findShip(type: Type, dx: number, dy: number, period: numbe
         if (ship.period === period && ship.dx === dx && ship.dy === dy) {
             if (adjustable && adjustable.pop < ship.pop) {
                 return [adjustable, true];
-            } 
+            }
             return [ship, false];
         }
     }
