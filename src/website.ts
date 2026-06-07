@@ -1,4 +1,5 @@
 
+import {types} from 'node:util';
 import {identifyPeriodic, parseSpeed, speedToString, parse} from '../lifeweb/lib/index.js';
 import {Type, B0_TYPES, Ship, shipsToString, normalizeShips, isValidInType, speedIsPossible, getOptimalPop, SUPERTYPES} from './base.js';
 
@@ -96,7 +97,7 @@ function parseShips(data: string): Ship[] {
 
 
 let typeSelect = getElement('type', 'select');
-let type: Type = 'int';
+let type = typeSelect.value as Type;
 typeSelect.addEventListener('change', () => {
     type = typeSelect.value as Type;
 });
@@ -433,9 +434,6 @@ for (let type of ['input', 'textarea', 'select']) {
         let value = localStorage[key];
         if (value) {
             (elt as HTMLInputElement).value = value;
-            if (elt.id === 'type') {
-                type = value as Type;
-            }
         }
         elt.addEventListener('change', () => {
             localStorage[key] = (elt as HTMLInputElement).value;
@@ -443,4 +441,5 @@ for (let type of ['input', 'textarea', 'select']) {
     });
 }
 
+type = typeSelect.value as Type;
 getCounts();
