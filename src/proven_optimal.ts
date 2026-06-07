@@ -33,6 +33,10 @@ export const PROVEN_OPTIMAL: {[K in Type]: [dx: number, dy: number, period: numb
 
     ],
 
+    'hrotr2': [
+
+    ],
+
     'intb1e': [
 
     ],

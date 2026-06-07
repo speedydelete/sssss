@@ -151,10 +151,8 @@ export async function addShipsToFiles(type: Type, ships: Ship[], limit?: number,
     }
     let changes: ChangeData = {};
     await _addShipsToFiles(type, structuredClone(ships2), includeComments, changes);
-    if (type in SUBTYPES && SUBTYPES[type]) {
-        for (let subtype of SUBTYPES[type]) {
-            await _addShipsToFiles(subtype, structuredClone(ships2), includeComments, changes);
-        }
+    for (let subtype of SUBTYPES[type]) {
+        await _addShipsToFiles(subtype, structuredClone(ships2), includeComments, changes);
     }
     let out = '';
     if (invalidShips.length > 0) {

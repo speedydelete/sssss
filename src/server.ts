@@ -5,7 +5,7 @@ import {execSync} from 'node:child_process';
 import {Worker} from 'node:worker_threads';
 import {IncomingMessage, ServerResponse, createServer} from 'node:http';
 import {speedToString} from '../lifeweb/lib/index.js';
-import {Type, TYPES, Ship, parseShips, addShipsToFiles, findShipRLE, speedIsPossible} from './index.js';
+import {Type, TYPES, B0_TYPES, Ship, parseShips, addShipsToFiles, findShipRLE, speedIsPossible} from './index.js';
 
 
 let basePath = normalize(`${import.meta.dirname}/..`);
@@ -34,10 +34,8 @@ async function updateCountFor(type: string): Promise<void> {
     counts[type] = `This rulespace contains ${total} known nonadjustable speeds (${data[0]} oscillators, ${data[1]} orthogonals, ${data[2]} diagonals, and ${data[3]} obliques).`;
 }
 
-for (let type of await fs.readdir(`${basePath}/data`)) {
-    if (!type.includes('.')) {
-        updateCountFor(type);
-    }
+for (let type of TYPES) {
+    updateCountFor(type);
 }
 
 
@@ -498,7 +496,7 @@ async function updatePeriodMaps(): Promise<void> {
             }
         }
         let maps: Uint32Array[] = [new Uint32Array(0)];
-        let b0 = type.includes('b0');
+        let b0 = B0_TYPES.includes(type);
         for (let period = 1; period < 128; period++) {
             let limit = period + 1;
             let map = new Uint32Array(Math.round((limit + 1) * (limit / 2)));

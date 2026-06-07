@@ -1,6 +1,6 @@
 
 import {identifyPeriodic, parseSpeed, speedToString, parse} from '../lifeweb/lib/index.js';
-import {Type, Ship, shipsToString, normalizeShips, isValidInType, speedIsPossible, getOptimalPop, SUPERTYPES} from './base.js';
+import {Type, B0_TYPES, Ship, shipsToString, normalizeShips, isValidInType, speedIsPossible, getOptimalPop, SUPERTYPES} from './base.js';
 
 
 // const API_PATH = `http://localhost:3000`;
@@ -254,7 +254,7 @@ async function fetchPeriodMap(): Promise<void> {
         return;
     }
     let newPeriod = parseInt(periodElt.value);
-    if (type.includes('b0')) {
+    if (B0_TYPES.includes(type)) {
         if (newPeriod % 2 !== 0) {
             newPeriod--;
         }
@@ -433,6 +433,9 @@ for (let type of ['input', 'textarea', 'select']) {
         let value = localStorage[key];
         if (value) {
             (elt as HTMLInputElement).value = value;
+            if (elt.id === 'type') {
+                type = value as Type;
+            }
         }
         elt.addEventListener('change', () => {
             localStorage[key] = (elt as HTMLInputElement).value;

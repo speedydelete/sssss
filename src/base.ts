@@ -1,11 +1,11 @@
 
-import {Pattern, INT, unparseTransitions, arrayToTransitions, MAPPattern, MAPB0Pattern, MAPGenPattern, identifyPeriodic, findMinmax, createPattern, parse, speedToString} from '../lifeweb/lib/index.js';
+import {Pattern, INT, unparseTransitions, arrayToTransitions, MAPPattern, MAPB0Pattern, MAPGenPattern, identifyPeriodic, findMinmax, createPattern, parse, speedToString, HROTPattern} from '../lifeweb/lib/index.js';
 import {PROVEN_OPTIMAL} from './proven_optimal.js';
 
 
-export type Type = 'int' | 'intb0' | 'ot' | 'otb0' | 'intgen' | 'otgen' | 'intb1e' | 'intnos' | 'int1dt';
+export type Type = 'int' | 'intb0' | 'ot' | 'otb0' | 'intgen' | 'otgen' | 'hrotr2' | 'intb1e' | 'intnos' | 'int1dt';
 
-export const TYPES = ['int', 'intb0', 'ot', 'otb0', 'intgen', 'otgen', 'intb1e', 'intnos', 'int1dt'];
+export const TYPES = ['int', 'intb0', 'ot', 'otb0', 'intgen', 'otgen', 'hrotr2', 'intb1e', 'intnos', 'int1dt'];
 
 export const TYPE_NAMES: {[K in Type]: string} = {
     'int': 'INT',
@@ -14,6 +14,7 @@ export const TYPE_NAMES: {[K in Type]: string} = {
     'otb0': 'OT B0',
     'intgen': 'INT Generations',
     'otgen': 'OT Generations',
+    'hrotr2': 'HROT R2',
     'intb1e': 'INT B1e',
     'intnos': 'INT Phoenix',
     'int1dt': 'INT 1 Death Transition',
@@ -28,11 +29,22 @@ export const SUPERTYPES: {[K in Type]?: Type} = {
     'int1dt': 'int',
 };
 
-export const SUBTYPES: {[K in Type]?: Type[]} = {
+export const SUBTYPES: {[K in Type]: Type[]} = {
     'int': ['ot', 'intb1e', 'intnos', 'int1dt'],
     'intb0': ['otb0'],
+    'ot': [],
+    'otb0': [],
     'intgen': ['otgen'],
+    'otgen': [],
+    'hrotr2': [],
+    'intb1e': [],
+    'intnos': [],
+    'int1dt': [],
 };
+
+export const OT_TYPES = ['ot', 'otb0', 'otgen'];
+export const B0_TYPES = ['intb0', 'otb0'];
+export const GEN_TYPES = ['intgen', 'otgen'];
 
 
 export interface Ship {
@@ -280,9 +292,9 @@ export function normalizeShips<T extends boolean | undefined = undefined>(shipTy
                 }
             }
         }
-        let [min, max] = findMinmax(p, ship.period, type, undefined, shipType.startsWith('ot'));
+        let [min, max] = findMinmax(p, ship.period, type);
         ship.rule = min;
-        if ((shipType === 'int' || shipType === 'intb0' || shipType === 'intgen') && includesOT(min, max)) {
+        if (SUBTYPES[shipType].some(x => OT_TYPES.includes(x)) && includesOT(min, max)) {
             ship.otRule = findMinmax(p, ship.period, type, undefined, true)[0];
         }
         if (shipType === 'int' && max.startsWith('B1') && !max.startsWith('B1c')) {
@@ -296,19 +308,6 @@ export function normalizeShips<T extends boolean | undefined = undefined>(shipTy
         }
         if (shipType === 'int' && has1DT(max)) {
             ship.onedtRule = min.split('/')[0] + '/' + max.split('/')[1];
-        }
-        if ((shipType.startsWith('ot') && !ship.otRule) || (shipType === 'intb1e' && !(ship.rule.startsWith('B1') && !ship.rule.startsWith('B1c'))) || (shipType === 'intnos' && !ship.rule.endsWith('/S')) || (shipType === 'int1dt' && !ship.onedtRule)) {
-            if (throwInvalid) {
-                throw new Error(`Invalid ship detected (does not match type): ${shipsToString([ship]).slice(0, -1)}`);
-            } else {
-                console.log(`Invalid ship detected (does not match): ${shipsToString([ship]).slice(0, -1)}`);
-                if (ship.dx === 0 && ship.dy === 0) {
-                    invalidPeriods.push(speed);
-                } else {
-                    invalidShips.push(speed);
-                }
-                continue;
-            }
         }
         if (p instanceof MAPB0Pattern) {
             let minPop = type.phases[0].population;
@@ -374,7 +373,7 @@ export function patternToShip(type: Type, p: Pattern, limit: number = 32768): Sh
         period: data.period,
         rle: p.toRLE().split('\n').slice(1).join(''),
     }], true)[0];
-    if (type.startsWith('ot') && out.otRule) {
+    if (OT_TYPES.includes(type) && out.otRule) {
         out.rule = out.otRule;
     }
     return out;
@@ -396,6 +395,8 @@ export function isValidInType(type: Type, ship: Ship): boolean {
         out = p instanceof MAPGenPattern && p.rule.symmetry === 'D8';
     } else if (type === 'otgen') {
         out = p instanceof MAPGenPattern && p.rule.symmetry === 'D8' && p.rule.str.match(/^[0-8]*\/[1-8]*\/\d+$/);
+    } else if (type === 'hrotr2') {
+        out = p instanceof HROTPattern && p.rule.states === 2 && p.rule.range === 2 && p.nh === undefined;
     } else if (type === 'intb1e') {
         out = p instanceof MAPPattern && p.rule.symmetry === 'D8' && p.rule.str.startsWith('B1e');
     } else if (type === 'intnos') {
@@ -421,19 +422,18 @@ export function speedIsPossible(type: Type, dx: number, dy: number, period: numb
             return value[3];
         }
     }
-    if (type.includes('gen') && dx === 0 && dy === 0 && period === 2) {
+    if (GEN_TYPES.includes(type) && dx === 0 && dy === 0 && period === 2) {
         return false;
-    } else if (type.includes('b0') && period % 2 !== 0) {
+    } else if (B0_TYPES.includes(type) && period % 2 !== 0) {
         return false;
     } else if (dx + dy <= period) {
         return true;
-    } else if (type.includes('b0') && dx + dy <= period * 3 / 2) {
+    } else if (B0_TYPES.includes(type) && dx + dy <= period * 3 / 2) {
         return true;
     } else {
         return false;
     }
 }
-
 
 function _getOptimalPop(type: Type, dx: number, dy: number, period: number): number {
     for (let value of PROVEN_OPTIMAL[type]) {
@@ -442,7 +442,7 @@ function _getOptimalPop(type: Type, dx: number, dy: number, period: number): num
         }
     }
     if (dx === 0 && dy === 0) {
-        return type.includes('b0') ? 1 : 2;
+        return B0_TYPES.includes(type) ? 1 : 2;
     } else if (type === 'int' && dy > 0 && dx + dy === period) {
         // https://conwaylife.com/forums/viewtopic.php?p=164841#p164841
         return 4;
