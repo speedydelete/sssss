@@ -439,9 +439,7 @@ export function speedIsPossible(type: Type, dx: number, dy: number, period: numb
         return false;
     } else if (B0_TYPES.includes(type) && period % 2 !== 0) {
         return false;
-    } else if (type === 'hrotr2' && dx + dy <= 2 * period) {
-        return true;
-    } else if (dx + dy <= period) {
+    } else if (dx + dy <= RANGES[type] * period) {
         return true;
     } else if (B0_TYPES.includes(type) && dx + dy <= period * 3 / 2) {
         return true;
