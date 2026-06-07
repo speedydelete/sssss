@@ -360,20 +360,24 @@ export function normalizeShips<T extends boolean | undefined = undefined>(shipTy
 }
 
 
-export function patternToShip(type: Type, p: Pattern, limit: number = 32768): Ship[] {
+export function patternToShip(type: Type, p: Pattern, limit: number = 32768): Ship {
     let data = identifyPeriodic(p, limit);
     p.run(data.stabilizedAt);
     if (!data.disp) {
         throw new Error(`Pattern is not a ship or its period is greater than ${limit} generations`);
     }
-    return normalizeShips(type, [{
+    let out = normalizeShips(type, [{
         pop: p.population,
         rule: p.rule.str,
         dx: data.disp[0],
         dy: data.disp[1],
         period: data.period,
         rle: p.toRLE().split('\n').slice(1).join(''),
-    }], true);
+    }], true)[0];
+    if (type.startsWith('ot') && out.otRule) {
+        out.rule = out.otRule;
+    }
+    return out;
 }
 
 

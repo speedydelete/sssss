@@ -54,7 +54,7 @@ if (cmd === 'get') {
         if (rle === '') {
             continue;
         }
-        data.push(...patternToShip(type, parse(rle + '!'), 1048576));
+        data.push(patternToShip(type, parse(rle + '!'), 1048576));
     }
     out = (await addShipsToFiles(type, data, undefined, true, cmd === 'add_rle'))[0];
 } else {
