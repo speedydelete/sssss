@@ -441,5 +441,6 @@ for (let type of ['input', 'textarea', 'select']) {
     });
 }
 
+
 type = typeSelect.value as Type;
 getCounts();
