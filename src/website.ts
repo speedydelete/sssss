@@ -1,7 +1,6 @@
 
-import {types} from 'node:util';
 import {identifyPeriodic, parseSpeed, speedToString, parse} from '../lifeweb/lib/index.js';
-import {Type, B0_TYPES, Ship, shipsToString, normalizeShips, isValidInType, speedIsPossible, getOptimalPop, SUPERTYPES} from './base.js';
+import {Type, B0_TYPES, RANGES, Ship, shipsToString, normalizeShips, isValidInType, speedIsPossible, getOptimalPop, SUPERTYPES} from './base.js';
 
 
 // const API_PATH = `http://localhost:3000`;
@@ -291,7 +290,7 @@ async function fetchPeriodMap(): Promise<void> {
     let rect3 = mapHoverInfoElt.getBoundingClientRect();
     // subtract 40 for the gap property
     let height = rect.height - rect2.height - rect3.height - 40;
-    mapCellCount = period + 1;
+    mapCellCount = RANGES[type] * period + 1;
     mapSize = Math.min(mapCellCount * 32, height);
     mapCellSize = Math.floor(mapSize / mapCellCount);
     mapSize = mapCellSize * mapCellCount;

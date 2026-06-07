@@ -46,6 +46,19 @@ export const OT_TYPES = ['ot', 'otb0', 'otgen'];
 export const B0_TYPES = ['intb0', 'otb0'];
 export const GEN_TYPES = ['intgen', 'otgen'];
 
+export const RANGES: {[K in Type]: number} = {
+    'int': 1,
+    'intb0': 1,
+    'ot': 1,
+    'otb0': 1,
+    'intgen': 1,
+    'otgen': 1,
+    'hrotr2': 2,
+    'intb1e': 1,
+    'intnos': 1,
+    'int1dt': 1,
+};
+
 
 export interface Ship {
     pop: number;

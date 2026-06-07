@@ -5,7 +5,7 @@ import {execSync} from 'node:child_process';
 import {Worker} from 'node:worker_threads';
 import {IncomingMessage, ServerResponse, createServer} from 'node:http';
 import {speedToString} from '../lifeweb/lib/index.js';
-import {Type, TYPES, B0_TYPES, Ship, parseShips, addShipsToFiles, findShipRLE, speedIsPossible} from './index.js';
+import {Type, TYPES, B0_TYPES, RANGES, Ship, parseShips, addShipsToFiles, findShipRLE, speedIsPossible} from './index.js';
 
 
 let basePath = normalize(`${import.meta.dirname}/..`);
@@ -498,7 +498,7 @@ async function updatePeriodMaps(): Promise<void> {
         let maps: Uint32Array[] = [new Uint32Array(0)];
         let b0 = B0_TYPES.includes(type);
         for (let period = 1; period < 128; period++) {
-            let limit = period + 1;
+            let limit = RANGES[type as Type] * period + 1;
             let map = new Uint32Array(Math.round((limit + 1) * (limit / 2)));
             if (b0 && period % 2 === 1) {
                 maps.push(map);
