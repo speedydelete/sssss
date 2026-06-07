@@ -426,6 +426,8 @@ export function speedIsPossible(type: Type, dx: number, dy: number, period: numb
         return false;
     } else if (B0_TYPES.includes(type) && period % 2 !== 0) {
         return false;
+    } else if (type === 'hrotr2' && dx + dy <= 2 * period) {
+        return true;
     } else if (dx + dy <= period) {
         return true;
     } else if (B0_TYPES.includes(type) && dx + dy <= period * 3 / 2) {
@@ -442,7 +444,7 @@ function _getOptimalPop(type: Type, dx: number, dy: number, period: number): num
         }
     }
     if (dx === 0 && dy === 0) {
-        return B0_TYPES.includes(type) ? 1 : 2;
+        return period === 1 || B0_TYPES.includes(type) ? 1 : 2;
     } else if (type === 'int' && dy > 0 && dx + dy === period) {
         // https://conwaylife.com/forums/viewtopic.php?p=164841#p164841
         return 4;
