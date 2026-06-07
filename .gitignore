@@ -5,9 +5,10 @@
 /*.txt
 /*.rle
 /*.sss
+/*.log
+/*.zip
 /data.zip
 /logs
 admin_keys.json
 /website
-/*.log
 *.tsbuildinfo
