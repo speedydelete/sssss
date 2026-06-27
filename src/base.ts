@@ -401,13 +401,13 @@ export function isValidInType(type: Type, ship: Ship): boolean {
     } else if (type === 'intb0') {
         out = p instanceof MAPB0Pattern && p.rule.symmetry === 'D8';
     } else if (type === 'ot') {
-        out = p instanceof MAPPattern && p.rule.symmetry === 'D8' && p.rule.str.match(/^B[1-8]*\/S[0-8]*$/);
+        out = p instanceof MAPPattern && p.rule.symmetry === 'D8' && (p.rule.str.match(/^B[1-8]*\/S[0-8]*$/) || ship.otRule !== undefined);
     } else if (type === 'otb0') {
-        out = p instanceof MAPB0Pattern && p.rule.symmetry === 'D8' && p.rule.str.match(/^B0[1-8]*\/S[0-7]*$/);
+        out = p instanceof MAPB0Pattern && p.rule.symmetry === 'D8' && (p.rule.str.match(/^B0[1-8]*\/S[0-7]*$/) || ship.otRule !== undefined);
     } else if (type === 'intgen') {
         out = p instanceof MAPGenPattern && p.rule.symmetry === 'D8';
     } else if (type === 'otgen') {
-        out = p instanceof MAPGenPattern && p.rule.symmetry === 'D8' && p.rule.str.match(/^[0-8]*\/[1-8]*\/\d+$/);
+        out = p instanceof MAPGenPattern && p.rule.symmetry === 'D8' && (p.rule.str.match(/^[0-8]*\/[1-8]*\/\d+$/) || ship.otRule !== undefined);
     } else if (type === 'hrotr2') {
         out = p instanceof HROTPattern && p.rule.states === 2 && p.rule.range === 2 && p.nh === undefined;
     } else if (type === 'intb1e') {
