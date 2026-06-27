@@ -194,10 +194,9 @@ submitButton.addEventListener('click', async () => {
         return;
     }
     ships = ships.filter(x => x);
-    let rawType = typeSelect.value as Type;
     for (let ship of ships) {
-        if (!isValidInType(rawType, ship)) {
-            alert(`Invalid ship for type ${rawType}: ${shipsToString([ship])}`);
+        if (!isValidInType(type, ship)) {
+            alert(`Invalid ship for type ${type}: ${shipsToString([ship])}`);
             return;
         }
     }
