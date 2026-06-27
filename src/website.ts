@@ -1,6 +1,6 @@
 
 import {identifyPeriodic, parseSpeed, speedToString, parse} from '../lifeweb/lib/index.js';
-import {Type, B0_TYPES, RANGES, Ship, shipsToString, normalizeShips, isValidInType, speedIsPossible, getOptimalPop, SUPERTYPES} from './base.js';
+import {Type, TYPE_NAMES, B0_TYPES, RANGES, Ship, shipsToString, normalizeShips, isValidInType, speedIsPossible, getOptimalPop, SUPERTYPES} from './base.js';
 
 
 // const API_PATH = `http://localhost:3000`;
@@ -196,7 +196,7 @@ submitButton.addEventListener('click', async () => {
     ships = ships.filter(x => x);
     for (let ship of ships) {
         if (!isValidInType(type, ship)) {
-            alert(`Invalid ship for type ${type}: ${shipsToString([ship])}`);
+            alert(`Invalid ship for type ${TYPE_NAMES[type]}: ${shipsToString([ship])}`);
             return;
         }
     }
