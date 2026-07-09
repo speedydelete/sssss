@@ -1,11 +1,14 @@
 {
     "type": "module",
     "devDependencies": {
-        "@types/node": "^24.10.1",
-        "typescript": "^5.9.3"
+        "@types/node": "^26.1.1",
+        "typescript": "^7.0.2"
     },
     "optionalDependencies": {
         "@minify-html/node": "^0.18.1",
-        "esbuild": "^0.28.0"
+        "esbuild": "^0.28.1"
+    },
+    "allowScripts": {
+        "esbuild@0.28.1": true
     }
 }
