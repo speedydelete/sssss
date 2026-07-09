@@ -346,7 +346,7 @@ const ENDPOINTS: {[key: string]: (req: IncomingMessage, params: URLSearchParams 
             console.log(`405 Method Not Allowed (${getLineNumber(new Error())})`);
             return;
         }
-        if (ip !== '192.9.227.225') {
+        if (ip !== '5.161.243.136') {
             out.writeHead(403);
             out.end();
             console.log(`403 Forbidden (${getLineNumber(new Error())})`);
