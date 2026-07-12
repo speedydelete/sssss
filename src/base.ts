@@ -326,7 +326,21 @@ export function normalizeShips<T extends boolean | undefined = undefined>(shipTy
             let minPop = type.phases[0].population;
             let minPhase = type.phases[0];
             let evenRule = ship.rule;
-            let [bTrs, sTrs] = arrayToTransitions(p.evenTrs.reverse(), INT);
+            let value = arrayToTransitions(p.evenTrs.reverse(), INT);
+            if (!value) {
+                if (throwInvalid) {
+                    throw new Error(`Invalid ship detected (arrayToTransitions failed, there is probably a bug in 5S, please report the ship that caused this error): ${shipsToString([ship]).slice(0, -1)}`);
+                } else {
+                    console.log(`Invalid ship detected (arrayToTransitions failed, there is probably a bug in 5S, please report the ship that caused this error): ${shipsToString([ship]).slice(0, -1)}`);
+                    if (ship.dx === 0 && ship.dy === 0) {
+                        invalidPeriods.push(speed);
+                    } else {
+                        invalidShips.push(speed);
+                    }
+                    continue;
+                }
+            }
+            let [bTrs, sTrs] = value;
             let bStr = unparseTransitions(bTrs, INT);
             let sStr = unparseTransitions(sTrs, INT);
             let oddRule = `B${bStr}/S${sStr}`;
