@@ -14,28 +14,33 @@ const SYMMETRIES = ['C1', 'C2_1', 'C2_eo', 'C2_oe', 'C2_4', 'C4_1', 'C4_4', 'D2_
 
 function parseRule(rule: string): [string[], string[], number] {
     let p = createPattern(rule);
-    let b: string[];
-    let s: string[];
+    let out: false | [string[], string[]];
     if (p instanceof MAPPattern) {
-        [b, s] = arrayToTransitions(p.trs, INT);
+        out = arrayToTransitions(p.trs, INT);
     } else if (p instanceof MAPB0Pattern) {
-        [b, s] = arrayToTransitions(p.evenTrs.map(x => 1 - x), INT);
+        out = arrayToTransitions(p.evenTrs.map(x => 1 - x), INT);
     } else if (p instanceof MAPGenPattern) {
-        [b, s] = arrayToTransitions(p.trs, INT);
+        out = arrayToTransitions(p.trs, INT);
     } else {
         throw new Error(`Rule is not in INT, INT B0, or INT Generations: '${rule}'`);
     }
-    return [b, s, p.rule.states];
+    if (!out) {
+        throw new Error(`Rule is not in INT, INT B0, or INT Generations: '${rule}'`);
+    }
+    return [out[0], out[1], p.rule.states];
 }
 
 function unparseRule(p: Pattern): string {
-    let bTrs: string[];
-    let sTrs: string[];
+    let value: false | [string[], string[]];
     if (p instanceof MAPB0Pattern) {
-        [bTrs, sTrs] = arrayToTransitions(p.evenTrs.map(x => 1 - x), INT);
+        value = arrayToTransitions(p.evenTrs.map(x => 1 - x), INT);
     } else {
-        [bTrs, sTrs] = arrayToTransitions(p.trs, INT);
+        value = arrayToTransitions(p.trs, INT);
     }
+    if (!value) {
+        throw new Error(`This error should not occur (arrayToTransitions failed), there is probably a bug, please report this error`);
+    }
+    let [bTrs, sTrs] = value
     let b = unparseTransitions(bTrs, INT);
     let s = unparseTransitions(sTrs, INT);
     if (p.rule.states === 2) {
