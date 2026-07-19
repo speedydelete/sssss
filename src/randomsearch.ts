@@ -119,6 +119,8 @@ let minOscPeriod = getNumber('min-osc-period');
 
 let noEvolve = Boolean(extraArgs['no-evolve']);
 
+let interval = getNumber('interval') ?? 5;
+
 let autoSubmit = getNumber('autosubmit');
 let toSubmit: string[] = [];
 let currentlySubmitting = false;
@@ -546,7 +548,7 @@ while (true) {
     run();
     count++;
     let now = performance.now() / 1000;
-    if (now - lastUpdate > 10) {
+    if (now - lastUpdate > interval) {
         console.log(`# ${count} rules checked (${(count / (now - start)).toFixed(3)} rules/second)`);
         lastUpdate = now;
     }
