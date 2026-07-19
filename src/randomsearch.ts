@@ -104,6 +104,7 @@ if (extraArgs['max-bb']) {
     maxBB = [parseInt(match[0]), parseInt(match[1])];
 }
 
+let minPop = getNumber('min-pop');
 let maxPop = getNumber('max-pop');
 
 let noBBChange = Boolean(extraArgs['no-bb-change']);
@@ -403,24 +404,21 @@ function run(): void {
         // }
         p.runGeneration();
         p.shrinkToFit();
-        if (maxBB !== undefined) {
-            if (p.height >= maxBB[1] || p.width > maxBB[0]) {
-                break;
-            }
+        if (maxBB !== undefined && (maxBB[1] || p.width > maxBB[0])) {
+            break;
         }
-        if (noBBChange) {
-            if (p.height !== actualBase.height || p.width !== actualBase.width) {
-                break;
-            }
+        if (noBBChange && (p.height !== actualBase.height || p.width !== actualBase.width)) {
+            break;
         }
         let pop = p.population;
         if (pop === 0) {
             break;
         }
-        if (maxPop !== undefined) {
-            if (pop > maxPop) {
-                break;
-            }
+        if (minPop !== undefined && pop < minPop) {
+            break;
+        }
+        if (maxPop !== undefined && pop > maxPop) {
+            break;
         }
         let hash = p.hash32();
         if ((i + 1) % p.rule.period === 0) {
