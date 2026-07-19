@@ -474,7 +474,7 @@ function run(): void {
                             break;
                         }
                         prevLines.add(str);
-                        console.log(str + ', ' + unparseRule(p));
+                        // console.log(str + ', ' + unparseRule(p));
                         if (autoSubmit !== undefined) {
                             toSubmit = toSubmit.filter(x => {
                                 let parts = x.split(', ');
