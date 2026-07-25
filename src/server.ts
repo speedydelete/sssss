@@ -477,7 +477,9 @@ function updateDataZip() {
 }
 
 function backupDataZip() {
-    execSync(`mkdir -p ${basePath}/backup && cp ${basePath}/data.zip ${basePath}/backup/data_${Math.floor(Date.now() / 1000)}.zip`, {stdio: 'inherit'});
+    let str = (new Date()).toISOString();
+    str = str.slice(0, str.indexOf('T'));
+    execSync(`mkdir -p ${basePath}/backup && cp ${basePath}/data.zip ${basePath}/backup/data_${str}.zip`, {stdio: 'inherit'});
 }
 
 async function updatePeriodMaps(): Promise<void> {
