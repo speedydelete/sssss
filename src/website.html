@@ -19,8 +19,8 @@ html, body {
 }
 
 body {
-    padding: 20px;
     margin: 0;
+    padding: 20px;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -84,9 +84,27 @@ option {
     background-color: #ffffff;
 }
 
+#top {
+    display: flex;
+    flex-direction: row;
+    gap: 3ch;
+    justify-content: center;
+    align-items: center;
+}
+
+#counts {
+    margin-top: 1.5em;
+    text-align: center;
+}
+
+#type {
+    box-sizing: content-box;
+    width: calc(13ch + 21px);
+}
+
 .main {
-    min-height: 0;
     flex: 1 1 auto;
+    min-height: 0;
     width: 100%;
 }
 
@@ -104,24 +122,6 @@ option {
     flex-direction: column;
     align-items: center;
     gap: 20px;
-}
-
-#top {
-    display: flex;
-    flex-direction: row;
-    gap: 3ch;
-    justify-content: center;
-    align-items: center;
-}
-
-#counts {
-    margin-top: 1.5em;
-    text-align: center;
-}
-
-#type {
-    box-sizing: content-box;
-    width: calc(13ch + 21px);
 }
 
 #search-wrapper {
@@ -254,7 +254,7 @@ option {
             <canvas id="period-map"></canvas>
             <div id="period-map-hover-info"></div>
         </div>
-        <script>'use strict';function printError(e,c='red'){let x=String(e instanceof Error?('stack' in e?e.stack:e):e);if(!x.includes('Error')){x=String(e)+'\n'+x}x=x.replaceAll('@',' at ');if(!(document.readyState==='complete')){alert(x);return;}document.querySelectorAll('body > *').forEach(x=>x.remove());let t=document.createElement('pre');t.style.color=c;t.style.marginTop='100px';t.style.fontFamily='\'Courier New\',Courier,monospace';t.style.fontSize='14px';t.style.overflowWrap='break-word';t.textContent=x.replaceAll(/file:\/\/\/media\/fuse\/drivefs-[0-9a-f]+\/root\/code\//g,'');document.body.appendChild(t);let l=setInterval(()=>{},0);for(let j=1;j<=l;j++){clearInterval(j);}window.onkeydown=()=>{};}window.addEventListener('error',e=>{printError(e.error);return true;});window.addEventListener('unhandledrejection',e=>{e.preventDefault();printError(e.reason);});</script>
+        <script>'use strict';function printError(e,c='red'){let x=String(e instanceof Error?('stack' in e?e.stack:e):e);if(!x.includes('Error')){x=String(e)+'\n'+x}x=x.replaceAll('@',' at ');if(document.readyState!=='complete'){alert(x);return;}document.querySelectorAll('body > *').forEach(x=>x.remove());let t=document.createElement('pre');t.style.color=c;t.style.fontFamily='\'Courier New\',Courier,monospace';t.style.fontSize='14px';t.style.marginTop='0';t.style.marginBottom='0';t.style.overflowWrap='break-word';t.textContent=x.replaceAll(/file:\/\/\/media\/fuse\/drivefs-[0-9a-f]+\/root\/code\//g,'');document.body.appendChild(t);document.body.style.alignItems='start';let l=setInterval(()=>{},0);for(let j=1;j<=l;j++){clearInterval(j);}window.onkeydown=()=>{};}window.addEventListener('error',e=>{printError(e.error);return true;});window.addEventListener('unhandledrejection',e=>{e.preventDefault();printError(e.reason);});</script>
         <script type="module" src="index.js"></script>
     </body>
 </html>

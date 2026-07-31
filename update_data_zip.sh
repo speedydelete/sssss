@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+set -eu -o pipefail
+SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd)
+rm -f "$SCRIPT_DIR/data.zip"
+(cd $SCRIPT_DIR; zip -r -9 data.zip data)

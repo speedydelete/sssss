@@ -472,7 +472,7 @@ server.listen(3000, 'localhost');
 
 
 function updateDataZip() {
-    execSync(`${basePath}/update_data_zip`, {stdio: 'inherit'});
+    execSync(`${basePath}/update_data_zip.sh`, {stdio: 'inherit'});
     execSync(`cp ${basePath}/data.zip /var/www/html/5s/data.zip`, {stdio: 'inherit'});
 }
 
