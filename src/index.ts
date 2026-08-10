@@ -161,12 +161,13 @@ export async function addShipsToFiles(type: Type, ships: Ship[], limit?: number,
     if (invalidPeriods.length > 0) {
         out += `${invalidShips.length} invalid period${invalidPeriods.length === 1 ? '' : 's'}: ${invalidShips.join(', ')}\n`;
     }
+    let found = false;
     for (let [key, value] of Object.entries(changes)) {
         let {newSpeeds, improvedSpeeds, newPeriods, improvedPeriods} = value;
         if (newSpeeds.length === 0 && improvedSpeeds.length === 0 && newPeriods.length === 0 && improvedPeriods.length === 0) {
-            out += `No changes made in ${TYPE_NAMES[key as Type]}\n`;
             continue;
         }
+        found = true;
         out += `Changes made in ${TYPE_NAMES[key as Type]}:\n`;
         if (newSpeeds.length > 0) {
             out += `    ${newSpeeds.length} new ship${newSpeeds.length === 1 ? '' : 's'}: ${newSpeeds.map(x => x[0]).join(', ')}\n`;
@@ -180,6 +181,9 @@ export async function addShipsToFiles(type: Type, ships: Ship[], limit?: number,
         if (improvedPeriods.length > 0) {
             out += `    ${improvedPeriods.length} improved period${improvedPeriods.length === 1 ? '' : 's'}: ${improvedPeriods.map(x => x[0]).join(', ')}\n`;
         }
+    }
+    if (!found) {
+        out += `No changes made\n`;
     }
     out += `Update took ${((performance.now() - start) / 1000).toFixed(3)} seconds\n`;
     return [out, changes];
