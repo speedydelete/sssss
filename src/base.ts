@@ -254,6 +254,7 @@ export function normalizeShips<T extends boolean | undefined = undefined>(shipTy
         ship.dx = type.disp[0];
         ship.dy = type.disp[1];
         ship.period = type.period;
+        console.log(p.toRLE());
         if (ship.dx !== 0 || ship.dy !== 0) {
             if (ship.dx === 0 && ship.dy !== 0) {
                 p.rotateRight();
@@ -262,9 +263,9 @@ export function normalizeShips<T extends boolean | undefined = undefined>(shipTy
                 type = identifyPeriodic(p, limit, false);
                 if (type.period !== ship.period || !type.disp || ship.dx !== type.disp[0] || ship.dy !== type.disp[1]) {
                     if (throwInvalid) {
-                        throw new Error(`Invalid ship detected (there is probably a bug, report this): ${shipsToString([ship]).slice(0, -1)}`);
+                        throw new Error(`Invalid ship detected (rotation mismatch, there is probably a bug in 5S, please report the ship that caused this error): ${shipsToString([ship]).slice(0, -1)}`);
                     } else {
-                        console.log(`Invalid ship detected (there is probably a bug, report this): ${shipsToString([ship]).slice(0, -1)}`);
+                        console.log(`Invalid ship detected rotation mismatch, there is probably a bug in 5S, please report the ship that caused this error): ${shipsToString([ship]).slice(0, -1)}`);
                         if (ship.dx === 0 && ship.dy === 0) {
                             invalidPeriods.push(speed);
                         } else {
@@ -292,9 +293,9 @@ export function normalizeShips<T extends boolean | undefined = undefined>(shipTy
                 type = identifyPeriodic(p, limit, false);
                 if (type.period !== ship.period || !type.disp || ship.dx !== type.disp[0] || ship.dy !== type.disp[1]) {
                     if (throwInvalid) {
-                        throw new Error(`Invalid ship detected (there is probably a bug, report this): ${shipsToString([ship]).slice(0, -1)}`);
+                        throw new Error(`Invalid ship detected (rotation mismatch, there is probably a bug in 5S, please report the ship that caused this error): ${shipsToString([ship]).slice(0, -1)}`);
                     } else {
-                        console.log(`Invalid ship detected (there is probably a bug, report this): ${shipsToString([ship]).slice(0, -1)}`);
+                        console.log(`Invalid ship detected (rotation mismatch, there is probably a bug in 5S, please report the ship that caused this error): ${shipsToString([ship]).slice(0, -1)}`);
                         if (ship.dx === 0 && ship.dy === 0) {
                             invalidPeriods.push(speed);
                         } else {
