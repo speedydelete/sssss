@@ -3,6 +3,13 @@
 set -eu -o pipefail
 pushd $(dirname "$(realpath $0)") > /dev/null
 
-node ./lib/build.js "$@"
+pushd lifeweb > /dev/null
+./update
+popd > /dev/null
+
+git pull
+npm install
+npx tsc -b
+./build
 
 popd > /dev/null

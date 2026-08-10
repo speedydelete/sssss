@@ -472,14 +472,18 @@ server.listen(3000, 'localhost');
 
 
 function updateDataZip() {
-    execSync(`${basePath}/update_data_zip.sh`, {stdio: 'inherit'});
+    console.log('Updating data.zip');
+    execSync(`${basePath}/update_data_zip`, {stdio: 'inherit'});
     execSync(`cp ${basePath}/data.zip /var/www/html/5s/data.zip`, {stdio: 'inherit'});
+    console.log('Data.zip update complete');
 }
 
 function backupDataZip() {
+    console.log('Creating backup');
     let str = (new Date()).toISOString();
     str = str.slice(0, str.indexOf('T'));
     execSync(`mkdir -p ${basePath}/backup && cp ${basePath}/data.zip ${basePath}/backup/data_${str}.zip`, {stdio: 'inherit'});
+    console.log('Backup complete');
 }
 
 async function updatePeriodMaps(): Promise<void> {

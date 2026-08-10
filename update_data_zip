@@ -3,6 +3,6 @@
 set -eu -o pipefail
 pushd $(dirname "$(realpath $0)") > /dev/null
 
-node ./lib/build.js "$@"
+zip -r -9 data.zip data
 
 popd > /dev/null
