@@ -254,13 +254,12 @@ export function normalizeShips<T extends boolean | undefined = undefined>(shipTy
         ship.dx = type.disp[0];
         ship.dy = type.disp[1];
         ship.period = type.period;
-        console.log(p.toRLE());
         if (ship.dx !== 0 || ship.dy !== 0) {
             if (ship.dx === 0 && ship.dy !== 0) {
                 p.rotateRight();
                 ship.dx = -ship.dy;
                 ship.dy = 0;
-                type = identifyPeriodic(p, limit, false);
+                type = identifyPeriodic(p, limit, false, false);
                 if (type.period !== ship.period || !type.disp || ship.dx !== type.disp[0] || ship.dy !== type.disp[1]) {
                     if (throwInvalid) {
                         throw new Error(`Invalid ship detected (rotation mismatch, there is probably a bug in 5S, please report the ship that caused this error): ${shipsToString([ship]).slice(0, -1)}`);
@@ -290,7 +289,7 @@ export function normalizeShips<T extends boolean | undefined = undefined>(shipTy
                     ship.dy = temp;
                     p.rotateLeft().flipVertical();
                 }
-                type = identifyPeriodic(p, limit, false);
+                type = identifyPeriodic(p, limit, false, false);
                 if (type.period !== ship.period || !type.disp || ship.dx !== type.disp[0] || ship.dy !== type.disp[1]) {
                     if (throwInvalid) {
                         throw new Error(`Invalid ship detected (rotation mismatch, there is probably a bug in 5S, please report the ship that caused this error): ${shipsToString([ship]).slice(0, -1)}`);
