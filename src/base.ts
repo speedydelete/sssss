@@ -215,7 +215,7 @@ export function normalizeShips<T extends boolean | undefined = undefined>(shipTy
     for (let i = 0; i < ships.length; i++) {
         let ship = ships[i];
         let speed = speedToString(ship.dx, ship.dy, ship.period);
-        let p = parse(`x = 0, y = 0, rule = ${ship.rule}\n${ship.rle}`);
+        let p = createPattern(ship.rule).loadRLE(ship.rle);
         if (p.isEmpty()) {
             if (throwInvalid) {
                 throw new Error(`Invalid ship detected (empty): ${shipsToString([ship]).slice(0, -1)}`);
@@ -355,7 +355,7 @@ export function normalizeShips<T extends boolean | undefined = undefined>(shipTy
             ship.pop = minPop;
             ship.rle = minPhase.toRLE().split('\n').slice(1).join('');
             if (ship.rule === oddRule) {
-                p = parse(`x = 0, y = 0, rule = ${ship.rule}\n${ship.rle}`);
+                p = createPattern(ship.rule).loadRLE(ship.rle);
                 ship.rule = findMinmax(p, limit, undefined, undefined).min;
             }
         } else {
