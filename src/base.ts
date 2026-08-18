@@ -305,10 +305,10 @@ export function normalizeShips<T extends boolean | undefined = undefined>(shipTy
                 }
             }
         }
-        let [min, max] = findMinmax(p, ship.period, type);
+        let {min, max} = findMinmax(p, ship.period, type);
         ship.rule = min;
         if (SUBTYPES[shipType].some(x => OT_TYPES.includes(x)) && includesOT(min, max)) {
-            ship.otRule = findMinmax(p, ship.period, type, undefined, true)[0];
+            ship.otRule = findMinmax(p, ship.period, type, undefined, true).min;
         }
         if (shipType === 'int' && max.startsWith('B1') && !max.startsWith('B1c')) {
             let rule = min;
@@ -356,7 +356,7 @@ export function normalizeShips<T extends boolean | undefined = undefined>(shipTy
             ship.rle = minPhase.toRLE().split('\n').slice(1).join('');
             if (ship.rule === oddRule) {
                 p = parse(`x = 0, y = 0, rule = ${ship.rule}\n${ship.rle}`);
-                ship.rule = findMinmax(p, limit, undefined, undefined)[0];
+                ship.rule = findMinmax(p, limit, undefined, undefined).min;
             }
         } else {
             let minPop = type.phases[0].population;
