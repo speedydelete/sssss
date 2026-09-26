@@ -2,7 +2,7 @@
 import {Pattern, createPattern as _createPattern} from '../../lifeweb/lib/index.js';
 import {INT_ADJUSTABLES} from './int.js';
 import {INTB0_ADJUSTABLES} from './intb0.js';
-import {Type} from '../index.js';
+import {Rulespace} from '../index.js';
 
 
 export interface AdjustableGenerator {
@@ -10,14 +10,14 @@ export interface AdjustableGenerator {
     createShip(dx: number, dy: number, period: number): Pattern | undefined;
 };
 
-const ADJUSTABLES: {[K in Type]?: AdjustableGenerator[]} = {
+const ADJUSTABLES: {[K in Rulespace]?: AdjustableGenerator[]} = {
     'int': INT_ADJUSTABLES,
     'intb0': INTB0_ADJUSTABLES,
 };
 
 
-export function createAdjustable(type: Type, dx: number, dy: number, period: number): [Pattern, number] | undefined {
-    let generators = ADJUSTABLES[type];
+export function createAdjustable(space: Rulespace, dx: number, dy: number, period: number): [Pattern, number] | undefined {
+    let generators = ADJUSTABLES[space];
     if (generators === undefined) {
         return;
     }

@@ -95,7 +95,7 @@ function parseShips(data: string): Ship[] {
 }
 
 
-let rulespaceSelect = getElement('type', 'select');
+let rulespaceSelect = getElement('rulespace', 'select');
 let space = rulespaceSelect.value as Rulespace;
 rulespaceSelect.addEventListener('change', () => {
     space = rulespaceSelect.value as Rulespace;
@@ -104,14 +104,14 @@ rulespaceSelect.addEventListener('change', () => {
 let countsOutput = getElement('counts');
 
 async function getCounts() {
-    let resp = await fetch(`${API_PATH}/getcounts?type=${space}`);
+    let resp = await fetch(`${API_PATH}/getcounts?rulespace=${space}`);
     if (resp.ok) {
         countsOutput.textContent = await resp.text();
     } else {
         countsOutput.textContent = '';
         if (resp.status === 429) {
             setTimeout(async () => {
-                let resp = await fetch(`${API_PATH}/getcounts?type=${space}`);
+                let resp = await fetch(`${API_PATH}/getcounts?rulespace=${space}`);
                 if (resp.ok) {
                     countsOutput.textContent = await resp.text();
                 }
@@ -156,7 +156,7 @@ searchButton.addEventListener('click', async () => {
         return;
     }
     let {dx, dy, period} = data;
-    let resp = await fetch(`${API_PATH}/get?type=${space}&dx=${dx}&dy=${dy}&period=${period}&adjustables=${adjustablesSelect.value}`);
+    let resp = await fetch(`${API_PATH}/get?rulespace=${space}&dx=${dx}&dy=${dy}&period=${period}&adjustables=${adjustablesSelect.value}`);
     if (resp.ok) {
         searchOutput.textContent = await resp.text();
     } else {
@@ -275,7 +275,7 @@ async function fetchPeriodMap(): Promise<void> {
     if (key in mapCache) {
         periodMap = mapCache[key];
     } else {
-        let resp = await fetch(`${API_PATH}/getperiodmap?type=${space}&period=${newPeriod}`);
+        let resp = await fetch(`${API_PATH}/getperiodmap?rulespace=${space}&period=${newPeriod}`);
         if (!resp.ok) {
             alert(`Server returned ${resp.status} ${resp.statusText} while fetching period map`);
             return;
