@@ -137,6 +137,8 @@ let lastGetPeriodMapTime = new Map<string, number>();
 
 let maxJobsExceeded = false;
 
+let currentlyAdding = false;
+
 let periodMaps: {[key: string]: Uint32Array[]} = {};
 
 
@@ -201,6 +203,12 @@ const ENDPOINTS: {[key: string]: (req: IncomingMessage, params: URLSearchParams 
     },
 
     add(req: IncomingMessage, params: URLSearchParams | null, out: ServerResponse<IncomingMessage>, ip: string, time: number): void {
+        if (currentlyAdding) {
+            out.writeHead(503, 'Service Unavailable (try again in several seconds)');
+            out.end();
+            return;
+        }
+        currentlyAdding = true;
         let value = lastAddTime.get(ip);
         if (value !== undefined) {
             if (time - value < 5) {
@@ -284,6 +292,7 @@ const ENDPOINTS: {[key: string]: (req: IncomingMessage, params: URLSearchParams 
                 out.end();
             }
         });
+        currentlyAdding = false;
     },
 
     getcounts(req: IncomingMessage, params: URLSearchParams | null, out: ServerResponse<IncomingMessage>, ip: string, time: number): void {
