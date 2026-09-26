@@ -1,10 +1,10 @@
 
 import {identifyPeriodic, parseSpeed, speedToString, parse} from '../lifeweb/lib/index.js';
-import {Rulespace, RULESPACE_NAMES, B0_RULESPACES, RANGES, Ship, shipsToString, normalizeShips, isValidInRulespace, speedIsPossible, getOptimalPop} from './base.js';
+import {Rulespace, RULESPACE_NAMES, B0_RULESPACES, RANGES, isPartOfRulespace, Ship, shipsToString, normalizeShips, isValidInRulespace, getOptimalPop} from './base.js';
 
 
-// const API_PATH = `http://localhost:3000`;
-const API_PATH = `api`;
+const API_PATH = `http://localhost:3000`;
+// const API_PATH = `api`;
 
 function getElement<T extends keyof HTMLElementTagNameMap = keyof HTMLElementTagNameMap>(id: string, type?: T): HTMLElementTagNameMap[T] {
     let out = document.getElementById(id);
@@ -236,11 +236,12 @@ submitButton.addEventListener('click', async () => {
 let mapCache: {[key: string]: Uint32Array} = {};
 let prevHour = 0
 
-let periodElt = getElement('period', 'input');
-let periodWrapperElt = getElement('period-wrapper');
-let mapHoverInfoElt = getElement('period-map-hover-info');
-let mapCanvas = getElement('period-map', 'canvas');
+let periodMapSettingsWrapperElt = getElement('period-map-settings-wrapper');
+let periodMapPeriodElt = getElement('period-map-period', 'input');
+let periodMapAdjustablesSelect = getElement('period-map-adjustables', 'select');
+let mapCanvas = getElement('period-map-map', 'canvas');
 let mapCtx = mapCanvas.getContext('2d') as CanvasRenderingContext2D;
+let mapHoverInfoElt = getElement('period-map-hover-info');
 
 let period = 0;
 let periodMap: Uint32Array | undefined = undefined;
@@ -252,30 +253,31 @@ async function fetchPeriodMap(): Promise<void> {
     if (!periodMapsShown) {
         return;
     }
-    let newPeriod = parseInt(periodElt.value);
+    let newPeriod = parseInt(periodMapPeriodElt.value);
+    let adjustables = periodMapAdjustablesSelect.value;
     if (B0_RULESPACES.includes(space)) {
         if (newPeriod % 2 !== 0) {
             newPeriod--;
         }
-        periodElt.min = '2';
-        periodElt.max = '126';
-        periodElt.step = '2';
-        periodElt.value = String(newPeriod);
+        periodMapPeriodElt.min = '2';
+        periodMapPeriodElt.max = '126';
+        periodMapPeriodElt.step = '2';
+        periodMapPeriodElt.value = String(newPeriod);
     } else {
-        periodElt.min = '1';
-        periodElt.max = '127';
-        periodElt.step = '1';
+        periodMapPeriodElt.min = '1';
+        periodMapPeriodElt.max = '127';
+        periodMapPeriodElt.step = '1';
     }
     let hour = Math.floor((Date.now() / 1000) / 3600);
     if (hour > prevHour) {
         mapCache = {};
     }
     prevHour = hour;
-    let key = space + ' ' + newPeriod;
+    let key = space + ' ' + newPeriod + ' ' + adjustables;
     if (key in mapCache) {
         periodMap = mapCache[key];
     } else {
-        let resp = await fetch(`${API_PATH}/getperiodmap?rulespace=${space}&period=${newPeriod}`);
+        let resp = await fetch(`${API_PATH}/getperiodmap?rulespace=${space}&period=${newPeriod}&adjustables=${adjustables}`);
         if (!resp.ok) {
             alert(`Server returned ${resp.status} ${resp.statusText} while fetching period map`);
             return;
@@ -285,7 +287,7 @@ async function fetchPeriodMap(): Promise<void> {
     }
     period = newPeriod;
     let rect = periodMapsElt.getBoundingClientRect();
-    let rect2 = periodWrapperElt.getBoundingClientRect();
+    let rect2 = periodMapSettingsWrapperElt.getBoundingClientRect();
     let rect3 = mapHoverInfoElt.getBoundingClientRect();
     // subtract 40 for the gap property
     let height = rect.height - rect2.height - rect3.height - 40;
@@ -297,8 +299,9 @@ async function fetchPeriodMap(): Promise<void> {
     mapCanvas.height = mapSize;
 }
 
-periodElt.addEventListener('change', fetchPeriodMap);
+periodMapPeriodElt.addEventListener('change', fetchPeriodMap);
 rulespaceSelect.addEventListener('change', fetchPeriodMap);
+periodMapAdjustablesSelect.addEventListener('change', fetchPeriodMap);
 
 let mouseX: number | undefined = undefined;
 let mouseY: number | undefined = undefined;
@@ -324,101 +327,120 @@ function renderPeriodMap(): void {
     }
     mapCtx.fillStyle = '#000000';
     mapCtx.fillRect(0, 0, mapSize, mapSize);
-    let i = 0;
-    for (let dx = 0; dx <= mapCellCount; dx++) {
-        for (let dy = 0; dy <= dx; dy++) {
-            let value = periodMap[i++];
+    type LineColor = '#0000ff' | '#007fff' | '#00ffff';
+    let lines: {[K in LineColor]: Set<string>} = {
+        '#00ffff': new Set(),
+        '#007fff': new Set(),
+        '#0000ff': new Set(),
+    };
+    let hover: [number, number] | undefined = undefined;
+    let periodMapIndex = 0;
+    for (let x = 0; x <= mapCellCount; x++) {
+        for (let y = 0; y <= x; y++) {
+            let pop = periodMap[periodMapIndex];
+            periodMapIndex++;
+            // population 0 means it's unknown
+            let unknown = pop === 0;
             let possible = true;
             let isOptimal = false;
             let provenOptimal = false;
-            if (value & (1 << 31)) {
-                mapCtx.fillStyle = '#00ff00';
-                value &= ~(1 << 31);
-                provenOptimal = true;
-                isOptimal = true;
-            } else if (!speedIsPossible(space, dx, dy, period)) {
-                mapCtx.fillStyle = '#000000';
+            let optimalPop = getOptimalPop(space, x, y, period);
+            if (optimalPop === false) {
                 possible = false;
-            } else if (value === 0) {
+                mapCtx.fillStyle = '#3f3f3f';
+            } else if (unknown) {
                 mapCtx.fillStyle = '#000000';
             } else {
-                let optimal = getOptimalPop(space, dx, dy, period);
-                if (optimal === false) {
-                    throw new Error(`This error should not occur, please report it (getOptimalPop is false and speedIsPossible is true)`);
-                }
-                let value2 = value - optimal;
-                if (value2 <= 0) {
+                let diff = pop - optimalPop;
+                if (diff <= 0) {
                     mapCtx.fillStyle = '#00ff00';
                     isOptimal = true;
-                } else if (value2 <= 2) {
+                } else if (diff <= 2) {
                     mapCtx.fillStyle = '#ffff00';
-                } else if (value2 <= 4) {
+                } else if (diff <= 4) {
                     mapCtx.fillStyle = '#ffd200';
                 } else {
                     mapCtx.fillStyle = '#ffa500';
                 }
             }
-            let x = dx * mapCellSize;
-            let y = dy * mapCellSize;
-            mapCtx.fillRect(x, y, mapCellSize, mapCellSize);
-            mapCtx.fillRect(y, x, mapCellSize, mapCellSize);
-            if (possible && !speedIsPossible(space, dx + 1, dy, period)) {
-                mapCtx.fillStyle = '#0000ff';
-                mapCtx.fillRect(x, y + mapCellSize - 2, mapCellSize, 2);
-                mapCtx.fillRect(y + mapCellSize - 2, x - 2, 2, mapCellSize + 2);
-                if (dx !== mapCellCount - 1) {
-                    mapCtx.fillRect(y, x + mapCellSize - 2, mapCellSize, 2);
-                    mapCtx.fillRect(x + mapCellSize - 2, y - 2, 2, mapCellSize + 2);
+            let cx = x * mapCellSize;
+            let cy = y * mapCellSize;
+            mapCtx.fillRect(cx, cy, mapCellSize, mapCellSize);
+            mapCtx.fillRect(cy, cx, mapCellSize, mapCellSize);
+            if (possible) {
+                lines['#0000ff'].add(`${x} ${y}`);
+                lines['#0000ff'].add(`${y} ${x}`);
+                if (isPartOfRulespace(space, 'int')) {
+                    if (period >= 2*Math.max(x, y) + Math.min(x, y)) {
+                        lines['#007fff'].add(`${x} ${y}`);
+                        lines['#007fff'].add(`${y} ${x}`);
+                        if (period >= 2*(x + y)) {
+                            lines['#00ffff'].add(`${x} ${y}`);
+                            lines['#00ffff'].add(`${y} ${x}`);
+                        }
+                    }
                 }
             }
             if (mouseX !== undefined && mouseY !== undefined) {
-                if (mouseX >= x && mouseY >= y && mouseX < x + mapCellSize && mouseY < y + mapCellSize) {
-                    let text = `${speedToString(dx, dy, period)}, `;
-                    if (!possible) {
-                        text += 'impossible';
-                    } else if (value === 0) {
-                        text += 'unknown';
+                let text = `${speedToString(x, y, period)}, `;
+                if (!possible) {
+                    text += 'impossible';
+                } else if (unknown) {
+                    text += 'unknown';
+                } else {
+                    text += `population ${pop}, `;
+                    if (provenOptimal) {
+                        text += 'proven optimal';
+                    } else if (isOptimal) {
+                        text += 'optimal';
                     } else {
-                        text += `population ${value}, `;
-                        if (provenOptimal) {
-                            text += 'proven optimal';
-                        } else if (isOptimal) {
-                            text += 'optimal';
-                        } else {
-                            text += `not optimal (optimal is ${getOptimalPop(space, dx, dy, period)} cells)`;
-                        }
+                        text += `not optimal (optimal is ${getOptimalPop(space, x, y, period)} cells)`;
                     }
+                }
+                if (mouseX >= cx && mouseY >= cy && mouseX < cx + mapCellSize && mouseY < cy + mapCellSize) {
                     mapHoverInfoElt.textContent = text;
-                    mapCtx.fillStyle = '#ff00ff';
-                    mapCtx.fillRect(x, y, mapCellSize, 2);
-                    mapCtx.fillRect(x, y, 2, mapCellSize);
-                    mapCtx.fillRect(x, y + mapCellSize - 2, mapCellSize, 2);
-                    mapCtx.fillRect(x + mapCellSize - 2, y, 2, mapCellSize);
-                } else if (mouseX >= y && mouseY >= x && mouseX <= y + mapCellSize && mouseY <= x + mapCellSize) {
-                    let text = `${speedToString(dx, dy, period)}, `;
-                    if (!possible) {
-                        text += 'impossible';
-                    } else if (value === 0) {
-                        text += 'unknown';
-                    } else {
-                        text += `population ${value}, `;
-                        if (provenOptimal) {
-                            text += 'proven optimal';
-                        } else if (isOptimal) {
-                            text += 'optimal';
-                        } else {
-                            text += `not optimal (optimal is ${getOptimalPop(space, dx, dy, period)} cells)`;
-                        }
-                    }
+                    hover = [cx, cy];
+                } else if (mouseX >= cy && mouseY >= cx && mouseX < cy + mapCellSize && mouseY < cx + mapCellSize) {
                     mapHoverInfoElt.textContent = text;
-                    mapCtx.fillStyle = '#ff00ff';
-                    mapCtx.fillRect(y, x, mapCellSize, 2);
-                    mapCtx.fillRect(y, x, 2, mapCellSize);
-                    mapCtx.fillRect(y, x + mapCellSize - 2, mapCellSize, 2);
-                    mapCtx.fillRect(y + mapCellSize - 2, x, 2, mapCellSize);
+                    hover = [cy, cx];
                 }
             }
         }
+    }
+    for (let [color, cells] of Object.entries(lines)) {
+        mapCtx.fillStyle = color;
+        for (let x = 0; x <= mapCellCount; x++) {
+            for (let y = 0; y <= mapCellCount; y++) {
+                let cx = x * mapCellSize;
+                let cy = y * mapCellSize;
+                if (cells.has(`${x} ${y}`)) {
+                    // top
+                    if (y > 0 && !cells.has(`${x} ${y - 1}`)) {
+                        mapCtx.fillRect(cx - 1, cy - 1, mapCellSize + 2, 2);
+                    }
+                    // bottom
+                    if (y < mapCellCount - 1 && !cells.has(`${x} ${y + 1}`)) {
+                        mapCtx.fillRect(cx - 1, cy + mapCellSize - 1, mapCellSize + 2, 2);
+                    }
+                    // left
+                    if (x > 0 && !cells.has(`${x - 1} ${y}`)) {
+                        mapCtx.fillRect(cx - 1, cy - 1, 2, mapCellSize + 2);
+                    }
+                    // right
+                    if (x < mapCellCount - 1 && !cells.has(`${x + 1} ${y}`)) {
+                        mapCtx.fillRect(cx + mapCellSize - 1, cy - 1, 2, mapCellSize + 2);
+                    }
+                }
+            }
+        }
+    }
+    if (hover) {
+        let [cx, cy] = hover;
+        mapCtx.fillStyle = '#ff00ff';
+        mapCtx.fillRect(cx, cy, mapCellSize, 2);
+        mapCtx.fillRect(cx, cy, 2, mapCellSize);
+        mapCtx.fillRect(cx, cy + mapCellSize - 2, mapCellSize, 2);
+        mapCtx.fillRect(cx + mapCellSize - 2, cy, 2, mapCellSize);
     }
     if (mouseX === undefined && mouseY === undefined) {
         mapHoverInfoElt.textContent = '';

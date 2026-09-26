@@ -9,7 +9,7 @@ export const UNPARSED_PROVEN_OPTIMAL: {[K in Rulespace]: [speed: string, value: 
     'int': [
         // these were disproved by LLS
         // command format: ./lls -p '>0' -r 'pB1-c2345678/S012345678'
-        // -b [value] [value] -s p[period] x[dx] y[dy] -p '<[pop]'
+        // -s p[period] x[dx] y[dy] -b [value] [value] -p '<[pop]'
         // or: ./vls B/S B1e2345678/S012345678 periodic 'speed' [value] [value] -maxpop=[pop]
         // the bounding box threshold is 2 * period * population + 1
         // so for 2c/3o, it's 2 * 3 * (4 - 1) + 1, it's 4 - 1 because you are
@@ -17,7 +17,8 @@ export const UNPARSED_PROVEN_OPTIMAL: {[K in Rulespace]: [speed: string, value: 
         // see https://conwaylife.com/forums/viewtopic.php?p=234626#p234626 for why this works
         // threshold used: 2*3*3 + 1 = 19
         ['2c/3o', 4],
-        ['(2, 1)c/3', 4],
+        // threshold used: 2*3*4 + 1 = 25
+        ['(2, 1)c/3', 5],
         // threshold used: 2*4*3 + 1 = 25
         ['3c/4o', 4],
         ['(2, 1)c/4', 4],
@@ -83,10 +84,10 @@ export function speedIsPossible(space: Rulespace, dx: number, dy: number, period
     }
     // basic speed limits:
     // for non B0 it's (x + y)c/(range * (x + y))
-    // for B0 it's (x + y)c/(range * period * 3/2)
+    // for B0 it's (x + y)c/(range * (x + y) * 3/2)
     if (B0_RULESPACES.includes(space)) {
-        if (dx + dy > RANGES[space] * period * 3 / 2) {
-            return true;
+        if (dx + dy > RANGES[space] * period * 3/2) {
+            return false;
         }
     } else {
         if (dx + dy > RANGES[space] * period) {
@@ -103,7 +104,7 @@ export function speedIsPossible(space: Rulespace, dx: number, dy: number, period
     }
     // greater than 10c/11o and less than c/1o is impossible in INT
     // https://conwaylife.com/forums/viewtopic.php?p=235471#p235471
-    if (isPartOfRulespace(space, 'int') && dy === 0 && dx / period > 10/11) {
+    if (isPartOfRulespace(space, 'int') && dy === 0 && dx / period > 10/11 && dx !== period) {
         return false;
     }
     // default is true
@@ -164,4 +165,3 @@ export function getOptimalPop(space: Rulespace, dx: number, dy: number, period: 
         return out;
     }
 }
-

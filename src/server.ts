@@ -5,7 +5,7 @@ import {execSync} from 'node:child_process';
 import {Worker} from 'node:worker_threads';
 import {IncomingMessage, ServerResponse, createServer} from 'node:http';
 import {speedToString} from '../lifeweb/lib/index.js';
-import {Rulespace, RULESPACES, B0_RULESPACES, RANGES, Ship, parseShips, addShipsToFiles, findShipRLE, speedIsPossible, isRulespace} from './index.js';
+import {IS_DEBUG, Rulespace, RULESPACES, B0_RULESPACES, RANGES, Ship, parseShips, addShipsToFiles, findShip, findShipRLE, speedIsPossible, isRulespace} from './index.js';
 
 
 let basePath = normalize(`${import.meta.dirname}/..`);
@@ -142,9 +142,9 @@ let currentlyAdding = false;
 let periodMaps: {[key: string]: Uint32Array[]} = {};
 
 
-const ENDPOINTS: {[key: string]: (req: IncomingMessage, params: URLSearchParams | null, out: ServerResponse<IncomingMessage>, ip: string, time: number) => void | Promise<void>} = {
+const ENDPOINTS: {[key: string]: (req: IncomingMessage, params: URLSearchParams | undefined, out: ServerResponse<IncomingMessage>, ip: string, time: number) => void | Promise<void>} = {
 
-    async get(req: IncomingMessage, params: URLSearchParams | null, out: ServerResponse<IncomingMessage>, ip: string, time: number): Promise<void> {
+    async get(req: IncomingMessage, params: URLSearchParams | undefined, out: ServerResponse<IncomingMessage>, ip: string, time: number): Promise<void> {
         let value = lastGetTime.get(ip);
         if (value !== undefined) {
             if (time - value < 1) {
@@ -176,9 +176,9 @@ const ENDPOINTS: {[key: string]: (req: IncomingMessage, params: URLSearchParams 
         let periodP = params.get('period');
         let adjustables = params.get('adjustables');
         if (!space || !dxP || !dyP || !periodP) {
-            out.writeHead(400, 'Expected "space", "dx", "dy", And "period" Parameters');
+            out.writeHead(400, 'Expected "rulespace", "dx", "dy", And "period" Parameters');
             out.end();
-            console.log(`400 Expected "space", "dx", "dy", And "period" Parameters (${getLineNumber(new Error())})`);
+            console.log(`400 Expected "rulespace", "dx", "dy", And "period" Parameters (${getLineNumber(new Error())})`);
             return;
         }
         let dx = parseInt(dxP);
@@ -196,13 +196,17 @@ const ENDPOINTS: {[key: string]: (req: IncomingMessage, params: URLSearchParams 
         } else {
             text = await findShipRLE(space, dx, dy, period, adjustables);
         }
-        out.writeHead(200);
+        if (IS_DEBUG) {
+            out.writeHead(200, undefined, {'access-control-allow-origin': '*'});
+        } else {
+            out.writeHead(200);
+        }
         out.write(text);
         out.end();
         console.log(`200 OK (${speedToString(dx, dy, period)} in rulespace ${space})`);
     },
 
-    add(req: IncomingMessage, params: URLSearchParams | null, out: ServerResponse<IncomingMessage>, ip: string, time: number): void {
+    add(req: IncomingMessage, params: URLSearchParams | undefined, out: ServerResponse<IncomingMessage>, ip: string, time: number): void {
         if (currentlyAdding) {
             out.writeHead(503, 'Service Unavailable (try again in several seconds)');
             out.end();
@@ -281,7 +285,11 @@ const ENDPOINTS: {[key: string]: (req: IncomingMessage, params: URLSearchParams 
                     newPeriods.push(...value.newPeriods.map(x => [space, x[0], x[1]] as [Rulespace, string, number]));
                     improvedPeriods.push(...value.improvedPeriods.map(x => [space, x[0], x[1], x[2]] as [Rulespace, string, number, number]));
                 }
-                out.writeHead(200);
+                if (IS_DEBUG) {
+                    out.writeHead(200, undefined, {'access-control-allow-origin': '*'});
+                } else {
+                    out.writeHead(200);
+                }
                 out.write(text);
                 out.end();
                 updateCountFor(space);
@@ -295,7 +303,7 @@ const ENDPOINTS: {[key: string]: (req: IncomingMessage, params: URLSearchParams 
         currentlyAdding = false;
     },
 
-    getcounts(req: IncomingMessage, params: URLSearchParams | null, out: ServerResponse<IncomingMessage>, ip: string, time: number): void {
+    getcounts(req: IncomingMessage, params: URLSearchParams | undefined, out: ServerResponse<IncomingMessage>, ip: string, time: number): void {
         let value = lastGetCountsTime.get(ip);
         if (value !== undefined) {
             if (time - value < 0.3) {
@@ -328,14 +336,17 @@ const ENDPOINTS: {[key: string]: (req: IncomingMessage, params: URLSearchParams 
             console.log(`400 Expected Rulespace Parameter (no rulespace parameter, ${getLineNumber(new Error())})`);
             return;
         }
-        // out.writeHead(200, undefined, {'access-control-allow-origin': '*'});
-        out.writeHead(200);
+        if (IS_DEBUG) {
+            out.writeHead(200, undefined, {'access-control-allow-origin': '*'});
+        } else {
+            out.writeHead(200);
+        }
         out.write(counts[space]);
         out.end();
         console.log(`200 OK (rulespace ${space})`);
     },
 
-    getnewships(req: IncomingMessage, params: URLSearchParams | null, out: ServerResponse<IncomingMessage>, ip: string, time: number): void {
+    getnewships(req: IncomingMessage, params: URLSearchParams | undefined, out: ServerResponse<IncomingMessage>, ip: string, time: number): void {
         let value = lastGetNewShipsTIme.get(ip);
         if (value !== undefined) {
             if (time - value < 50) {
@@ -371,7 +382,7 @@ const ENDPOINTS: {[key: string]: (req: IncomingMessage, params: URLSearchParams 
         improvedPeriods = [];
     },
 
-    getperiodmap(req: IncomingMessage, params: URLSearchParams | null, out: ServerResponse<IncomingMessage>, ip: string, time: number): void {
+    getperiodmap(req: IncomingMessage, params: URLSearchParams | undefined, out: ServerResponse<IncomingMessage>, ip: string, time: number): void {
         let value = lastGetPeriodMapTime.get(ip);
         if (value !== undefined) {
             if (time - value < 0.1) {
@@ -392,17 +403,17 @@ const ENDPOINTS: {[key: string]: (req: IncomingMessage, params: URLSearchParams 
             return;
         }
         if (!params) {
-            out.writeHead(400, 'Expected "space" And "period" Parameters');
+            out.writeHead(400, 'Expected "rulespace" And "period" Parameters');
             out.end();
-            console.log(`400 Expected "space" And "period" Parameters (no query string, ${getLineNumber(new Error())})`);
+            console.log(`400 Expected "rulespace" And "period" Parameters (no query string, ${getLineNumber(new Error())})`);
             return;
         }
-        let space = params.get('space');
+        let space = params.get('rulespace') as Rulespace;
         let periodP = params.get('period');
         if (!space || !periodP) {
-            out.writeHead(400, 'Expected "space" And "period" Parameters');
+            out.writeHead(400, 'Expected "rulespace" And "period" Parameters');
             out.end();
-            console.log(`400 Expected "space" And "period" Parameters (parameters aren't present, ${getLineNumber(new Error())})`);
+            console.log(`400 Expected "rulespace" And "period" Parameters (parameters aren't present, ${getLineNumber(new Error())})`);
             return;
         }
         let period = parseInt(periodP);
@@ -412,7 +423,14 @@ const ENDPOINTS: {[key: string]: (req: IncomingMessage, params: URLSearchParams 
             console.log(`400 Invalid Parameters (period is invalid, ${getLineNumber(new Error())})`);
             return;
         }
-        let maps = periodMaps[space];
+        let adjustables = params.get('adjustables') ?? 'no';
+        if (!( adjustables === 'no' || adjustables === 'yes' || adjustables === 'only')) {
+            out.writeHead(400, 'Invalid Parameters');
+            out.end();
+            console.log(`400 Invalid Parameters (adjustables is invalid, ${getLineNumber(new Error())})`);
+            return;
+        }
+        let maps = periodMaps[`${space} ${adjustables}`];
         if (!maps || !(period in maps)) {
             out.writeHead(400, 'Invalid Parameters');
             out.end();
@@ -420,8 +438,11 @@ const ENDPOINTS: {[key: string]: (req: IncomingMessage, params: URLSearchParams 
             return;
         }
         let map = maps[period];
-        // out.writeHead(200, undefined, {'access-control-allow-origin': '*'});
-        out.writeHead(200);
+        if (IS_DEBUG) {
+            out.writeHead(200, undefined, {'access-control-allow-origin': '*'});
+        } else {
+            out.writeHead(200);
+        }
         out.write(Buffer.from(map.buffer, 0, map.byteLength));
         out.end();
         console.log(`200 OK (rulespace ${space})`);
@@ -432,8 +453,12 @@ const ENDPOINTS: {[key: string]: (req: IncomingMessage, params: URLSearchParams 
 
 let server = createServer(async (req, out) => {
     try {
-        let ip = req.headers['x-forwarded-for'] as string;
-        // let ip = '127.0.0.1';
+        let ip: string;
+        if (IS_DEBUG) {
+            ip = '127.0.0.1';
+        } else {
+            ip = req.headers['x-forwarded-for'] as string
+        }
         if (!ip) {
             out.writeHead(400, 'No IP address; cannot determine rate limits');
             out.end();
@@ -452,14 +477,14 @@ let server = createServer(async (req, out) => {
             return;
         }
         let endpoint: string;
-        let params: URLSearchParams | null;
+        let params: URLSearchParams | undefined;
         if (req.url.includes('?')) {
             let parts = req.url.slice(1).split('?');
             endpoint = parts[0];
             params = new URLSearchParams(parts[1]);
         } else {
             endpoint = req.url.slice(1);
-            params = null;
+            params = undefined;
         }
         if (endpoint in ENDPOINTS) {
             await ENDPOINTS[endpoint](req, params, out, ip, time);
@@ -481,6 +506,9 @@ server.listen(3000, 'localhost');
 
 
 function updateDataZip() {
+    if (IS_DEBUG) {
+        return;
+    }
     console.log('Updating data.zip');
     execSync(`${basePath}/update_data_zip`, {stdio: 'inherit'});
     execSync(`cp ${basePath}/data.zip /var/www/html/5s/data.zip`, {stdio: 'inherit'});
@@ -488,6 +516,9 @@ function updateDataZip() {
 }
 
 function backupDataZip() {
+    if (IS_DEBUG) {
+        return;
+    }
     console.log('Creating backup');
     let str = (new Date()).toISOString();
     str = str.slice(0, str.indexOf('T'));
@@ -495,40 +526,60 @@ function backupDataZip() {
     console.log('Backup complete');
 }
 
+const PERIOD_MAP_MAX = 128;
+
 async function updatePeriodMaps(): Promise<void> {
     console.log(`Updating period maps`);
     for (let space of RULESPACES) {
-        let entries: {[key: string]: number} = {};
-        for (let category of ['orthogonal', 'diagonal', 'oblique', 'oscillator']) {
-            let file = (await fs.readFile(`${basePath}/data/${space}/${category}.sss`)).toString();
-            for (let ship of parseShips(file)) {
-                let key = ship.dx + ' ' + ship.dy + ' ' + ship.period;
-                let value = ship.pop;
-                if (ship.comment && ship.comment.toLowerCase().includes('proven optimal')) {
-                    value |= (1 << 31);
+        for (let adjustables of ['no', 'yes', 'only']) {
+            let entries: {[key: string]: number} = {};
+            if (adjustables === 'no' || adjustables === 'yes') {
+                for (let category of ['orthogonal', 'diagonal', 'oblique', 'oscillator']) {
+                    let file = (await fs.readFile(`${basePath}/data/${space}/${category}.sss`)).toString();
+                    for (let ship of parseShips(file)) {
+                        if (ship.period > PERIOD_MAP_MAX) {
+                            continue;
+                        }
+                        let key = `${ship.dx} ${ship.dy} ${ship.period}`;
+                        entries[key] = ship.pop;
+                    }
                 }
-                entries[key] = value;
             }
-        }
-        let maps: Uint32Array[] = [new Uint32Array(0)];
-        let b0 = B0_RULESPACES.includes(space);
-        for (let period = 1; period < 128; period++) {
-            let limit = RANGES[space as Rulespace] * period + 1;
-            let map = new Uint32Array(Math.round((limit + 1) * (limit / 2)));
-            if (b0 && period % 2 === 1) {
+            if (adjustables === 'yes' || adjustables === 'only') {
+                for (let period = 1; period < PERIOD_MAP_MAX; period++) {
+                    let limit = RANGES[space] * period + 1;
+                    for (let dx = 0; dx < limit; dx++) {
+                        for (let dy = 0; dy <= dx; dy++) {
+                            let data = await findShip(space, dx, dy, period, 'only');
+                            if (data !== undefined) {
+                                let key = `${dx} ${dy} ${period}`;
+                                entries[key] = data[0].pop;
+                            }
+                        }
+                    }
+                }
+            }
+            let maps: Uint32Array[] = [new Uint32Array(0)];
+            let b0 = B0_RULESPACES.includes(space);
+            for (let period = 1; period < PERIOD_MAP_MAX; period++) {
+                let limit = RANGES[space] * period + 1;
+                let map = new Uint32Array(Math.round((limit + 1) * (limit / 2)));
+                if (b0 && period % 2 === 1) {
+                    maps.push(map);
+                    continue;
+                }
+                let i = 0;
+                for (let dx = 0; dx < limit; dx++) {
+                    for (let dy = 0; dy <= dx; dy++) {
+                        let key = `${dx} ${dy} ${period}`;
+                        // population 0 means it's unknown
+                        map[i++] = entries[key] ?? 0;
+                    }
+                }
                 maps.push(map);
-                continue;
             }
-            let i = 0;
-            for (let dx = 0; dx < limit; dx++) {
-                for (let dy = 0; dy <= dx; dy++) {
-                    let key = dx + ' ' + dy + ' ' + period;
-                    map[i++] = entries[key] ?? 0;
-                }
-            }
-            maps.push(map);
+            periodMaps[`${space} ${adjustables}`] = maps;
         }
-        periodMaps[space] = maps;
     }
     console.log(`Period maps update complete`);
 }

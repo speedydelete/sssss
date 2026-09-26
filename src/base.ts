@@ -1,9 +1,12 @@
 
 import {Pattern, INT, unparseTransitions, arrayToTransitions, MAPPattern, MAPB0Pattern, MAPGenPattern, identifyPeriodic, findMinmax, createPattern, speedToString, HROTPattern} from '../lifeweb/lib/index.js';
 
-import {speedIsPossible, getOptimalPop} from './limits.js';
+import {getOptimalPop} from './limits.js';
 
 export * from './limits.js';
+
+
+export const IS_DEBUG = true;
 
 
 export type Rulespace = 'int' | 'intb0' | 'ot' | 'otb0' | 'intgen' | 'otgen' | 'hrotr2' | 'intb1e' | 'intnos' | 'int1dt';

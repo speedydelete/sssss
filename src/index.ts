@@ -8,7 +8,6 @@ import {Rulespace, RULESPACE_NAMES, Ship, parseShips, shipsToString, removeDupli
 export * from './base.js';
 
 
-
 function classifyShips(ships: Ship[]): [Ship[], Ship[], Ship[], Ship[]] {
     let oscillators: Ship[] = [];
     let orthogonals: Ship[] = [];
@@ -193,8 +192,8 @@ export async function addShipsToFiles(space: Rulespace, ships: Ship[], limit?: n
 
 export type AdjustableMode = 'yes' | 'no' | 'only';
 
-export async function findShip(space: Rulespace, dx: number, dy: number, period: number, adjustables: AdjustableMode = 'yes'): Promise<[Ship, boolean] | null> {
-    let adjustable: Ship | null = null;
+export async function findShip(space: Rulespace, dx: number, dy: number, period: number, adjustables: AdjustableMode = 'yes'): Promise<[Ship, boolean] | undefined> {
+    let adjustable: Ship | undefined = undefined;
     if (adjustables === 'yes' || adjustables === 'only') {
         let out = createAdjustable(space, dx, dy, period);
         if (out) {
@@ -217,7 +216,7 @@ export async function findShip(space: Rulespace, dx: number, dy: number, period:
                 adjustable = ship;
             }
         } else if (adjustables === 'only') {
-            return null;
+            return undefined;
         }
     }
     dx = Math.abs(dx);
@@ -251,7 +250,7 @@ export async function findShip(space: Rulespace, dx: number, dy: number, period:
     if (adjustable) {
         return [adjustable, true];
     } else {
-        return null;
+        return undefined;
     }
 }
 
