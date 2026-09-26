@@ -2,7 +2,7 @@
 import * as path from 'node:path';
 import * as fs from 'node:fs/promises';
 import {INT, unparseTransitions, arrayToTransitions, MAPPattern, MAPB0Pattern, MAPGenPattern, findMinmax, createPattern} from '../lifeweb/lib/index.js';
-import {Type, TYPES, parseShips} from './index.js';
+import {Rulespace, isRulespace, parseShips} from './index.js';
 
 
 type Pattern = MAPPattern | MAPB0Pattern | MAPGenPattern;
@@ -38,7 +38,7 @@ function unparseRule(p: Pattern): string {
         value = arrayToTransitions(p.trs, INT);
     }
     if (!value) {
-        throw new Error(`This error should not occur (arrayToTransitions failed), there is probably a bug, please report this error`);
+        throw new Error(`This error should not occur, please report it (arrayToTransitions failed)`);
     }
     let [bTrs, sTrs] = value
     let b = unparseTransitions(bTrs, INT);
@@ -55,9 +55,9 @@ if (process.argv.length < 8) {
     throw new Error(`Expected at least 5 arguments`);
 }
 
-let type = process.argv[3];
-if (!(TYPES.includes(type as Type) || type === 'none' || type === 'report-all')) {
-    throw new Error(`Invalid type: '${type}'`);
+let space = process.argv[3];
+if (!(isRulespace(space) || space === 'none' || space === 'report-all')) {
+    throw new Error(`Invalid rulespace: '${space}'`);
 }
 
 let minRule = process.argv[4];
@@ -128,10 +128,10 @@ let lastSubmitTime = performance.now() / 1000;
 
 
 let records: {[key: string]: number} = {};
-if (type !== 'none' && type !== 'report-all') {
+if (space !== 'none' && space !== 'report-all') {
     console.log('# Loading records');
     for (let file of ['orthogonal', 'diagonal', 'oblique', 'oscillator']) {
-        let data = (await fs.readFile(path.join(import.meta.dirname, '..', 'data', type, file + '.sss'))).toString();
+        let data = (await fs.readFile(path.join(import.meta.dirname, '..', 'data', space, file + '.sss'))).toString();
         for (let ship of parseShips(data)) {
             records[`${ship.dx} ${ship.dy} ${ship.period}`] = ship.pop;
         }
@@ -457,7 +457,7 @@ function run(): void {
                             if (pop < records[key]) {
                                 records[key] = pop;
                             } else {
-                                if (type !== 'report-all') {
+                                if (space !== 'report-all') {
                                     break;
                                 }
                             }
@@ -492,7 +492,7 @@ function run(): void {
                             }
                             lastSubmitTime = now;
                             currentlySubmitting = true;
-                            fetch(`https://speedydelete.com/5s/api/add?type=${type}`, {method: 'POST', body: toSubmit.slice(0, autoSubmit).join('\n')}).then(async resp => {
+                            fetch(`https://speedydelete.com/5s/api/add?rulespace=${space}`, {method: 'POST', body: toSubmit.slice(0, autoSubmit).join('\n')}).then(async resp => {
                                 console.log(`# Submission complete: ${resp.status} ${resp.statusText}`);
                                 if (resp.ok) {
                                     for (let line of (await resp.text()).split('\n')) {

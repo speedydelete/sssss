@@ -1,6 +1,6 @@
 
 import {identifyPeriodic, parseSpeed, speedToString, parse} from '../lifeweb/lib/index.js';
-import {Type, TYPE_NAMES, B0_TYPES, RANGES, Ship, shipsToString, normalizeShips, isValidInType, speedIsPossible, getOptimalPop, SUPERTYPES} from './base.js';
+import {Rulespace, RULESPACE_NAMES, B0_RULESPACES, RANGES, Ship, shipsToString, normalizeShips, isValidInRulespace, speedIsPossible, getOptimalPop} from './base.js';
 
 
 // const API_PATH = `http://localhost:3000`;
@@ -95,23 +95,23 @@ function parseShips(data: string): Ship[] {
 }
 
 
-let typeSelect = getElement('type', 'select');
-let type = typeSelect.value as Type;
-typeSelect.addEventListener('change', () => {
-    type = typeSelect.value as Type;
+let rulespaceSelect = getElement('type', 'select');
+let space = rulespaceSelect.value as Rulespace;
+rulespaceSelect.addEventListener('change', () => {
+    space = rulespaceSelect.value as Rulespace;
 });
 
 let countsOutput = getElement('counts');
 
 async function getCounts() {
-    let resp = await fetch(`${API_PATH}/getcounts?type=${type}`);
+    let resp = await fetch(`${API_PATH}/getcounts?type=${space}`);
     if (resp.ok) {
         countsOutput.textContent = await resp.text();
     } else {
         countsOutput.textContent = '';
         if (resp.status === 429) {
             setTimeout(async () => {
-                let resp = await fetch(`${API_PATH}/getcounts?type=${type}`);
+                let resp = await fetch(`${API_PATH}/getcounts?type=${space}`);
                 if (resp.ok) {
                     countsOutput.textContent = await resp.text();
                 }
@@ -120,7 +120,7 @@ async function getCounts() {
     }
 }
 
-typeSelect.addEventListener('change', getCounts);
+rulespaceSelect.addEventListener('change', getCounts);
 
 
 let periodMapsShown = false;
@@ -156,7 +156,7 @@ searchButton.addEventListener('click', async () => {
         return;
     }
     let {dx, dy, period} = data;
-    let resp = await fetch(`${API_PATH}/get?type=${type}&dx=${dx}&dy=${dy}&period=${period}&adjustables=${adjustablesSelect.value}`);
+    let resp = await fetch(`${API_PATH}/get?type=${space}&dx=${dx}&dy=${dy}&period=${period}&adjustables=${adjustablesSelect.value}`);
     if (resp.ok) {
         searchOutput.textContent = await resp.text();
     } else {
@@ -188,15 +188,15 @@ submitButton.addEventListener('click', async () => {
         alert(`No ships provided or all ships are invalid!`);
         return;
     }
-    let [ships, invalidShips] = normalizeShips(type, rawShips, false, 65536);
+    let [ships, invalidShips] = normalizeShips(space, rawShips, false, 65536);
     if (ships.length === 0) {
         alert(`No ships provided or all ships are invalid!`);
         return;
     }
     ships = ships.filter(x => x);
     for (let ship of ships) {
-        if (!isValidInType(type, ship)) {
-            alert(`Invalid ship for type ${TYPE_NAMES[type]}: ${shipsToString([ship])}`);
+        if (!isValidInRulespace(space, ship)) {
+            alert(`Invalid ship for rulespace ${RULESPACE_NAMES[space]}: ${shipsToString([ship])}`);
             return;
         }
     }
@@ -205,7 +205,7 @@ submitButton.addEventListener('click', async () => {
     shipsOutput.textContent = 'Adding ships...';
     submitButton.textContent = 'Back';
     isBackButton = true;
-    let resp = await fetch(`${API_PATH}/add?type=${type}`, {
+    let resp = await fetch(`${API_PATH}/add?rulespace=${space}`, {
         method: 'POST',
         body: shipsToString(ships),
     });
@@ -253,7 +253,7 @@ async function fetchPeriodMap(): Promise<void> {
         return;
     }
     let newPeriod = parseInt(periodElt.value);
-    if (B0_TYPES.includes(type)) {
+    if (B0_RULESPACES.includes(space)) {
         if (newPeriod % 2 !== 0) {
             newPeriod--;
         }
@@ -271,11 +271,11 @@ async function fetchPeriodMap(): Promise<void> {
         mapCache = {};
     }
     prevHour = hour;
-    let key = type + ' ' + newPeriod;
+    let key = space + ' ' + newPeriod;
     if (key in mapCache) {
         periodMap = mapCache[key];
     } else {
-        let resp = await fetch(`${API_PATH}/getperiodmap?type=${type}&period=${newPeriod}`);
+        let resp = await fetch(`${API_PATH}/getperiodmap?type=${space}&period=${newPeriod}`);
         if (!resp.ok) {
             alert(`Server returned ${resp.status} ${resp.statusText} while fetching period map`);
             return;
@@ -289,7 +289,7 @@ async function fetchPeriodMap(): Promise<void> {
     let rect3 = mapHoverInfoElt.getBoundingClientRect();
     // subtract 40 for the gap property
     let height = rect.height - rect2.height - rect3.height - 40;
-    mapCellCount = RANGES[type] * period + 1;
+    mapCellCount = RANGES[space] * period + 1;
     mapSize = Math.min(mapCellCount * 32, height);
     mapCellSize = Math.floor(mapSize / mapCellCount);
     mapSize = mapCellSize * mapCellCount;
@@ -298,7 +298,7 @@ async function fetchPeriodMap(): Promise<void> {
 }
 
 periodElt.addEventListener('change', fetchPeriodMap);
-typeSelect.addEventListener('change', fetchPeriodMap);
+rulespaceSelect.addEventListener('change', fetchPeriodMap);
 
 let mouseX: number | undefined = undefined;
 let mouseY: number | undefined = undefined;
@@ -336,13 +336,16 @@ function renderPeriodMap(): void {
                 value &= ~(1 << 31);
                 provenOptimal = true;
                 isOptimal = true;
-            } else if (!speedIsPossible(type, dx, dy, period)) {
+            } else if (!speedIsPossible(space, dx, dy, period)) {
                 mapCtx.fillStyle = '#000000';
                 possible = false;
             } else if (value === 0) {
                 mapCtx.fillStyle = '#000000';
             } else {
-                let optimal = getOptimalPop(type, dx, dy, period);
+                let optimal = getOptimalPop(space, dx, dy, period);
+                if (optimal === false) {
+                    throw new Error(`This error should not occur, please report it (getOptimalPop is false and speedIsPossible is true)`);
+                }
                 let value2 = value - optimal;
                 if (value2 <= 0) {
                     mapCtx.fillStyle = '#00ff00';
@@ -359,7 +362,7 @@ function renderPeriodMap(): void {
             let y = dy * mapCellSize;
             mapCtx.fillRect(x, y, mapCellSize, mapCellSize);
             mapCtx.fillRect(y, x, mapCellSize, mapCellSize);
-            if (possible && !speedIsPossible(type, dx + 1, dy, period)) {
+            if (possible && !speedIsPossible(space, dx + 1, dy, period)) {
                 mapCtx.fillStyle = '#0000ff';
                 mapCtx.fillRect(x, y + mapCellSize - 2, mapCellSize, 2);
                 mapCtx.fillRect(y + mapCellSize - 2, x - 2, 2, mapCellSize + 2);
@@ -382,7 +385,7 @@ function renderPeriodMap(): void {
                         } else if (isOptimal) {
                             text += 'optimal';
                         } else {
-                            text += `not optimal (optimal is ${getOptimalPop(type, dx, dy, period)} cells)`;
+                            text += `not optimal (optimal is ${getOptimalPop(space, dx, dy, period)} cells)`;
                         }
                     }
                     mapHoverInfoElt.textContent = text;
@@ -404,7 +407,7 @@ function renderPeriodMap(): void {
                         } else if (isOptimal) {
                             text += 'optimal';
                         } else {
-                            text += `not optimal (optimal is ${getOptimalPop(type, dx, dy, period)} cells)`;
+                            text += `not optimal (optimal is ${getOptimalPop(space, dx, dy, period)} cells)`;
                         }
                     }
                     mapHoverInfoElt.textContent = text;
@@ -440,5 +443,5 @@ for (let type of ['input', 'textarea', 'select']) {
 }
 
 
-type = typeSelect.value as Type;
+space = rulespaceSelect.value as Rulespace;
 getCounts();

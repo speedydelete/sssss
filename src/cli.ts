@@ -2,7 +2,7 @@
 import * as fs from 'node:fs/promises';
 import {execSync} from 'node:child_process';
 import {parseSpeed, parse} from '../lifeweb/lib/index.js';
-import {Type, TYPES, Ship, parseShips, patternToShip, addShipsToFiles, findSpeedRLE} from './index.js';
+import {Rulespace, isRulespace, Ship, parseShips, patternToShip, addShipsToFiles, findSpeedRLE} from './index.js';
 
 
 if (process.argv[2] === 'randomsearch') {
@@ -23,11 +23,11 @@ if (process.argv[2] === 'randomsearch') {
 }
 
 let cmd = process.argv[2];
-let type = process.argv[3] as Type;
+let space = process.argv[3] as Rulespace;
 let arg = process.argv.slice(4).join(' ');
 
-if (!TYPES.includes(type)) {
-    throw new Error(`Invalid type: '${type}'`);
+if (!isRulespace(space)) {
+    throw new Error(`Invalid rulespace: '${space}'`);
 }
 
 let out: string;
@@ -43,10 +43,10 @@ if (cmd === 'get') {
         arg = arg.slice(0, -4);
         adjustables = 'only';
     }
-    out = await findSpeedRLE(type, arg, adjustables);
+    out = await findSpeedRLE(space, arg, adjustables);
 } else if (cmd === 'add' || cmd === 'add_no_verify') {
     let data = parseShips((await fs.readFile(arg)).toString());
-    out = (await addShipsToFiles(type, data, undefined, true, cmd === 'add'))[0];
+    out = (await addShipsToFiles(space, data, undefined, true, cmd === 'add'))[0];
 } else if (cmd === 'add_rle' || cmd === 'add_rle_no_verify') {
     let data: Ship[] = [];
     for (let rle of (await fs.readFile(arg)).toString().split('!')) {
@@ -54,9 +54,9 @@ if (cmd === 'get') {
         if (rle === '') {
             continue;
         }
-        data.push(patternToShip(type, parse(rle + '!'), 1048576));
+        data.push(patternToShip(space, parse(rle + '!'), 1048576));
     }
-    out = (await addShipsToFiles(type, data, undefined, true, cmd === 'add_rle'))[0];
+    out = (await addShipsToFiles(space, data, undefined, true, cmd === 'add_rle'))[0];
 } else {
     throw new Error(`Invalid subcommand: ${process.argv[2]}`);
 }

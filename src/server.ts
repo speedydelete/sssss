@@ -5,7 +5,7 @@ import {execSync} from 'node:child_process';
 import {Worker} from 'node:worker_threads';
 import {IncomingMessage, ServerResponse, createServer} from 'node:http';
 import {speedToString} from '../lifeweb/lib/index.js';
-import {Type, TYPES, B0_TYPES, RANGES, Ship, parseShips, addShipsToFiles, findShipRLE, speedIsPossible} from './index.js';
+import {Rulespace, RULESPACES, B0_RULESPACES, RANGES, Ship, parseShips, addShipsToFiles, findShipRLE, speedIsPossible, isRulespace} from './index.js';
 
 
 let basePath = normalize(`${import.meta.dirname}/..`);
@@ -23,19 +23,19 @@ function getLineNumber(error: Error): string  | undefined{
 
 let counts: {[key: string]: string} = {};
 
-async function updateCountFor(type: string): Promise<void> {
+async function updateCountFor(space: Rulespace): Promise<void> {
     let data = [];
     let total = 0;
     for (let part of ['oscillator', 'orthogonal', 'diagonal', 'oblique']) {
-        let count = (await fs.readFile(`${basePath}/data/${type}/${part}.sss`)).toString().split('\n').length - 1;
+        let count = (await fs.readFile(`${basePath}/data/${space}/${part}.sss`)).toString().split('\n').length - 1;
         total += count;
         data.push(count);
     }
-    counts[type] = `This rulespace contains ${total} known nonadjustable speeds (${data[0]} oscillators, ${data[1]} orthogonals, ${data[2]} diagonals, and ${data[3]} obliques).`;
+    counts[space] = `This rulespace contains ${total} known nonadjustable speeds (${data[0]} oscillators, ${data[1]} orthogonals, ${data[2]} diagonals, and ${data[3]} obliques).`;
 }
 
-for (let type of TYPES) {
-    updateCountFor(type);
+for (let space of RULESPACES) {
+    updateCountFor(space);
 }
 
 
@@ -110,7 +110,7 @@ function workerOnExit(code: number): void {
     workerHandleFatal(new Error(msg));
 }
 
-async function addShipsToFilesWorker(type: string, ships: Ship[], limit?: number, includeComments?: boolean): Promise<WorkerData> {
+async function addShipsToFilesWorker(space: Rulespace, ships: Ship[], limit?: number, includeComments?: boolean): Promise<WorkerData> {
     return new Promise((resolve, reject) => {
         let id = nextID++;
         let timeout = setTimeout(() => {
@@ -119,15 +119,15 @@ async function addShipsToFilesWorker(type: string, ships: Ship[], limit?: number
             restartWorker();
         }, 30000);
         jobs.set(id, {resolve, reject, timeout});
-        worker.postMessage({id, type, ships, limit, includeComments});
+        worker.postMessage({id, space, ships, limit, includeComments});
     });
 }
 
 
-let newSpeeds: [string, string, number][] = [];
-let improvedSpeeds: [string, string, number, number][] = [];
-let newPeriods: [string, string, number][] = [];
-let improvedPeriods: [string, string, number, number][] = [];
+let newSpeeds: [Rulespace, string, number][] = [];
+let improvedSpeeds: [Rulespace, string, number, number][] = [];
+let newPeriods: [Rulespace, string, number][] = [];
+let improvedPeriods: [Rulespace, string, number, number][] = [];
 
 let lastGetTime = new Map<string, number>();
 let lastAddTime = new Map<string, number>();
@@ -165,41 +165,41 @@ const ENDPOINTS: {[key: string]: (req: IncomingMessage, params: URLSearchParams 
             return;
         }
         if (!params) {
-            out.writeHead(400, 'Expected "type", "dx", "dy", And "period" Parameters');
+            out.writeHead(400, 'Expected "rulespace", "dx", "dy", And "period" Parameters');
             out.end();
-            console.log(`400 Expected "type", "dx", "dy", And "period" Parameters (no query string, ${getLineNumber(new Error())})`);
+            console.log(`400 Expected "rulespace", "dx", "dy", And "period" Parameters (no query string, ${getLineNumber(new Error())})`);
             return;
         }
-        let type = params.get('type') as Type;
+        let space = params.get('rulespace') as Rulespace;
         let dxP = params.get('dx');
         let dyP = params.get('dy');
         let periodP = params.get('period');
         let adjustables = params.get('adjustables');
-        if (!type || !dxP || !dyP || !periodP) {
-            out.writeHead(400, 'Expected "type", "dx", "dy", And "period" Parameters');
+        if (!space || !dxP || !dyP || !periodP) {
+            out.writeHead(400, 'Expected "space", "dx", "dy", And "period" Parameters');
             out.end();
-            console.log(`400 Expected "type", "dx", "dy", And "period" Parameters (${getLineNumber(new Error())})`);
+            console.log(`400 Expected "space", "dx", "dy", And "period" Parameters (${getLineNumber(new Error())})`);
             return;
         }
         let dx = parseInt(dxP);
         let dy = parseInt(dyP);
         let period = parseInt(periodP);
-        if (!TYPES.includes(type) || Number.isNaN(dx) || Number.isNaN(dy) || Number.isNaN(period) || (adjustables !== undefined && !(adjustables === 'yes' || adjustables === 'no' || adjustables === 'only'))) {
+        if (!isRulespace(space) || Number.isNaN(dx) || Number.isNaN(dy) || Number.isNaN(period) || (adjustables !== undefined && !(adjustables === 'yes' || adjustables === 'no' || adjustables === 'only'))) {
             out.writeHead(400, 'Invalid Parameters');
             out.end();
             console.log(`400 Invalid Parameters (${getLineNumber(new Error())})`);
             return;
         }
         let text: string;
-        if (!speedIsPossible(type, dx, dy, period)) {
+        if (!speedIsPossible(space, dx, dy, period)) {
             text = 'Speed is impossible';
         } else {
-            text = await findShipRLE(type, dx, dy, period, adjustables);
+            text = await findShipRLE(space, dx, dy, period, adjustables);
         }
         out.writeHead(200);
         out.write(text);
         out.end();
-        console.log(`200 OK (${speedToString(dx, dy, period)} in type ${type})`);
+        console.log(`200 OK (${speedToString(dx, dy, period)} in rulespace ${space})`);
     },
 
     add(req: IncomingMessage, params: URLSearchParams | null, out: ServerResponse<IncomingMessage>, ip: string, time: number): void {
@@ -249,16 +249,16 @@ const ENDPOINTS: {[key: string]: (req: IncomingMessage, params: URLSearchParams 
             return;
         }
         if (!params) {
-            out.writeHead(400, 'Expected Type Parameter');
+            out.writeHead(400, 'Expected Rulespace Parameter');
             out.end();
-            console.log(`400 Expected Type Parameter (no query string, ${getLineNumber(new Error())})`);
+            console.log(`400 Expected Rulespace Parameter (no query string, ${getLineNumber(new Error())})`);
             return;
         }
-        let type = params.get('type');
-        if (!type) {
-            out.writeHead(400, 'Expected Type Parameter');
+        let space = params.get('rulespace') as Rulespace;
+        if (!space) {
+            out.writeHead(400, 'Expected Rulespace Parameter');
             out.end();
-            console.log(`400 Expected Type Parameter (no type parameter, ${getLineNumber(new Error())})`);
+            console.log(`400 Expected Rulespace Parameter (no rulespace parameter, ${getLineNumber(new Error())})`);
             return;
         }
         let data = '';
@@ -274,18 +274,18 @@ const ENDPOINTS: {[key: string]: (req: IncomingMessage, params: URLSearchParams 
                     console.log(`400 Max 2048 Ships (sent ${ships.length} ships, ${getLineNumber(new Error())})`);
                     return;
                 }
-                let [text, speeds] = (await addShipsToFilesWorker(type, ships, 65536, false));
-                for (let [type, value] of Object.entries(speeds)) {
-                    newSpeeds.push(...value.newSpeeds.map(x => [type, x[0], x[1]] as [string, string, number]));
-                    improvedSpeeds.push(...value.improvedSpeeds.map(x => [type, x[0], x[1], x[2]] as [string, string, number, number]));
-                    newPeriods.push(...value.newPeriods.map(x => [type, x[0], x[1]] as [string, string, number]));
-                    improvedPeriods.push(...value.improvedPeriods.map(x => [type, x[0], x[1], x[2]] as [string, string, number, number]));
+                let [text, speeds] = (await addShipsToFilesWorker(space, ships, 65536, false));
+                for (let [space, value] of Object.entries(speeds)) {
+                    newSpeeds.push(...value.newSpeeds.map(x => [space, x[0], x[1]] as [Rulespace, string, number]));
+                    improvedSpeeds.push(...value.improvedSpeeds.map(x => [space, x[0], x[1], x[2]] as [Rulespace, string, number, number]));
+                    newPeriods.push(...value.newPeriods.map(x => [space, x[0], x[1]] as [Rulespace, string, number]));
+                    improvedPeriods.push(...value.improvedPeriods.map(x => [space, x[0], x[1], x[2]] as [Rulespace, string, number, number]));
                 }
                 out.writeHead(200);
                 out.write(text);
                 out.end();
-                updateCountFor(type);
-                console.log(`200 OK (added ${ships.length} ships to type ${type})`);
+                updateCountFor(space);
+                console.log(`200 OK (added ${ships.length} ships to rulespace ${space})`);
             } catch (error) {
                 console.error(error);
                 out.writeHead(500);
@@ -316,23 +316,23 @@ const ENDPOINTS: {[key: string]: (req: IncomingMessage, params: URLSearchParams 
             return;
         }
         if (!params) {
-            out.writeHead(400, 'Expected Type Parameter');
+            out.writeHead(400, 'Expected Rulespace Parameter');
             out.end();
-            console.log(`400 Expected Type Parameter (no query string, ${getLineNumber(new Error())})`);
+            console.log(`400 Expected Rulespace Parameter (no query string, ${getLineNumber(new Error())})`);
             return;
         }
-        let type = params.get('type');
-        if (!type) {
-            out.writeHead(400, 'Expected Type Parameter');
+        let space = params.get('rulespace') as Rulespace;
+        if (!space) {
+            out.writeHead(400, 'Expected Rulespace Parameter');
             out.end();
-            console.log(`400 Expected Type Parameter (no type parameter, ${getLineNumber(new Error())})`);
+            console.log(`400 Expected Rulespace Parameter (no rulespace parameter, ${getLineNumber(new Error())})`);
             return;
         }
         // out.writeHead(200, undefined, {'access-control-allow-origin': '*'});
         out.writeHead(200);
-        out.write(counts[type]);
+        out.write(counts[space]);
         out.end();
-        console.log(`200 OK (type ${type})`);
+        console.log(`200 OK (rulespace ${space})`);
     },
 
     getnewships(req: IncomingMessage, params: URLSearchParams | null, out: ServerResponse<IncomingMessage>, ip: string, time: number): void {
@@ -392,17 +392,17 @@ const ENDPOINTS: {[key: string]: (req: IncomingMessage, params: URLSearchParams 
             return;
         }
         if (!params) {
-            out.writeHead(400, 'Expected "type" And "period" Parameters');
+            out.writeHead(400, 'Expected "space" And "period" Parameters');
             out.end();
-            console.log(`400 Expected "type" And "period" Parameters (no query string, ${getLineNumber(new Error())})`);
+            console.log(`400 Expected "space" And "period" Parameters (no query string, ${getLineNumber(new Error())})`);
             return;
         }
-        let type = params.get('type');
+        let space = params.get('space');
         let periodP = params.get('period');
-        if (!type || !periodP) {
-            out.writeHead(400, 'Expected "type" And "period" Parameters');
+        if (!space || !periodP) {
+            out.writeHead(400, 'Expected "space" And "period" Parameters');
             out.end();
-            console.log(`400 Expected "type" And "period" Parameters (parameters aren't present, ${getLineNumber(new Error())})`);
+            console.log(`400 Expected "space" And "period" Parameters (parameters aren't present, ${getLineNumber(new Error())})`);
             return;
         }
         let period = parseInt(periodP);
@@ -412,7 +412,7 @@ const ENDPOINTS: {[key: string]: (req: IncomingMessage, params: URLSearchParams 
             console.log(`400 Invalid Parameters (period is invalid, ${getLineNumber(new Error())})`);
             return;
         }
-        let maps = periodMaps[type];
+        let maps = periodMaps[space];
         if (!maps || !(period in maps)) {
             out.writeHead(400, 'Invalid Parameters');
             out.end();
@@ -424,7 +424,7 @@ const ENDPOINTS: {[key: string]: (req: IncomingMessage, params: URLSearchParams 
         out.writeHead(200);
         out.write(Buffer.from(map.buffer, 0, map.byteLength));
         out.end();
-        console.log(`200 OK (type ${type})`);
+        console.log(`200 OK (rulespace ${space})`);
     },
 
 };
@@ -497,10 +497,10 @@ function backupDataZip() {
 
 async function updatePeriodMaps(): Promise<void> {
     console.log(`Updating period maps`);
-    for (let type of TYPES) {
+    for (let space of RULESPACES) {
         let entries: {[key: string]: number} = {};
         for (let category of ['orthogonal', 'diagonal', 'oblique', 'oscillator']) {
-            let file = (await fs.readFile(`${basePath}/data/${type}/${category}.sss`)).toString();
+            let file = (await fs.readFile(`${basePath}/data/${space}/${category}.sss`)).toString();
             for (let ship of parseShips(file)) {
                 let key = ship.dx + ' ' + ship.dy + ' ' + ship.period;
                 let value = ship.pop;
@@ -511,9 +511,9 @@ async function updatePeriodMaps(): Promise<void> {
             }
         }
         let maps: Uint32Array[] = [new Uint32Array(0)];
-        let b0 = B0_TYPES.includes(type);
+        let b0 = B0_RULESPACES.includes(space);
         for (let period = 1; period < 128; period++) {
-            let limit = RANGES[type as Type] * period + 1;
+            let limit = RANGES[space as Rulespace] * period + 1;
             let map = new Uint32Array(Math.round((limit + 1) * (limit / 2)));
             if (b0 && period % 2 === 1) {
                 maps.push(map);
@@ -528,7 +528,7 @@ async function updatePeriodMaps(): Promise<void> {
             }
             maps.push(map);
         }
-        periodMaps[type] = maps;
+        periodMaps[space] = maps;
     }
     console.log(`Period maps update complete`);
 }

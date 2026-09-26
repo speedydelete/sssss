@@ -3,7 +3,7 @@ import * as path from 'node:path';
 import * as fs from 'node:fs/promises';
 import {parseSpeed, speedToString} from '../lifeweb/lib/index.js';
 import {createAdjustable} from './adjustable/index.js';
-import {Type, TYPE_NAMES, SUPERTYPES, SUBTYPES, Ship, parseShips, shipsToString, removeDuplicateShips, normalizeShips, isValidInType, validateType, shipIsOptimal} from './base.js';
+import {Rulespace, RULESPACE_NAMES, Ship, parseShips, shipsToString, removeDuplicateShips, normalizeShips, validateRulespace, isValidInRulespace, shipIsOptimal, SUPER_RULESPACES, SUB_RULESPACES} from './base.js';
 
 export * from './base.js';
 
@@ -32,45 +32,45 @@ function classifyShips(ships: Ship[]): [Ship[], Ship[], Ship[], Ship[]] {
 
 let dataPath = path.normalize(`${import.meta.dirname}/../data`);
 
-export type ChangeData = {[K in Type]?: {
+export type ChangeData = {[K in Rulespace]?: {
     newSpeeds: [string, number][];
     improvedSpeeds: [string, number, number][];
     newPeriods: [string, number][];
     improvedPeriods: [string, number, number][];
 }};
 
-async function _addShipsToFiles(type: Type, ships: Ship[], includeComments: boolean, _changes: ChangeData): Promise<void> {
-    if (!(type in _changes)) {
-        _changes[type] = {
+async function _addShipsToFiles(space: Rulespace, ships: Ship[], includeComments: boolean, _changes: ChangeData): Promise<void> {
+    if (!(space in _changes)) {
+        _changes[space] = {
             newSpeeds: [],
             improvedSpeeds: [],
             newPeriods: [],
             improvedPeriods: [],
         }
     }
-    let changes = _changes[type] as Exclude<ChangeData[Type], undefined>;
-    if (type === 'ot' || type === 'otb0' || type === 'otgen') {
+    let changes = _changes[space] as Exclude<ChangeData[Rulespace], undefined>;
+    if (space === 'ot' || space === 'otb0' || space === 'otgen') {
         ships = ships.filter((x): x is Ship & {otRule: string} => x.otRule !== undefined).map(x => {
             x = structuredClone(x);
             x.rule = x.otRule;
             return x;
         });
-    } else if (type === 'intnos') {
+    } else if (space === 'intnos') {
         ships = ships.filter(x => x.rule.endsWith('/S'));
-    } else if (type === 'intb1e') {
+    } else if (space === 'intb1e') {
         ships = ships.filter((x): x is Ship & {b1eRule: string} => x.b1eRule !== undefined).map(x => {
             x = structuredClone(x);
             x.rule = x.b1eRule;
             return x;
         });
-    } else if (type === 'int1dt') {
+    } else if (space === 'int1dt') {
         ships = ships.filter((x): x is Ship & {onedtRule: string} => x.onedtRule !== undefined).map(x => {
             x = structuredClone(x);
             x.rule = x.onedtRule;
             return x;
         });
     }
-    ships = ships.filter(x => x).filter(ship => isValidInType(type, ship));
+    ships = ships.filter(x => x).filter(ship => isValidInRulespace(space, ship));
     if (ships.length === 0) {
         return;
     }
@@ -82,7 +82,7 @@ async function _addShipsToFiles(type: Type, ships: Ship[], includeComments: bool
         if (part.length > 2048) {
             console.log('Adding ' + name + 's');
         }
-        let filePath = path.join(dataPath, type, name + '.sss');
+        let filePath = path.join(dataPath, space, name + '.sss');
         let data = parseShips((await fs.readFile(filePath)).toString());
         let found: Ship[] = [];
         for (let ship of data) {
@@ -126,20 +126,21 @@ async function _addShipsToFiles(type: Type, ships: Ship[], includeComments: bool
     }
 }
 
-export async function addShipsToFiles(type: Type, ships: Ship[], limit?: number, includeComments: boolean = true, verify: boolean = true): Promise<[string, ChangeData]> {
-    if (type in SUPERTYPES && SUPERTYPES[type]) {
-        return addShipsToFiles(SUPERTYPES[type], ships, limit, includeComments, verify);
+export async function addShipsToFiles(space: Rulespace, ships: Ship[], limit?: number, includeComments: boolean = true, verify: boolean = true): Promise<[string, ChangeData]> {
+    if (space in SUPER_RULESPACES && SUPER_RULESPACES[space] !== undefined) {
+        return addShipsToFiles(SUPER_RULESPACES[space], ships, limit, includeComments, verify);
     }
     let start = performance.now();
     ships = ships.filter(x => x);
+    // this check is more properly done below
     // for (let ship of ships) {
-    //     validateType(type, ship);
+    //     validateRulespace(space, ship);
     // }
     let ships2: Ship[];
     let invalidShips: string[];
     let invalidPeriods: string[];
     if (verify) {
-        [ships2, invalidShips, invalidPeriods] = normalizeShips(type, ships, false, limit);
+        [ships2, invalidShips, invalidPeriods] = normalizeShips(space, ships, false, limit);
         ships2 = ships2.filter(x => x);
     } else {
         ships2 = ships;
@@ -147,12 +148,12 @@ export async function addShipsToFiles(type: Type, ships: Ship[], limit?: number,
         invalidPeriods = [];
     }
     for (let ship of ships2) {
-        validateType(type, ship);
+        validateRulespace(space, ship);
     }
     let changes: ChangeData = {};
-    await _addShipsToFiles(type, structuredClone(ships2), includeComments, changes);
-    for (let subtype of SUBTYPES[type]) {
-        await _addShipsToFiles(subtype, structuredClone(ships2), includeComments, changes);
+    await _addShipsToFiles(space, structuredClone(ships2), includeComments, changes);
+    for (let subspace of SUB_RULESPACES[space]) {
+        await _addShipsToFiles(subspace, structuredClone(ships2), includeComments, changes);
     }
     let out = '';
     if (invalidShips.length > 0) {
@@ -168,7 +169,7 @@ export async function addShipsToFiles(type: Type, ships: Ship[], limit?: number,
             continue;
         }
         found = true;
-        out += `Changes made in ${TYPE_NAMES[key as Type]}:\n`;
+        out += `Changes made in ${RULESPACE_NAMES[key as Rulespace]}:\n`;
         if (newSpeeds.length > 0) {
             out += `    ${newSpeeds.length} new ship${newSpeeds.length === 1 ? '' : 's'}: ${newSpeeds.map(x => x[0]).join(', ')}\n`;
         }
@@ -190,10 +191,12 @@ export async function addShipsToFiles(type: Type, ships: Ship[], limit?: number,
 }
 
 
-export async function findShip(type: Type, dx: number, dy: number, period: number, adjustables: 'yes' | 'no' | 'only' = 'yes'): Promise<[Ship, boolean] | null> {
+export type AdjustableMode = 'yes' | 'no' | 'only';
+
+export async function findShip(space: Rulespace, dx: number, dy: number, period: number, adjustables: AdjustableMode = 'yes'): Promise<[Ship, boolean] | null> {
     let adjustable: Ship | null = null;
     if (adjustables === 'yes' || adjustables === 'only') {
-        let out = createAdjustable(type, dx, dy, period);
+        let out = createAdjustable(space, dx, dy, period);
         if (out) {
             let [p, pop] = out;
             for (let i = 0; i < period; i++) {
@@ -236,7 +239,7 @@ export async function findShip(type: Type, dx: number, dy: number, period: numbe
     } else {
         file = 'oblique';
     }
-    let data = parseShips((await fs.readFile(`${dataPath}/${type}/${file}.sss`)).toString());
+    let data = parseShips((await fs.readFile(`${dataPath}/${space}/${file}.sss`)).toString());
     for (let ship of data) {
         if (ship.period === period && ship.dx === dx && ship.dy === dy) {
             if (adjustable && adjustable.pop < ship.pop) {
@@ -252,8 +255,8 @@ export async function findShip(type: Type, dx: number, dy: number, period: numbe
     }
 }
 
-export async function findShipRLE(type: Type, dx: number, dy: number, period: number, adjustables: 'yes' | 'no' | 'only' = 'yes'): Promise<string> {
-    let data = await findShip(type, dx, dy, period, adjustables);
+export async function findShipRLE(space: Rulespace, dx: number, dy: number, period: number, adjustables: AdjustableMode = 'yes'): Promise<string> {
+    let data = await findShip(space, dx, dy, period, adjustables);
     if (!data) {
         return `No such ship found in database!\n`;
     }
@@ -262,7 +265,7 @@ export async function findShipRLE(type: Type, dx: number, dy: number, period: nu
     if (isAdjustable) {
         prefix += ', adjustable';
     }
-    if (shipIsOptimal(type, ship)) {
+    if (shipIsOptimal(space, ship)) {
         prefix += ', optimal';
     }
     if (ship.rle.startsWith('http')) {
@@ -272,7 +275,7 @@ export async function findShipRLE(type: Type, dx: number, dy: number, period: nu
     }
 }
 
-export async function findSpeedRLE(type: Type, speed: string, adjustables: 'yes' | 'no' | 'only' = 'yes'): Promise<string> {
+export async function findSpeedRLE(space: Rulespace, speed: string, adjustables: AdjustableMode = 'yes'): Promise<string> {
     let {dx, dy, period} = parseSpeed(speed);
-    return await findShipRLE(type, dx, dy, period, adjustables);
+    return await findShipRLE(space, dx, dy, period, adjustables);
 }
