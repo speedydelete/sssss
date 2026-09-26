@@ -93,7 +93,7 @@ option {
 
 #top {
     display: flex;
-    flex-direction: row;
+    flex-flow: row wrap;
     gap: 3ch;
     justify-content: center;
     align-items: center;
@@ -129,6 +129,16 @@ option {
     flex-direction: column;
     align-items: center;
     gap: 1.25em;
+}
+
+@media screen and (max-width: 800px) {
+    #main {
+        flex-direction: column;
+    }
+    #main > div {
+        min-height: fit-content;
+        width: 100%;
+    }
 }
 
 #search-wrapper {
@@ -177,8 +187,8 @@ option {
 }
 
 #ships, #ships-out {
-    width: 80%;
-    height: 10ch;
+    width: max(80%, 35ch);
+    min-height: 15em;
     flex: 1 0 auto;
 }
 

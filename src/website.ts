@@ -1,10 +1,9 @@
 
 import {identifyPeriodic, parseSpeed, speedToString, parse} from '../lifeweb/lib/index.js';
-import {Rulespace, RULESPACE_NAMES, B0_RULESPACES, RANGES, isPartOfRulespace, Ship, shipsToString, normalizeShips, isValidInRulespace, getOptimalPop} from './base.js';
+import {IS_DEBUG, Rulespace, RULESPACE_NAMES, B0_RULESPACES, RANGES, isPartOfRulespace, Ship, shipsToString, normalizeShips, isValidInRulespace, getOptimalPop} from './base.js';
 
 
-const API_PATH = `http://localhost:3000`;
-// const API_PATH = `api`;
+const API_PATH = IS_DEBUG ? `http://localhost:3000` : `api`;
 
 function getElement<T extends keyof HTMLElementTagNameMap = keyof HTMLElementTagNameMap>(id: string, type?: T): HTMLElementTagNameMap[T] {
     let out = document.getElementById(id);
@@ -327,9 +326,9 @@ function renderPeriodMap(): void {
     }
     mapCtx.fillStyle = '#000000';
     mapCtx.fillRect(0, 0, mapSize, mapSize);
-    type LineColor = '#0000ff' | '#007fff' | '#00ffff';
+    type LineColor = '#0000ff' | '#007fff' | '#7f00ff';
     let lines: {[K in LineColor]: Set<string>} = {
-        '#00ffff': new Set(),
+        '#7f00ff': new Set(),
         '#007fff': new Set(),
         '#0000ff': new Set(),
     };
@@ -347,7 +346,7 @@ function renderPeriodMap(): void {
             let optimalPop = getOptimalPop(space, x, y, period);
             if (optimalPop === false) {
                 possible = false;
-                mapCtx.fillStyle = '#3f3f3f';
+                mapCtx.fillStyle = '#6f6f6f';
             } else if (unknown) {
                 mapCtx.fillStyle = '#000000';
             } else {
@@ -375,8 +374,8 @@ function renderPeriodMap(): void {
                         lines['#007fff'].add(`${x} ${y}`);
                         lines['#007fff'].add(`${y} ${x}`);
                         if (period >= 2*(x + y)) {
-                            lines['#00ffff'].add(`${x} ${y}`);
-                            lines['#00ffff'].add(`${y} ${x}`);
+                            lines['#7f00ff'].add(`${x} ${y}`);
+                            lines['#7f00ff'].add(`${y} ${x}`);
                         }
                     }
                 }

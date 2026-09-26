@@ -104,7 +104,9 @@ export function speedIsPossible(space: Rulespace, dx: number, dy: number, period
     }
     // greater than 10c/11o and less than c/1o is impossible in INT
     // https://conwaylife.com/forums/viewtopic.php?p=235471#p235471
-    if (isPartOfRulespace(space, 'int') && dy === 0 && dx / period > 10/11 && dx !== period) {
+    // plus some additional oblique speeds
+    // https://discord.com/channels/357922255553953794/1502711250616848414/1553442358572355765
+    if (isPartOfRulespace(space, 'int') && dx < period && (period + dy)/(period - dx) > 11) {
         return false;
     }
     // default is true
