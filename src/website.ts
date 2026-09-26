@@ -369,7 +369,7 @@ function renderPeriodMap(): void {
             if (possible) {
                 lines['#0000ff'].add(`${x} ${y}`);
                 lines['#0000ff'].add(`${y} ${x}`);
-                if (isPartOfRulespace(space, 'int') && space !== 'intb1e') {
+                if (isPartOfRulespace(space, 'int') && !isPartOfRulespace(space, 'intb1e')) {
                     if (period >= 2*Math.max(x, y) + Math.min(x, y)) {
                         lines['#007fff'].add(`${x} ${y}`);
                         lines['#007fff'].add(`${y} ${x}`);

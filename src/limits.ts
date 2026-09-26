@@ -113,6 +113,11 @@ export function speedIsPossible(space: Rulespace, dx: number, dy: number, period
     if (isPartOfRulespace(space, 'int') && dx < period && (period + dy)/(period - dx) > 11) {
         return false;
     }
+    // same for B1e
+    // https://discord.com/channels/357922255553953794/1502711250616848414/1553511175680036895
+    if (isPartOfRulespace(space, 'intb1e') && dx < period && (period + 2*dy)/(period - dx) > 8) {
+        return false;
+    }
     // default is true
     return true;
 }
