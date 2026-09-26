@@ -6,7 +6,7 @@ import {getOptimalPop} from './limits.js';
 export * from './limits.js';
 
 
-export const IS_DEBUG = true;
+export const IS_DEBUG = false;
 
 
 export type Rulespace = 'int' | 'intb0' | 'ot' | 'otb0' | 'intgen' | 'otgen' | 'hrotr2' | 'intb1e' | 'intnos' | 'int1dt';
