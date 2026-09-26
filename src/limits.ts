@@ -94,6 +94,10 @@ export function speedIsPossible(space: Rulespace, dx: number, dy: number, period
             return false;
         }
     }
+    // p1 is impossible in phoenix
+    if (space === 'intnos' && dx === 0 && dy === 0 && period === 1) {
+        return false;
+    }
     // p2 is impossible in generations rules
     if (GENERATIONS_RULESPACES.includes(space) && dx === 0 && dy === 0 && period === 2) {
         return false;
