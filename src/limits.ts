@@ -97,11 +97,11 @@ export function speedIsPossible(space: Rulespace, dx: number, dy: number, period
     // for non B0 it's (x + y)c/(range * (x + y))
     // for B0 it's (x + y)c/(range * (x + y) * 1.5)
     if (B0_RULESPACES.includes(space)) {
-        if (dx + dy > RANGES[space] * period * 1.5) {
+        if (dx + dy > period * 1.5) {
             return false;
         }
     } else {
-        if (dx + dy > RANGES[space] * period) {
+        if (dx + dy > period) {
             return false;
         }
     }
