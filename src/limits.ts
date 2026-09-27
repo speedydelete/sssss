@@ -85,7 +85,7 @@ export function speedIsPossible(space: Rulespace, dx: number, dy: number, period
             return value[3];
         }
     }
-    // first the hrot case
+    // first the HROT case
     if (space === 'hrotr2') {
         // basic speed limit is 2c/1o and (x + y)c/(3 * x * y)
         if (dx > 2 * period || dx + dy > 3 * period) {
