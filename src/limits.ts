@@ -9,7 +9,7 @@ export const UNPARSED_PROVEN_OPTIMAL: {[K in Rulespace]: [speed: string, value: 
     'int': [
         // these were proved by LLS
         // command format: ./lls -p '>0' -r 'pB1-c2345678/S012345678'
-        // -s p[period] x[dx] y[dy] -b [value] [value] -p '<[pop]'
+        // -s p[period] x[dx] y[dy] -b [value] [value] -p '<=[pop]'
         // or: ./vls B/S B1e2345678/S012345678 periodic 'speed' [value] [value] -maxpop=[pop]
         // the bounding box threshold is 2 * period * population + 1
         // so for 2c/3o, it's 2 * 3 * (4 - 1) + 1, it's 4 - 1 because you are
@@ -23,8 +23,10 @@ export const UNPARSED_PROVEN_OPTIMAL: {[K in Rulespace]: [speed: string, value: 
         ['3c/4o', 4],
         ['(2, 1)c/4', 4],
         // threshold used: 2*5*4 + 1 = 41
-        // search not completed yet
         ['(4, 1)c/5', 5],
+        // threshold used: 2*6*4 + 1 = 61
+        // search not completed yet
+        // ['(5, 1)c/6', 5],
     ],
 
     'intb0': [
