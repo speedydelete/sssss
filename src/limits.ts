@@ -7,7 +7,7 @@ import {Rulespace, SUPER_RULESPACES, RANGES, B0_RULESPACES, GENERATIONS_RULESPAC
 export const UNPARSED_PROVEN_OPTIMAL: {[K in Rulespace]: [speed: string, value: number | false][]} = {
 
     'int': [
-        // these were disproved by LLS
+        // these were proved by LLS
         // command format: ./lls -p '>0' -r 'pB1-c2345678/S012345678'
         // -s p[period] x[dx] y[dy] -b [value] [value] -p '<[pop]'
         // or: ./vls B/S B1e2345678/S012345678 periodic 'speed' [value] [value] -maxpop=[pop]
@@ -22,6 +22,9 @@ export const UNPARSED_PROVEN_OPTIMAL: {[K in Rulespace]: [speed: string, value: 
         // threshold used: 2*4*3 + 1 = 25
         ['3c/4o', 4],
         ['(2, 1)c/4', 4],
+        // threshold used: 2*5*4 + 1 = 41
+        // search not completed yet
+        // ['(4, 1)c/5', 5],
     ],
 
     'intb0': [
@@ -82,11 +85,19 @@ export function speedIsPossible(space: Rulespace, dx: number, dy: number, period
             return value[3];
         }
     }
+    // first the hrot case
+    if (space === 'hrotr2') {
+        // basic speed limit is 2c/1o and (x + y)c/(3 * x * y)
+        if (dx > 2 * period || dx + dy > 3 * period) {
+            return false;
+        }
+        return true;
+    }
     // basic speed limits:
     // for non B0 it's (x + y)c/(range * (x + y))
-    // for B0 it's (x + y)c/(range * (x + y) * 3/2)
+    // for B0 it's (x + y)c/(range * (x + y) * 1.5)
     if (B0_RULESPACES.includes(space)) {
-        if (dx + dy > RANGES[space] * period * 3/2) {
+        if (dx + dy > RANGES[space] * period * 1.5) {
             return false;
         }
     } else {
