@@ -241,6 +241,7 @@ let periodMapAdjustablesSelect = getElement('period-map-adjustables', 'select');
 let mapCanvas = getElement('period-map-map', 'canvas');
 let mapCtx = mapCanvas.getContext('2d') as CanvasRenderingContext2D;
 let mapHoverInfoElt = getElement('period-map-hover-info');
+let invalidPeriodMapTextElt = getElement('invalid-period-map-text');
 
 let period = 0;
 let periodMap: Uint32Array | undefined = undefined;
@@ -252,7 +253,12 @@ async function fetchPeriodMap(): Promise<void> {
     if (!periodMapsShown) {
         return;
     }
+    invalidPeriodMapTextElt.textContent = '';
     let newPeriod = parseInt(periodMapPeriodElt.value);
+    if (newPeriod < 1 || newPeriod > 127) {
+        invalidPeriodMapTextElt.textContent = `Invalid period`;
+        return;
+    }
     let adjustables = periodMapAdjustablesSelect.value;
     if (B0_RULESPACES.includes(space)) {
         if (newPeriod % 2 !== 0) {
