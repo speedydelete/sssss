@@ -236,6 +236,7 @@ const ENDPOINTS: {[key: string]: (req: IncomingMessage, params: URLSearchParams 
                 out.writeHead(500, 'Too Busy');
                 out.end();
                 console.log(`500 Too Busy (attempted to add when cleaning up after too many jobs (currently ${jobs.size} active jobs), ${getLineNumber(new Error())})`);
+                currentlyAdding = false;
                 return;
             }
         }
@@ -244,18 +245,21 @@ const ENDPOINTS: {[key: string]: (req: IncomingMessage, params: URLSearchParams 
             out.writeHead(500, 'Too Busy');
             out.end();
             console.log(`500 Too Busy (attempted to add when there are already ${jobs.size} active jobs, ${getLineNumber(new Error())})`);
+            currentlyAdding = false;
             return;
         }
         if (req.method !== 'POST') {
             out.writeHead(405);
             out.end();
             console.log(`405 Method Not Allowed (${getLineNumber(new Error())})`);
+            currentlyAdding = false;
             return;
         }
         if (!params) {
             out.writeHead(400, 'Expected Rulespace Parameter');
             out.end();
             console.log(`400 Expected Rulespace Parameter (no query string, ${getLineNumber(new Error())})`);
+            currentlyAdding = false;
             return;
         }
         let space = params.get('rulespace') as Rulespace;
@@ -263,6 +267,7 @@ const ENDPOINTS: {[key: string]: (req: IncomingMessage, params: URLSearchParams 
             out.writeHead(400, 'Expected Rulespace Parameter');
             out.end();
             console.log(`400 Expected Rulespace Parameter (no rulespace parameter, ${getLineNumber(new Error())})`);
+            currentlyAdding = false;
             return;
         }
         let data = '';
@@ -276,6 +281,7 @@ const ENDPOINTS: {[key: string]: (req: IncomingMessage, params: URLSearchParams 
                     out.writeHead(400, 'Max 2048 Ships');
                     out.end();
                     console.log(`400 Max 2048 Ships (sent ${ships.length} ships, ${getLineNumber(new Error())})`);
+                    currentlyAdding = false;
                     return;
                 }
                 let [text, speeds] = (await addShipsToFilesWorker(space, ships, 65536, false));
@@ -294,13 +300,14 @@ const ENDPOINTS: {[key: string]: (req: IncomingMessage, params: URLSearchParams 
                 out.end();
                 updateCountFor(space);
                 console.log(`200 OK (added ${ships.length} ships to rulespace ${space})`);
+                currentlyAdding = false;
             } catch (error) {
                 console.error(error);
                 out.writeHead(500);
                 out.end();
+                currentlyAdding = false;
             }
         });
-        currentlyAdding = false;
     },
 
     getcounts(req: IncomingMessage, params: URLSearchParams | undefined, out: ServerResponse<IncomingMessage>, ip: string, time: number): void {

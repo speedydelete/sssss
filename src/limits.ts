@@ -25,8 +25,7 @@ export const UNPARSED_PROVEN_OPTIMAL: {[K in Rulespace]: [speed: string, value: 
         // threshold used: 2*5*4 + 1 = 41
         ['(4, 1)c/5', 5],
         // threshold used: 2*6*4 + 1 = 61
-        // search not completed yet
-        // ['(5, 1)c/6', 5],
+        ['(5, 1)c/6', 5],
     ],
 
     'intb0': [
